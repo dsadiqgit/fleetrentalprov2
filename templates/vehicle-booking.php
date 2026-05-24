@@ -295,7 +295,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     </div>
                     <div class="flex justify-between items-center">
                         <button @click="step = 2" class="text-slate-500 font-bold hover:text-slate-900 transition">← Back</button>
-                        <button @click="step = 4" class="bg-blue-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg hover:bg-blue-700 transition-all">Proceed to Payment →</button>
+                        <button @click="step = 4; initStripe();" class="bg-blue-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg hover:bg-blue-700 transition-all">Proceed to Payment →</button>
                     </div>
                 </div>
 
@@ -304,7 +304,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
                         <h2 class="text-xl font-bold text-slate-900 mb-6">Complete Your Payment</h2>
                         <div class="grid grid-cols-2 gap-3 mb-8">
-                            <button @click="formData.payment_method = 'card'" :class="formData.payment_method === 'card' ? 'border-blue-600 bg-blue-50/50 text-blue-600' : 'border-slate-200 text-slate-500'" class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all">
+                            <button @click="formData.payment_method = 'card'; initStripe();" :class="formData.payment_method === 'card' ? 'border-blue-600 bg-blue-50/50 text-blue-600' : 'border-slate-200 text-slate-500'" class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all">
                                 <svg class="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                                 <span class="font-bold text-sm">Credit Card</span>
                             </button>
@@ -600,6 +600,30 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     body: JSON.stringify({ vehicle_id: vehicleId, customer_name: this.formData.name, customer_email: this.formData.email, customer_phone: this.formData.phone, customer_license: this.formData.license, pickup_date: this.dateRange.start, return_date: this.dateRange.end, pickup_time: this.formData.pickup_time, return_time: this.formData.return_time, total_days: this.days, price_per_day: this.basePrice, notes: this.formData.notes, skip_verification: true })
                 });
                 this.step = 3;
+            },
+
+            initStripe() {
+                if (this.stripePublishableKey && !this.paymentElement) {
+                    this.$nextTick(() => {
+                        try {
+                            this.stripe = Stripe(this.stripePublishableKey);
+                            const elements = this.stripe.elements();
+                            this.paymentElement = elements.create('card', {
+                                style: {
+                                    base: {
+                                        fontSize: '16px',
+                                        color: '#1e293b',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                        '::placeholder': { color: '#94a3b8' }
+                                    }
+                                }
+                            });
+                            this.paymentElement.mount('#stripe-payment-element');
+                        } catch (e) {
+                            console.error('Stripe initialization failed:', e);
+                        }
+                    });
+                }
             },
 
             async submitBooking() {

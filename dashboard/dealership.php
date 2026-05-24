@@ -95,6 +95,13 @@ try {
 catch (PDOException $e) { /* Column might exist */
 }
 
+// Update schema for users to support team member signature
+try {
+    @$pdo->exec("ALTER TABLE users ADD COLUMN signature_data LONGTEXT NULL");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
 $error = '';
 $success = '';
 $active_tab = $_GET['tab'] ?? 'main';
@@ -225,6 +232,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 else {
                     $error = 'Invalid email address.';
+                }
+                break;
+
+            case 'save_witness_signature':
+                $sig_data = $_POST['signature_data'] ?? '';
+                if ($sig_data) {
+                    try {
+                        $stmt = $pdo->prepare("UPDATE users SET signature_data = ? WHERE id = ?");
+                        $stmt->execute([$sig_data, $_SESSION['user_id']]);
+                        $success = 'Witness signature saved successfully!';
+                    }
+                    catch (Exception $e) {
+                        $error = 'Failed to save witness signature.';
+                    }
+                }
+                else {
+                    $error = 'No signature data provided.';
                 }
                 break;
 
@@ -819,6 +843,133 @@ elseif ($active_tab === 'team'): ?>
                     </div>
                     <?php
     endif; ?>
+
+                    <!-- Logged-in Team Member Signature Section -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-6">
+                        <h4 class="text-sm font-bold text-gray-900 mb-1">Your Witness Signature</h4>
+                        <p class="text-xs text-gray-500 mb-4">Draw your signature below to save it as your witness signature. This signature will automatically appear on rental contracts.</p>
+                        
+                        <?php
+                        // Fetch logged in user's saved signature
+                        $stmt_sig = $pdo->prepare("SELECT signature_data FROM users WHERE id = ?");
+                        $stmt_sig->execute([$_SESSION['user_id']]);
+                        $my_sig = $stmt_sig->fetchColumn();
+                        ?>
+
+                        <form method="POST" id="witnessSigForm" class="space-y-4">
+                            <input type="hidden" name="action" value="save_witness_signature">
+                            <input type="hidden" name="signature_data" id="witnessSignatureData" value="">
+                            
+                            <div class="relative w-full max-w-md border border-gray-200 rounded-xl overflow-hidden bg-gray-50" style="height: 150px;">
+                                <canvas id="witnessSigCanvas" class="w-full h-full cursor-crosshair relative z-10" style="touch-action: none;"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-300 font-semibold text-xs uppercase tracking-wider" id="canvasPlaceholder">
+                                    <?php if ($my_sig): ?>
+                                        <img src="<?= htmlspecialchars($my_sig) ?>" alt="My Signature" id="witnessSigImage" class="max-h-28 pointer-events-none relative z-0">
+                                    <?php else: ?>
+                                        Draw signature here
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-3">
+                                <button type="button" onclick="clearWitnessSignature()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs font-semibold">Clear</button>
+                                <button type="button" onclick="saveWitnessSignature()" class="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 text-xs font-semibold">Save Signature</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const canvas = document.getElementById('witnessSigCanvas');
+                            if (!canvas) return;
+                            
+                            const ctx = canvas.getContext('2d');
+                            const placeholder = document.getElementById('canvasPlaceholder');
+                            let isDrawing = false;
+                            let hasDrawn = false;
+                            
+                            // Adjust canvas coordinate resolution on resize
+                            function resizeCanvas() {
+                                const rect = canvas.getBoundingClientRect();
+                                canvas.width = rect.width;
+                                canvas.height = rect.height;
+                                ctx.strokeStyle = '#000000';
+                                ctx.lineWidth = 2.5;
+                                ctx.lineCap = 'round';
+                                ctx.lineJoin = 'round';
+                            }
+                            
+                            resizeCanvas();
+                            window.addEventListener('resize', resizeCanvas);
+                            
+                            function getPos(e) {
+                                const rect = canvas.getBoundingClientRect();
+                                if (e.touches && e.touches.length > 0) {
+                                    return {
+                                        x: e.touches[0].clientX - rect.left,
+                                        y: e.touches[0].clientY - rect.top
+                                    };
+                                }
+                                return {
+                                    x: e.clientX - rect.left,
+                                    y: e.clientY - rect.top
+                                };
+                            }
+                            
+                            function startDraw(e) {
+                                isDrawing = true;
+                                const pos = getPos(e);
+                                ctx.beginPath();
+                                ctx.moveTo(pos.x, pos.y);
+                                
+                                // Hide placeholder
+                                const sigImg = document.getElementById('witnessSigImage');
+                                if (sigImg) sigImg.remove();
+                                placeholder.innerHTML = '';
+                            }
+                            
+                            function draw(e) {
+                                if (!isDrawing) return;
+                                e.preventDefault();
+                                const pos = getPos(e);
+                                ctx.lineTo(pos.x, pos.y);
+                                ctx.stroke();
+                                hasDrawn = true;
+                            }
+                            
+                            function stopDraw() {
+                                isDrawing = false;
+                            }
+                            
+                            // Mouse events
+                            canvas.addEventListener('mousedown', startDraw);
+                            canvas.addEventListener('mousemove', draw);
+                            canvas.addEventListener('mouseup', stopDraw);
+                            canvas.addEventListener('mouseleave', stopDraw);
+                            
+                            // Touch events
+                            canvas.addEventListener('touchstart', startDraw);
+                            canvas.addEventListener('touchmove', draw);
+                            canvas.addEventListener('touchend', stopDraw);
+                            
+                            window.clearWitnessSignature = function() {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                placeholder.innerHTML = 'Draw signature here';
+                                hasDrawn = false;
+                                document.getElementById('witnessSignatureData').value = '';
+                            };
+                            
+                            window.saveWitnessSignature = function() {
+                                if (!hasDrawn) {
+                                    alert('Please draw a signature before saving.');
+                                    return;
+                                }
+                                const dataUrl = canvas.toDataURL('image/png');
+                                document.getElementById('witnessSignatureData').value = dataUrl;
+                                document.getElementById('witnessSigForm').submit();
+                            };
+                        });
+                    </script>
                 </div>
 
                 <!-- Invite Modal -->

@@ -159,6 +159,33 @@ $contractText = $isVisualTemplate ? $contentJson['html'] : $rawContent;
 
 $vehicleNameStr = trim(($vehicleForPdf['brand'] ?? '') . ' ' . ($vehicleForPdf['model'] ?? ''));
 
+// Fetch a team member of this tenant to act as the Witness / Rental Provider signer
+$witness_name = 'Authorized Witness';
+$witness_signature_html = '';
+
+$stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role IN ('admin', 'staff') AND signature_data IS NOT NULL AND signature_data != '' LIMIT 1");
+$stmt_w->execute([$tenant['id']]);
+$witness = $stmt_w->fetch();
+
+if (!$witness) {
+    // Fallback to any admin of the tenant
+    $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role = 'admin' LIMIT 1");
+    $stmt_w->execute([$tenant['id']]);
+    $witness = $stmt_w->fetch();
+}
+
+if ($witness) {
+    $witness_name = $witness['full_name'] ?? 'Authorized Representative';
+    if (!empty($witness['signature_data'])) {
+        $witness_sig = $witness['signature_data'];
+        if (strpos($witness_sig, 'data:image/') === 0) {
+            $witness_signature_html = '<img src="' . htmlspecialchars($witness_sig) . '" style="max-height: 50px; display: inline-block;" alt="Witness Signature" />';
+        } else {
+            $witness_signature_html = '<i>' . htmlspecialchars($witness_sig) . '</i>';
+        }
+    }
+}
+
 $replacements = [
     '{{vehicle_name}}' => trim($vehicleNameStr) ?: 'NOT SPECIFIED',
     '{{vehicle_registration}}' => $vehicleForPdf['registration'] ?? 'N/A',
@@ -172,6 +199,8 @@ $replacements = [
     '{{included_distance}}' => ($vehicleForPdf['mileage_limit'] ?? 'Unlimited') . ' miles',
     '{{excess_distance_fee}}' => '£0.50',
     '{{deductible_amount}}' => '£500',
+    '{{witness_signature}}' => $witness_signature_html,
+    '{{user_name}}' => $witness_name,
 ];
     $signatureHtml = '<span style="color:#999;font-style:italic;font-weight:bold;">DIGITAL PREVIEW</span>';
     if (!empty($contractForPdf['contract_status']) && $contractForPdf['contract_status'] === 'signed') {
@@ -202,6 +231,10 @@ foreach ($replacements as $key => $value) {
     $contractText = preg_replace($pattern, $value, $contractText);
     $contractText = str_ireplace($key, $value, $contractText);
 }
+
+// Direct translations requested by the user
+$contractText = str_ireplace('business Owner', 'Witness', $contractText);
+$contractText = str_ireplace('Car Rental', $witness_name, $contractText);
 
 // Remove designer controls to ensure the preview is a clean, static document
 $contractText = preg_replace('/<button[^>]*>.*?<\/button>/is', '', $contractText);

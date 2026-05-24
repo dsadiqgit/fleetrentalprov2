@@ -363,8 +363,8 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                     <div id="contractHeader"
                         class="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-8 gap-4"
                         style="background-color: #93C5FD;">
-                        <h1 class="text-xl sm:text-3xl font-bold text-white text-center sm:text-left"
-                            contenteditable="true">Vehicle Rental Contract</h1>
+                        <h1 id="previewContractTitle" class="text-xl sm:text-3xl font-bold text-white text-center sm:text-left"
+                            contenteditable="true"><?= htmlspecialchars($template['name'] ?? 'Vehicle Rental Contract')?></h1>
                         <div id="logoContainer" class="bg-white px-4 py-2 rounded">
                             <span class="text-gray-400 text-sm">Your Logo</span>
                         </div>
@@ -440,9 +440,8 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                                 written.</p>
                             <div class="grid grid-cols-2 gap-8">
                                 <div>
-                                    <p class="text-sm font-medium text-gray-900 mb-4" contenteditable="true">Rental
-                                        Company</p>
-                                    <div class="mb-2 h-16"></div>
+                                    <p class="text-sm font-medium text-gray-900 mb-4" contenteditable="true">Witness</p>
+                                    <div class="mb-2 h-16">{{witness_signature}}</div>
                                     <p class="text-sm text-gray-600" contenteditable="true">{{user_name}}</p>
                                     <p class="text-sm text-gray-600">Date: {{current_datetime}}</p>
                                 </div>
@@ -545,6 +544,41 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
         document.getElementById('contactPhone').addEventListener('input', function () {
             document.getElementById('displayPhone').textContent = this.value || '555-123-4567';
         });
+
+        // Synchronize template/contract name bidirectionally between sidebar inputs and contract header
+        const templateNameInput = document.getElementById('templateName');
+        const templateNameMobileInput = document.getElementById('templateNameMobile');
+        const previewContractTitle = document.getElementById('previewContractTitle');
+
+        if (templateNameInput && previewContractTitle) {
+            templateNameInput.addEventListener('input', function () {
+                previewContractTitle.textContent = this.value || 'Vehicle Rental Contract';
+                if (templateNameMobileInput) {
+                    templateNameMobileInput.value = this.value;
+                }
+            });
+        }
+
+        if (templateNameMobileInput && previewContractTitle) {
+            templateNameMobileInput.addEventListener('input', function () {
+                previewContractTitle.textContent = this.value || 'Vehicle Rental Contract';
+                if (templateNameInput) {
+                    templateNameInput.value = this.value;
+                }
+            });
+        }
+
+        if (previewContractTitle) {
+            previewContractTitle.addEventListener('input', function () {
+                const text = this.textContent.trim();
+                if (templateNameInput) {
+                    templateNameInput.value = text;
+                }
+                if (templateNameMobileInput) {
+                    templateNameMobileInput.value = text;
+                }
+            });
+        }
 
         function handleLogoSelect(url) {
             logoDataUrl = url;

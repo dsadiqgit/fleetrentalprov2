@@ -258,6 +258,37 @@ function renderContractToPDF($pdf, $contractData, $booking, $tenant, $vehicle, $
         $signatureHtml = '<span style="color:#999;font-style:italic;font-weight:bold;">DIGITAL PREVIEW</span>';
     }
 
+    // Fetch a team member of this tenant to act as the Witness / Rental Provider signer
+    $witness_name = 'Authorized Witness';
+    $witness_signature_html = '';
+    
+    $pdo = getDB();
+    $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role IN ('admin', 'staff') AND signature_data IS NOT NULL AND signature_data != '' LIMIT 1");
+    $stmt_w->execute([$tenant['id']]);
+    $witness = $stmt_w->fetch();
+    
+    if (!$witness) {
+        $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role = 'admin' LIMIT 1");
+        $stmt_w->execute([$tenant['id']]);
+        $witness = $stmt_w->fetch();
+    }
+    
+    if ($witness) {
+        $witness_name = $witness['full_name'] ?? 'Authorized Representative';
+        if (!empty($witness['signature_data'])) {
+            $witness_sig = $witness['signature_data'];
+            if (strpos($witness_sig, 'data:image/') === 0) {
+                // For TCPDF we need to parse the base64 string
+                $imgParts = explode(',', $witness_sig, 2);
+                if (count($imgParts) === 2) {
+                    $witness_signature_html = '<img src="@' . $imgParts[1] . '" height="30" />';
+                }
+            } else {
+                $witness_signature_html = '<i>' . htmlspecialchars($witness_sig) . '</i>';
+            }
+        }
+    }
+
     $replacements = [
         '{{vehicle_name}}' => trim($vehicleNameStr) ?: 'NOT SPECIFIED',
         '{{vehicle_registration}}' => $vehicle['registration'] ?? 'N/A',
@@ -273,7 +304,13 @@ function renderContractToPDF($pdf, $contractData, $booking, $tenant, $vehicle, $
         '{{deductible_amount}}' => '£500',
         '{{current_datetime}}' => date('F j, Y h:i A'),
         '{{signature}}' => $signatureHtml,
+        '{{witness_signature}}' => $witness_signature_html,
+        '{{user_name}}' => $witness_name,
     ];
+    
+    // Direct translations requested by the user
+    $contractText = str_ireplace('business Owner', 'Witness', $contractText);
+    $contractText = str_ireplace('Car Rental', $witness_name, $contractText);
     
     // Robust replacements logic
     foreach ($replacements as $key => $value) {

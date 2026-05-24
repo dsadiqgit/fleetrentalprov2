@@ -81,6 +81,33 @@ try {
     $content = $isVisualTemplate ? $contentJson['html'] : $rawContent;
     $vehicleName = trim(($data['brand'] ?? '') . ' ' . ($data['model'] ?? ''));
     
+    // Fetch a team member of this tenant to act as the Witness / Rental Provider signer
+    $witness_name = 'Authorized Witness';
+    $witness_signature_html = '';
+    
+    $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role IN ('admin', 'staff') AND signature_data IS NOT NULL AND signature_data != '' LIMIT 1");
+    $stmt_w->execute([$tenant_id]);
+    $witness = $stmt_w->fetch();
+    
+    if (!$witness) {
+        // Fallback to any admin of the tenant
+        $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role = 'admin' LIMIT 1");
+        $stmt_w->execute([$tenant_id]);
+        $witness = $stmt_w->fetch();
+    }
+    
+    if ($witness) {
+        $witness_name = $witness['full_name'] ?? 'Authorized Representative';
+        if (!empty($witness['signature_data'])) {
+            $witness_sig = $witness['signature_data'];
+            if (strpos($witness_sig, 'data:image/') === 0) {
+                $witness_signature_html = '<img src="' . htmlspecialchars($witness_sig) . '" style="max-height: 50px; height: 50px;" />';
+            } else {
+                $witness_signature_html = '<i>' . htmlspecialchars($witness_sig) . '</i>';
+            }
+        }
+    }
+    
     $replacements = [
         '{{vehicle_name}}' => $vehicleName,
         '{{vehicle_registration}}' => 'N/A',
@@ -96,11 +123,17 @@ try {
         '{{deductible_amount}}' => '£500',
         '{{current_datetime}}' => date('F j, Y h:i A'),
         '{{signature}}' => '',
+        '{{witness_signature}}' => $witness_signature_html,
+        '{{user_name}}' => $witness_name,
     ];
     
     foreach ($replacements as $key => $value) {
         $content = str_replace($key, $value, $content);
     }
+
+    // Direct translations requested by the user
+    $content = str_ireplace('business Owner', 'Witness', $content);
+    $content = str_ireplace('Car Rental', $witness_name, $content);
     
     $isHtml = $isVisualTemplate;
     if ($isHtml) {
