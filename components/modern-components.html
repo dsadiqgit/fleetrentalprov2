@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Components - Fleet Rental Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Modern Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e5e7eb;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        input:checked + .toggle-slider {
+            background-color: #10b981;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* Modern Dropdown */
+        .modern-dropdown {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto space-y-12">
+        <h1 class="text-3xl font-bold text-gray-900">Modern UI Components</h1>
+        
+        <!-- Dropdown Example -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Modern Dropdown</h2>
+            <div class="max-w-xs">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select an option</label>
+                <select class="modern-dropdown w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option>Instagram</option>
+                    <option>A friend</option>
+                    <option>Google</option>
+                    <option>Other</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Toggle Switch Example -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Modern Toggle Switch</h2>
+            <div class="flex items-center space-x-3">
+                <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="text-sm text-gray-700">Enable notifications</span>
+            </div>
+        </div>
+        
+        <!-- Calendar Example -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Modern Calendar</h2>
+            
+            <!-- Calendar Header -->
+            <div class="flex justify-between items-center mb-6">
+                <button class="p-2 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                
+                <h3 class="text-lg font-semibold text-gray-900">March 2026</h3>
+                
+                <button class="p-2 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="max-w-sm mx-auto">
+                <!-- Day Headers -->
+                <div class="grid grid-cols-7 gap-2 mb-2">
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">Mo</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">Tu</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">We</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">Th</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">Fr</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">Sa</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">Su</div>
+                </div>
+                
+                <!-- Calendar Days -->
+                <div class="grid grid-cols-7 gap-2">
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">25</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">26</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">27</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">28</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">1</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">2</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">3</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">4</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">5</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">6</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">7</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">8</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">9</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">10</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">11</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">12</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">13</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">14</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">15</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">16</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">17</div>
+                    <!-- Selected Date -->
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 cursor-pointer transition">18</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">19</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">20</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">21</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">22</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">23</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">24</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">25</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">26</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">27</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">28</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">29</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">30</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer transition">31</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">1</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">2</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">3</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">4</div>
+                    <div class="flex items-center justify-center h-10 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-50 cursor-pointer transition">5</div>
+                </div>
+            </div>
+            
+            <!-- Done Button -->
+            <div class="flex justify-end mt-6">
+                <button class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>
+
+ErrorDocument 404 /404.php
+
+RewriteEngine On
+
+# Exclude specific directories from rewriting - they should be accessed directly
+RewriteRule ^(api|auth|admin|dashboard|config|includes|uploads|public|assets|templates|vendor|app)($|/) - [L]
+
+# Remove .php extension from URLs
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.+?)/?$ $1.php [L]
+
+# Redirect to index.php only for non-existent files/directories (for subdomain routing)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
