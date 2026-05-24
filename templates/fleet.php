@@ -140,8 +140,6 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="/app/custom-select.js" defer></script>
-    <!-- Universal Tenant Header (Includes Branding, Navigation & Styles) -->
-    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
 
     <style>
         .search-pill-mobile {
@@ -252,6 +250,9 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 </head>
 
 <body class="bg-gray-50">
+
+    <!-- Universal Tenant Header (Includes Branding, Navigation & Styles) -->
+    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
 
     <!-- Search and Filter Section -->
     <section class="bg-white border-b border-gray-200 py-3 md:py-6 sticky top-0 z-40 shadow-sm">

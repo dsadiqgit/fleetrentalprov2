@@ -59,11 +59,11 @@ if (!$content) {
     <title>Booking Confirmed | <?= htmlspecialchars($tenant['name']) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
 
     <!-- Universal Tenant Header Styles -->
     <?php include __DIR__ . '/includes/tenant_header.php'; ?>
-</head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
 
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Success Message -->

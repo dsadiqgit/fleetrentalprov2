@@ -13,7 +13,7 @@ function is_header_active($page)
 
 <!-- Navbar -->
 <nav id="mainNav"
-    class="bg-white border-b border-gray-100 sticky top-0 z-[100] transition-transform duration-300 transform translate-y-0 w-full">
+    class="bg-white border-b border-gray-100 sticky top-0 z-[100] w-full" style="transition: transform 0.3s ease-in-out;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div class="flex justify-between items-center h-16">
             <a href="/" class="flex items-center">
@@ -726,7 +726,7 @@ endif; ?>
 
         if (currentScrollPos <= 0) {
             // At the top
-            scrollNav.classList.remove('-translate-y-full');
+            scrollNav.style.transform = '';
             scrollNav.classList.remove('shadow-md');
         } else {
             // Add shadow slightly
@@ -735,10 +735,10 @@ endif; ?>
             // Limit hiding threshold so it doesn't accidentally trigger heavily on bounce
             if (currentScrollPos > lastScrollPos && currentScrollPos > 60) {
                 // Scrolling DOWN
-                scrollNav.classList.add('-translate-y-full');
+                scrollNav.style.transform = 'translateY(-100%)';
             } else if (currentScrollPos < lastScrollPos) {
                 // Scrolling UP
-                scrollNav.classList.remove('-translate-y-full');
+                scrollNav.style.transform = 'translateY(0)';
             }
         }
         lastScrollPos = currentScrollPos;

@@ -80,8 +80,6 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         href="https://fonts.googleapis.com/css2?family=<?= str_replace(' ', '+', $content['font_family'] ?? 'Inter')?>:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <!-- Universal Tenant Header (Includes Branding, Navigation & Styles) -->
-    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
     <style>
         .flatpickr-day.prevMonthDay,
@@ -129,6 +127,9 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 
 
 <body class="bg-gray-50">
+
+    <!-- Universal Tenant Header (Includes Branding, Navigation & Styles) -->
+    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
 
     <?php foreach ($sections_order as $section): ?>
     <?php if ($section === 'hero' && !($content['hero_hidden'] ?? 0)): ?>

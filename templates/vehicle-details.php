@@ -39,11 +39,17 @@ $similar_vehicles = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
-    <!-- Universal Tenant Header (Includes Branding, Navigation & Styles) -->
-    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?> | <?= htmlspecialchars($content['company_name'] ?? $tenant['name']) ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
 </head>
 <body class="bg-gray-50">
+
+    <!-- Universal Tenant Header (Includes Branding, Navigation & Styles) -->
+    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
 
     <!-- Back Button -->
     <div class="bg-white border-b border-gray-200">

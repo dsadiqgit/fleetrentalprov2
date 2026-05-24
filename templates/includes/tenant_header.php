@@ -74,7 +74,7 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
     }
 </style>
 
-<header class="border-b border-gray-100 sticky top-0 z-[100] transition-all duration-300" 
+<header class="border-b border-gray-100 sticky top-0 z-[1200] transition-all duration-300" 
         style="background-color: var(--header-color); backdrop-filter: blur(8px);">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16 md:h-20">
@@ -130,7 +130,7 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
     </div>
 
     <!-- Mobile Navigation Overlay -->
-    <div id="tenantMobileMenu" class="hidden fixed inset-0 bg-white z-[150] p-6 lg:hidden">
+    <div id="tenantMobileMenu" class="hidden fixed inset-0 min-h-screen bg-white/95 backdrop-blur-lg z-[9999] p-6 lg:hidden flex flex-col overflow-y-auto">
         <div class="flex justify-between items-center mb-10">
             <span class="text-xl font-black italic"><?= htmlspecialchars($content['company_name'] ?? $tenant['name']) ?></span>
             <button onclick="toggleTenantMobileMenu()" class="text-slate-900">
@@ -139,13 +139,13 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
                 </svg>
             </button>
         </div>
-        <div class="flex flex-col space-y-6 text-center">
+        <div class="flex flex-col space-y-6 text-center flex-1">
             <a href="<?= $tenant_home ?>" class="text-2xl font-black text-slate-900" onclick="toggleTenantMobileMenu()">Home</a>
             <a href="<?= $fleet_url ?>" class="text-2xl font-black text-slate-900" onclick="toggleTenantMobileMenu()">Our Fleet</a>
             <a href="<?= $tenant_home ?>#about" class="text-2xl font-black text-slate-900" onclick="toggleTenantMobileMenu()">About</a>
             <a href="<?= $tenant_home ?>#contact" class="text-2xl font-black text-slate-900" onclick="toggleTenantMobileMenu()">Contact</a>
             
-            <div class="pt-10">
+            <div class="pt-10 mt-auto">
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <a href="<?= $_SESSION['role'] === 'customer' ? '/dashboard/customer.php' : '/dashboard/' ?>" 
                        class="btn-primary-custom w-full py-5 rounded-2xl text-xl font-black shadow-2xl block">
@@ -165,7 +165,12 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
 <script>
     function toggleTenantMobileMenu() {
         const menu = document.getElementById('tenantMobileMenu');
+        const isOpen = menu.classList.contains('hidden');
         menu.classList.toggle('hidden');
         document.body.classList.toggle('overflow-hidden');
+        document.body.classList.toggle('touch-none');
+        if (isOpen) {
+            menu.scrollTop = 0;
+        }
     }
 </script>

@@ -96,10 +96,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         .dayContainer { display: block !important; width: 100% !important; min-width: 100% !important; max-width: 100% !important; }
         .flatpickr-day { display: inline-block !important; width: 14.2857% !important; max-width: 14.2857% !important; height: 48px !important; line-height: 48px !important; margin: 0 !important; border-radius: 12px !important; box-sizing: border-box !important; }
     </style>
-    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
 </head>
 
 <body class="bg-[#F8FAFC]">
+
+    <?php include __DIR__ . '/includes/tenant_header.php'; ?>
     <main class="px-4 sm:px-6 lg:px-8 py-8" x-data="bookingFlow()">
         <!-- Progress Stepper -->
         <div class="flex items-center justify-center mb-10 max-w-2xl mx-auto">
