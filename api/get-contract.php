@@ -84,18 +84,53 @@ try {
     // Fetch a team member of this tenant to act as the Witness / Rental Provider signer
     $witness_name = 'Authorized Witness';
     $witness_signature_html = '';
-    
-    $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role IN ('admin', 'staff') AND signature_data IS NOT NULL AND signature_data != '' LIMIT 1");
-    $stmt_w->execute([$tenant_id]);
-    $witness = $stmt_w->fetch();
-    
+
+    $witness = null;
+
+    // Prefer the currently logged-in dashboard user if they have a saved signature
+    if (!empty($_SESSION['user_id'])) {
+        $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE id = ? AND tenant_id = ?");
+        $stmt_w->execute([$_SESSION['user_id'], $tenant_id]);
+        $session_witness = $stmt_w->fetch();
+        if ($session_witness && !empty($session_witness['signature_data'])) {
+            $witness = $session_witness;
+        }
+    }
+
     if (!$witness) {
-        // Fallback to any admin of the tenant
-        $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role = 'admin' LIMIT 1");
+        // Otherwise pick any tenant user with a saved signature, prioritising owners/admins/staff
+        $stmt_w = $pdo->prepare("
+            SELECT full_name, signature_data FROM users
+            WHERE tenant_id = ? AND signature_data IS NOT NULL AND signature_data != ''
+            ORDER BY CASE role
+                WHEN 'owner' THEN 1
+                WHEN 'admin' THEN 2
+                WHEN 'staff' THEN 3
+                ELSE 4 END,
+                id ASC
+            LIMIT 1
+        ");
         $stmt_w->execute([$tenant_id]);
         $witness = $stmt_w->fetch();
     }
-    
+
+    if (!$witness) {
+        // Still fall back to any team member for naming consistency
+        $stmt_w = $pdo->prepare("
+            SELECT full_name, signature_data FROM users
+            WHERE tenant_id = ?
+            ORDER BY CASE role
+                WHEN 'owner' THEN 1
+                WHEN 'admin' THEN 2
+                WHEN 'staff' THEN 3
+                ELSE 4 END,
+                id ASC
+            LIMIT 1
+        ");
+        $stmt_w->execute([$tenant_id]);
+        $witness = $stmt_w->fetch();
+    }
+
     if ($witness) {
         $witness_name = $witness['full_name'] ?? 'Authorized Representative';
         if (!empty($witness['signature_data'])) {

@@ -263,12 +263,45 @@ function renderContractToPDF($pdf, $contractData, $booking, $tenant, $vehicle, $
     $witness_signature_html = '';
     
     $pdo = getDB();
-    $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role IN ('admin', 'staff') AND signature_data IS NOT NULL AND signature_data != '' LIMIT 1");
-    $stmt_w->execute([$tenant['id']]);
-    $witness = $stmt_w->fetch();
+    $witness = null;
+
+    if (!empty($_SESSION['user_id'])) {
+        $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE id = ? AND tenant_id = ?");
+        $stmt_w->execute([$_SESSION['user_id'], $tenant['id']]);
+        $sessionWitness = $stmt_w->fetch();
+        if ($sessionWitness && !empty($sessionWitness['signature_data'])) {
+            $witness = $sessionWitness;
+        }
+    }
     
     if (!$witness) {
-        $stmt_w = $pdo->prepare("SELECT full_name, signature_data FROM users WHERE tenant_id = ? AND role = 'admin' LIMIT 1");
+        $stmt_w = $pdo->prepare("
+            SELECT full_name, signature_data FROM users
+            WHERE tenant_id = ? AND signature_data IS NOT NULL AND signature_data != ''
+            ORDER BY CASE role
+                WHEN 'owner' THEN 1
+                WHEN 'admin' THEN 2
+                WHEN 'staff' THEN 3
+                ELSE 4 END,
+                id ASC
+            LIMIT 1
+        ");
+        $stmt_w->execute([$tenant['id']]);
+        $witness = $stmt_w->fetch();
+    }
+    
+    if (!$witness) {
+        $stmt_w = $pdo->prepare("
+            SELECT full_name, signature_data FROM users
+            WHERE tenant_id = ?
+            ORDER BY CASE role
+                WHEN 'owner' THEN 1
+                WHEN 'admin' THEN 2
+                WHEN 'staff' THEN 3
+                ELSE 4 END,
+                id ASC
+            LIMIT 1
+        ");
         $stmt_w->execute([$tenant['id']]);
         $witness = $stmt_w->fetch();
     }

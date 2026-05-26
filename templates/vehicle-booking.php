@@ -35,6 +35,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 
 $require_verification = isset($settings['require_license_verification']) ? (bool)$settings['require_license_verification'] : true;
 $min_age = intval($vehicle['min_age'] ?? 0);
+$min_days_required = max(1, intval($vehicle['min_days'] ?? 1));
 
 $stmt = $pdo->prepare("SELECT pickup_date, return_date FROM bookings WHERE vehicle_id = ? AND status NOT IN ('cancelled', 'completed')");
 $stmt->execute([$vehicle_id]);
@@ -352,10 +353,14 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         <div class="p-8 space-y-6">
                             <div class="mb-6 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50/30"><div id="inlineCalendar"></div></div>
                             <div class="flex justify-between items-center border-t border-slate-50 pt-6">
-                                <span class="text-base font-bold text-slate-900">Total <span class="font-normal text-slate-400 ml-1" x-text="'(' + days + ' days)'"></span></span>
+                                <span class="text-base font-bold text-slate-900">Total <span class="font-normal text-slate-400 ml-1" x-text="'(' + days + ' ' + (days === 1 ? 'day' : 'days') + ')'" ></span></span>
                                 <span class="text-xl font-extrabold text-slate-900" x-text="'<?= $currency_symbol ?>' + calculateTotal()"></span>
                             </div>
-                            <button @click="proceedToStep2()" :disabled="days < 1" class="w-full mt-2 py-4 bg-[#0b1b3d] text-white rounded font-bold text-base hover:bg-[#152a5c] disabled:opacity-50 transition-all">Rent Now</button>
+                            <p x-show="days > 0 && days < minDays" class="mt-3 text-sm text-red-600 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M4.93 4.93L19.07 19.07"/></svg>
+                                <span x-text="'Minimum booking is ' + minDays + ' ' + (minDays === 1 ? 'day' : 'days') + '.'"></span>
+                            </p>
+                            <button @click="proceedToStep2()" :disabled="days < minDays" class="w-full mt-2 py-4 bg-[#0b1b3d] text-white rounded font-bold text-base hover:bg-[#152a5c] disabled:opacity-50 transition-all">Rent Now</button>
                         </div>
                     </div>
                 </div>
@@ -385,6 +390,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
     function bookingFlow() {
         const requireVerification = <?= $require_verification ? 'true' : 'false' ?>;
         const vehicleMinAge = <?= $min_age ?>;
+        const vehicleMinDays = <?= $min_days_required ?>;
         const vehicleId = <?= $vehicle_id ?>;
 
         return {
@@ -410,6 +416,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             dailyPricing: <?= $vehicle['daily_pricing'] ?: '{}' ?>,
             basePrice: <?= (float)$vehicle['price_per_day'] ?>,
             stripe: null, elements: null, paymentElement: null, clientSecret: null,
+            minDays: vehicleMinDays,
             timeSlots: (() => { const s = []; for (let h = 6; h <= 22; h++) { s.push(h.toString().padStart(2,'0') + ':00'); s.push(h.toString().padStart(2,'0') + ':30'); } return s; })(),
 
             get stepLabels() {
@@ -484,6 +491,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             },
 
             proceedToStep2() {
+                if (!this.enforceMinimumDays()) return;
                 this.step = 2;
                 if (requireVerification && !this.isVerified) this.initVerification();
             },
@@ -590,6 +598,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             },
 
             goToReview() {
+                if (!this.enforceMinimumDays()) return;
                 if (!this.formData.name || !this.formData.email) {
                     this.modal = { show: true, title: 'Missing Information', message: 'Please fill in your full name and email address.', type: 'error' };
                     return;
@@ -600,6 +609,17 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     body: JSON.stringify({ vehicle_id: vehicleId, customer_name: this.formData.name, customer_email: this.formData.email, customer_phone: this.formData.phone, customer_license: this.formData.license, pickup_date: this.dateRange.start, return_date: this.dateRange.end, pickup_time: this.formData.pickup_time, return_time: this.formData.return_time, total_days: this.days, price_per_day: this.basePrice, notes: this.formData.notes, skip_verification: true })
                 });
                 this.step = 3;
+            },
+
+            enforceMinimumDays() {
+                if (this.days >= this.minDays) return true;
+                this.modal = {
+                    show: true,
+                    title: 'Minimum Booking',
+                    message: `This vehicle requires a minimum booking of ${this.minDays} ${this.minDays === 1 ? 'day' : 'days'}.`,
+                    type: 'error'
+                };
+                return false;
             },
 
             initStripe() {
@@ -627,6 +647,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             },
 
             async submitBooking() {
+                if (!this.enforceMinimumDays()) return;
                 this.isSubmitting = true;
                 try {
                     const fd = new FormData();
