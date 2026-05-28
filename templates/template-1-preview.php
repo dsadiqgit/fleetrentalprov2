@@ -325,14 +325,14 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                             </svg>
                             Book Your Car
                         </button>
-                        <button onclick="document.getElementById('fleet')?.scrollIntoView({behavior: 'smooth'})" 
+                        <a href="/fleet" 
                             class="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                             </svg>
                             View Our Fleet
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -474,10 +474,6 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                         <h3 class="text-lg font-bold text-gray-900 mb-3">
                             <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'] . ' ' . $vehicle['year'])?>
                         </h3>
-
-                        <!-- Price -->
-                        <p class="text-sm text-orange-500 font-medium mb-4">Contact us for best price</p>
-
                         <!-- Action Buttons -->
                         <div class="grid grid-cols-2 gap-3">
                             <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>" 
