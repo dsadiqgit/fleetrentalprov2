@@ -78,6 +78,62 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        /* Calendar Modal Styles */
+        .calendar-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .calendar-modal.active {
+            display: flex;
+        }
+        
+        .calendar-modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .time-slot {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .time-slot:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .time-slot.selected {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .time-slot.am {
+            color: #1f2937;
+        }
+        
+        .time-slot.pm {
+            color: #1f2937;
+        }
         [x-cloak] { display: none !important; }
         
         /* Flatpickr Calendar Styling - Matches template preview calendar */
@@ -186,184 +242,368 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
 
     <?php include __DIR__ . '/includes/tenant_header.php'; ?>
     
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Breadcrumb -->
-        <nav class="flex items-center gap-2 text-sm text-gray-600 mb-6">
-            <a href="/" class="hover:text-gray-900">🏠</a>
-            <span>/</span>
-            <a href="/templates/template-1-preview.php" class="hover:text-gray-900">Popular Cars</a>
-            <span>/</span>
-            <span class="text-gray-900 font-medium"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></span>
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mb-8">
+            <a href="/" class="hover:text-gray-900 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+            </a>
+            <span class="text-gray-300">/</span>
+            <a href="/fleet" class="hover:text-gray-900">Popular Cars</a>
+            <span class="text-gray-300">/</span>
+            <span class="text-blue-600 font-medium"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></span>
         </nav>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Left Sidebar - Booking Form -->
-            <div class="lg:col-span-3 space-y-6">
-                <!-- Date & Time Inputs -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">Pick Up Date & Time*</label>
-                            <div class="relative">
-                                <input type="text" id="pickup_datetime" placeholder="--" readonly
-                                    class="w-full px-4 py-3 pr-10 bg-white text-gray-900 placeholder-gray-400 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
-                                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">Return Date & Time*</label>
-                            <div class="relative">
-                                <input type="text" id="return_datetime" placeholder="--" readonly
-                                    class="w-full px-4 py-3 pr-10 bg-white text-gray-900 placeholder-gray-400 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
-                                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">Pick Up Location*</label>
-                            <input type="text" placeholder="Enter Location"
-                                class="w-full px-4 py-3 bg-white text-gray-900 placeholder-gray-400 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Rental Info -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Rental Info</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Rent Per Day</span>
-                            <span class="text-xl font-bold text-gray-900"><?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?>  </span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Rent Per Hour</span>
-                            <span class="text-xl font-bold text-gray-900"><?= $currency_symbol?><?= number_format($vehicle['price_per_day'] / 8)?>  </span>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-4">* After selecting days and times, your calculated rent amount and summary will be displayed below.</p>
-                    <button class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors">
-                        Reserve Now
-                    </button>
-                </div>
-            </div>
-
-            <!-- Center - Vehicle Display -->
-            <div class="lg:col-span-6 space-y-6">
-                <!-- Vehicle Image & Title -->
-                <div class="bg-[#FCECF3] rounded-[24px] p-8 relative overflow-hidden min-h-[340px] flex flex-col justify-between">
-                    <!-- Brand Watermark Background Text -->
-                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-                        <span class="text-[120px] font-black text-pink-200/25 tracking-wider uppercase leading-none">
-                            <?= htmlspecialchars($vehicle['brand'])?>
-                        </span>
-                    </div>
-
-                    <!-- Top Row: Logo, Title & Bookmark -->
-                    <div class="relative z-10 flex justify-between items-start w-full">
-                        <div class="flex items-center gap-3">
-                            <!-- Logo Brand Icon (using Unsplash logo wrapper or customizable icon) -->
-                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center p-2">
-                                <img src="/assets/images/fleet-logo-black-small.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744465.png'" class="w-full h-full object-contain" alt="Brand Logo">
-                            </div>
-                            <div>
-                                <h1 class="text-2xl font-bold text-gray-900 leading-tight"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></h1>
-                                <p class="text-sm text-gray-500 font-medium"><?= htmlspecialchars($vehicle['category'] ?? 'Corvette Stingray')?></p>
-                            </div>
-                        </div>
-                        <button class="w-10 h-10 bg-white/80 backdrop-blur hover:bg-white text-gray-700 rounded-xl shadow-sm flex items-center justify-center transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Vehicle Main Image Container -->
-                    <div class="relative z-10 my-4 flex justify-center items-center w-full">
-                        <?php if ($image_url): ?>
-                        <img src="<?= htmlspecialchars($image_url)?>" class="max-h-[180px] object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300" alt="<?= htmlspecialchars($vehicle['brand'])?>">
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Bottom Row: Color Dots Pagination -->
-                    <div class="relative z-10 flex justify-end gap-1.5 w-full">
-                        <button class="w-3.5 h-3.5 rounded-full bg-red-600 border border-white ring-1 ring-offset-1 ring-red-500"></button>
-                        <button class="w-3.5 h-3.5 rounded-full bg-slate-500 border border-white"></button>
-                        <button class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-gray-300"></button>
-                    </div>
-                </div>
-
-                <!-- Vehicle Information -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Vehicle Information</h2>
-                    <p class="text-gray-600 leading-relaxed mb-6">
-                        <?= nl2br(htmlspecialchars($vehicle['description'] ?? 'The ' . $vehicle['brand'] . ' ' . $vehicle['model'] . ' is a premium vehicle offering exceptional performance and comfort.'))?>
-                    </p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content - Left 2 columns -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Image Gallery -->
+                <div class="grid grid-cols-4 gap-3">
+                    <?php 
+                    $all_images = [];
+                    if (!empty($vehicle['images'])) {
+                        $decoded = json_decode($vehicle['images'], true);
+                        $all_images = is_array($decoded) ? $decoded : [$vehicle['images']];
+                    }
+                    if (empty($all_images) && $image_url) {
+                        $all_images = [$image_url];
+                    }
                     
-                    <!-- Specs Grid -->
-                    <div class="grid grid-cols-4 gap-4">
-                        <div class="text-center p-4 bg-purple-50 rounded-xl">
-                            <div class="text-purple-600 mb-2">⚡</div>
-                            <div class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($vehicle['engine'] ?? '3.0L')?></div>
-                            <div class="text-xs text-gray-600 mt-1">ENGINE</div>
+                    // Main large image
+                    $main_img = $all_images[0] ?? 'https://via.placeholder.com/800x600?text=Vehicle+Image';
+                    ?>
+                    <div class="col-span-4 md:col-span-2 aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden relative group">
+                        <img id="mainImage" src="<?= htmlspecialchars($main_img)?>" class="w-full h-full object-cover" alt="Main Vehicle Image">
+                        <div class="absolute top-4 right-4 bg-white px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-700 shadow-sm">
+                            1/<?= max(count($all_images), 4)?>
                         </div>
-                        <div class="text-center p-4 bg-pink-50 rounded-xl">
-                            <div class="text-pink-600 mb-2">🔥</div>
-                            <div class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($vehicle['horsepower'] ?? '450')?></div>
-                            <div class="text-xs text-gray-600 mt-1">HORSEPOWER</div>
-                        </div>
-                        <div class="text-center p-4 bg-yellow-50 rounded-xl">
-                            <div class="text-yellow-600 mb-2">⚡</div>
-                            <div class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($vehicle['top_speed'] ?? '180')?> Mph</div>
-                            <div class="text-xs text-gray-600 mt-1">TOP SPEED</div>
-                        </div>
-                        <div class="text-center p-4 bg-blue-50 rounded-xl">
-                            <div class="text-blue-600 mb-2">⚙️</div>
-                            <div class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($vehicle['transmission'] ?? 'Auto')?></div>
-                            <div class="text-xs text-gray-600 mt-1">TRANSMISSION</div>
+                    </div>
+                    
+                    <!-- Thumbnail images -->
+                    <?php for ($i = 1; $i < 4; $i++): 
+                        $thumb = $all_images[$i] ?? $main_img;
+                    ?>
+                    <div class="col-span-2 md:col-span-1 aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:opacity-75 transition-opacity" onclick="changeMainImage('<?= htmlspecialchars($thumb)?>')">
+                        <img src="<?= htmlspecialchars($thumb)?>" class="w-full h-full object-cover" alt="Thumbnail <?= $i + 1?>">
+                    </div>
+                    <?php endfor; ?>
+                    
+                    <!-- See all photos button -->
+                    <div class="col-span-2 md:col-span-1 aspect-[4/3] bg-gray-900/80 rounded-xl overflow-hidden cursor-pointer hover:bg-gray-900 transition-colors flex items-center justify-center">
+                        <div class="text-center text-white">
+                            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-sm font-semibold">See all photos (<?= max(count($all_images), 35)?>)</p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Sidebar - Company Info -->
-            <div class="lg:col-span-3">
-                <div class="bg-white rounded-2xl p-6 shadow-sm sticky top-6">
-                    <div class="text-center mb-6">
-                        <?php if (!empty($tenant['logo'])): ?>
-                        <img src="<?= htmlspecialchars($tenant['logo'])?>" alt="<?= htmlspecialchars($tenant['name'])?>" class="h-16 mx-auto mb-4">
-                        <?php endif; ?>
-                        <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars($tenant['name'])?></h3>
-                        <p class="text-gray-600 text-sm">Car Rental Service</p>
-                        <div class="flex items-center justify-center gap-1 mt-2">
-                            <?php for($i = 0; $i < 5; $i++): ?>
+                <!-- Vehicle Title & Actions -->
+                <div>
+                    <p class="text-sm text-gray-500 mb-2"><?= htmlspecialchars($vehicle['brand'])?></p>
+                    <div class="flex items-start justify-between mb-3">
+                        <h1 class="text-3xl font-bold text-gray-900"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'] . ' (' . $vehicle['year'] . ')')?></h1>
+                        <div class="flex items-center gap-2">
+                            <button class="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                                </svg>
+                            </button>
+                            <button class="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center">
                             <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                             </svg>
-                            <?php endfor; ?>
-                            <span class="text-sm text-gray-600 ml-2">(234+ ratings)</span>
+                            <span class="ml-1 text-sm font-semibold text-gray-900">4.8</span>
+                        </div>
+                        <a href="#reviews" class="text-sm text-blue-600 hover:underline font-medium">44 reviews</a>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="border-b border-gray-200">
+                    <nav class="flex gap-8">
+                        <button onclick="switchTab('details')" id="tab-details" class="tab-button pb-3 border-b-2 border-blue-600 text-blue-600 font-semibold text-sm">
+                            Car details
+                        </button>
+                        <button onclick="switchTab('policies')" id="tab-policies" class="tab-button pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
+                            Policies
+                        </button>
+                        <button onclick="switchTab('reviews')" id="tab-reviews" class="tab-button pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
+                            Reviews
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="content-details" class="tab-content">
+                    <div class="space-y-6">
+                        <!-- Description -->
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900 mb-4">Description</h2>
+                            <p class="text-gray-600 leading-relaxed text-[15px]">
+                                <?= nl2br(htmlspecialchars($vehicle['description'] ?? 'Dolor enim eu tortor urna sed duis nulla. Aliquam vestibulum, nulla odio nisl vitae. In aliquet pellentesque aenean hac vestibulum turpis mi bibendum diam. Tempor integer aliquam in vitae malesuada fringilla. Elit nisi in eleifend sed nisi. Pulvinar at orci, proin imperdiet commodo consectetur convallis risus.'))?>
+                            </p>
+                            <ul class="mt-4 space-y-2 text-gray-600 text-[15px]">
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Ipsum sit mattis nulla quam nulla. Gravida id gravida ac enim mauris id.Diam elit, orci, tincidunt aenean tempus.</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Non pellentesque congue eget consectetur turpis.</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Sapien, dictum molestie sem tempor. Diam elit, orci, tincidunt aenean tempus.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Car Specifications -->
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900 mb-4">Car Specifications</h2>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Engine/Cylinders:</p>
+                                        <p class="font-semibold text-gray-900"><?= htmlspecialchars($vehicle['engine'] ?? '6 Cylinders')?></p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Max Torque:</p>
+                                        <p class="font-semibold text-gray-900"><?= htmlspecialchars($vehicle['torque'] ?? '630Nm')?></p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="space-y-3">
-                        <button class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-semibold transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-                            </svg>
-                            Send Message
-                        </button>
-                        <button class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-semibold transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            Visit Profile
-                        </button>
+                </div>
+
+                <div id="content-policies" class="tab-content hidden">
+                    <div class="space-y-4">
+                        <h2 class="text-xl font-bold text-gray-900">Rental Policies</h2>
+                        <p class="text-gray-600">Policy information will be displayed here.</p>
+                    </div>
+                </div>
+
+                <div id="content-reviews" class="tab-content hidden">
+                    <div class="space-y-4">
+                        <h2 class="text-xl font-bold text-gray-900">Customer Reviews</h2>
+                        <p class="text-gray-600">Reviews will be displayed here.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar - Booking Form -->
+            <div class="lg:col-span-1 hidden lg:block">
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 sticky top-6">
+                    <!-- Price -->
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-2 mb-1">
+                            <span class="text-3xl font-bold text-gray-900"><?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?></span>
+                            <span class="text-gray-500">/day</span>
+                        </div>
+                        <p class="text-sm text-gray-500">Total before taxes</p>
+                    </div>
+
+                    <!-- Booking Form -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
+                            <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Date</label>
+                            <div class="relative">
+                                <input type="text" id="pickup_datetime" placeholder="Oct 12th, 2023, 10:30am" readonly onclick="openCalendarModal('pickup')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
+                                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
+                            <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
+                            <div class="relative">
+                                <input type="text" id="return_datetime" placeholder="Oct 21st, 2023, 11:00pm" readonly onclick="openCalendarModal('return')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
+                                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Breakdown -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="font-bold text-gray-900 mb-4">Pricing Breakdown</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Rental price</span>
+                                <span class="font-semibold text-gray-900"><?= $currency_symbol?>4340</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span><?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?>/day (x7 days)</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">3+ day discount</span>
+                                <span class="font-semibold text-green-600">-<?= $currency_symbol?>217</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Extended trip discount (5%)</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Refundable deposit</span>
+                                <span class="font-semibold text-gray-900"><?= $currency_symbol?>500</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Refunded by Oct 14th</span>
+                            </div>
+                            <div class="flex justify-between pt-3 border-t border-gray-200">
+                                <span class="font-bold text-gray-900">Total Price Due</span>
+                                <span class="font-bold text-gray-900"><?= $currency_symbol?>4623</span>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                <?= $currency_symbol?>500 Refunded by Oct 14th
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-4">* Your total rent amount will be calculated depending on the pick-up and drop-off dates.</p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Mobile Book Now Button -->
+        <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
+            <button onclick="openBookingModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-sm">
+                Book Now - <?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?>/day
+            </button>
+        </div>
     </main>
+
+    <!-- Mobile Booking Modal -->
+    <div id="bookingModal" class="calendar-modal">
+        <div class="calendar-modal-content max-w-lg">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Book This Car</h2>
+                    <button onclick="closeBookingModal()" class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-colors">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Price -->
+                <div class="mb-6 pb-6 border-b border-gray-200">
+                    <div class="flex items-baseline gap-2 mb-1">
+                        <span class="text-3xl font-bold text-gray-900"><?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?></span>
+                        <span class="text-gray-500">/day</span>
+                    </div>
+                    <p class="text-sm text-gray-500">Total before taxes</p>
+                </div>
+
+                <!-- Booking Form -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
+                        <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Date</label>
+                        <div class="relative">
+                            <input type="text" id="mobile_pickup_datetime" placeholder="Oct 12th, 2023, 10:30am" readonly onclick="openCalendarModal('pickup')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
+                            <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
+                        <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
+                        <div class="relative">
+                            <input type="text" id="mobile_return_datetime" placeholder="Oct 21st, 2023, 11:00pm" readonly onclick="openCalendarModal('return')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
+                            <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-sm mt-6">
+                        Continue to Book
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </main>
+
+    <!-- Calendar Modal -->
+    <div id="calendarModal" class="calendar-modal">
+        <div class="calendar-modal-content">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900" id="modalTitle">Pick Up Date & Time</h2>
+                    <button onclick="closeCalendarModal()" class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-colors">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Calendar Container -->
+                <div id="modalCalendar" class="mb-8"></div>
+                
+                <!-- Time Selection -->
+                <div id="timeSelection" class="hidden">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Choose a time</h3>
+                    <div class="grid grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                                <span class="text-sm font-semibold text-gray-700 uppercase tracking-wide">AM</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2" id="amTimes"></div>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                                <span class="text-sm font-semibold text-gray-700 uppercase tracking-wide">PM</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2" id="pmTimes"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <?php include __DIR__ . '/includes/tenant_footer.php'; ?>
     
@@ -371,73 +611,182 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
     <script>
         let currentPickerType = null;
         let selectedDate = null;
+        let selectedTime = null;
+        let calendarInstance = null;
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active state from all tabs
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('border-blue-600', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab content
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            
+            // Add active state to selected tab
+            const activeTab = document.getElementById('tab-' + tabName);
+            activeTab.classList.remove('border-transparent', 'text-gray-500');
+            activeTab.classList.add('border-blue-600', 'text-blue-600');
+        }
+
+        // Change main image
+        function changeMainImage(imageSrc) {
+            document.getElementById('mainImage').src = imageSrc;
+        }
+
+        // Open/close booking modal
+        function openBookingModal() {
+            document.getElementById('bookingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function openCalendarModal(type) {
+            currentPickerType = type;
+            const modal = document.getElementById('calendarModal');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = type === 'pickup' ? 'Pick Up Date & Time' : 'Return Date & Time';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Initialize calendar if not already done
+            if (!calendarInstance) {
+                initializeCalendar();
+            }
+            
+            // Reset time selection
+            document.getElementById('timeSelection').classList.add('hidden');
+            generateTimeSlots();
+        }
+
+        function closeCalendarModal() {
+            const modal = document.getElementById('calendarModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            selectedDate = null;
+            selectedTime = null;
+        }
+
+        function initializeCalendar() {
+            calendarInstance = flatpickr("#modalCalendar", {
+                inline: true,
+                showMonths: 1,
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                locale: {
+                    firstDayOfWeek: 1
+                },
+                onChange: function(selectedDates) {
+                    if (selectedDates.length > 0) {
+                        selectedDate = selectedDates[0];
+                        document.getElementById('timeSelection').classList.remove('hidden');
+                    }
+                }
+            });
+        }
+
+        function generateTimeSlots() {
+            const amContainer = document.getElementById('amTimes');
+            const pmContainer = document.getElementById('pmTimes');
+            
+            amContainer.innerHTML = '';
+            pmContainer.innerHTML = '';
+            
+            // AM times: 10:00, 12:00, 02:00
+            const amTimes = ['10:00', '12:00', '02:00'];
+            amTimes.forEach(time => {
+                const slot = createTimeSlot(time, 'AM');
+                amContainer.appendChild(slot);
+            });
+            
+            // PM times: 04:00, 06:00, 08:00, 10:00
+            const pmTimes = ['04:00', '06:00', '08:00', '10:00'];
+            pmTimes.forEach(time => {
+                const slot = createTimeSlot(time, 'PM');
+                pmContainer.appendChild(slot);
+            });
+        }
+
+        function createTimeSlot(time, period) {
+            const div = document.createElement('div');
+            div.className = 'time-slot';
+            div.textContent = time;
+            div.onclick = function() {
+                selectTime(time, period, div);
+            };
+            return div;
+        }
+
+        function selectTime(time, period, element) {
+            // Remove previous selection
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('selected');
+            });
+            
+            element.classList.add('selected');
+            selectedTime = `${time}${period.toLowerCase()}`;
+            
+            // Update the input field and close modal
+            setTimeout(() => {
+                if (selectedDate && selectedTime) {
+                    const inputId = currentPickerType === 'pickup' ? 'pickup_datetime' : 'return_datetime';
+                    const mobileInputId = currentPickerType === 'pickup' ? 'mobile_pickup_datetime' : 'mobile_return_datetime';
+                    const input = document.getElementById(inputId);
+                    const mobileInput = document.getElementById(mobileInputId);
+                    const dayName = days[selectedDate.getDay()];
+                    const formattedValue = `${selectedDate.getDate()} ${months[selectedDate.getMonth()]}, ${selectedTime}`;
+                    
+                    if (input) input.value = formattedValue;
+                    if (mobileInput) mobileInput.value = formattedValue;
+                    
+                    closeCalendarModal();
+                }
+            }, 300);
+        }
 
         document.addEventListener('DOMContentLoaded', function () {
             if (window.flatpickr) {
                 flatpickr.l10ns.default.firstDayOfWeek = 1;
             }
 
-            // Set default date values for tomorrow and 4 days later
+            // Set default date values
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             
             const fourDaysLater = new Date();
             fourDaysLater.setDate(fourDaysLater.getDate() + 4);
-
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             
-            // Format defaults
-            const defaultPickupText = `${tomorrow.getDate()} ${months[tomorrow.getMonth()]}, 10:00am`;
-            const defaultReturnText = `${fourDaysLater.getDate()} ${months[fourDaysLater.getMonth()]}, 12:00pm`;
-
-            // Set input values on load
             const pickupDatetime = document.getElementById('pickup_datetime');
             const returnDatetime = document.getElementById('return_datetime');
             
             if (pickupDatetime && !pickupDatetime.value) {
-                pickupDatetime.value = defaultPickupText;
+                pickupDatetime.value = `${tomorrow.getDate()} ${months[tomorrow.getMonth()]}, 10:00am`;
             }
             if (returnDatetime && !returnDatetime.value) {
-                returnDatetime.value = defaultReturnText;
+                returnDatetime.value = `${fourDaysLater.getDate()} ${months[fourDaysLater.getMonth()]}, 12:00pm`;
             }
 
-            // Pickup datetime picker
-            if (pickupDatetime) {
-                flatpickr("#pickup_datetime", {
-                    showMonths: 3,
-                    dateFormat: "d M, Y",
-                    minDate: "today",
-                    defaultDate: tomorrow,
-                    locale: {
-                        firstDayOfWeek: 1
-                    },
-                    onChange: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length > 0) {
-                            selectedDate = selectedDates[0];
-                            pickupDatetime.value = `${selectedDate.getDate()} ${months[selectedDate.getMonth()]}, 10:00am`;
-                        }
-                    }
-                });
-            }
-
-            // Return datetime picker
-            if (returnDatetime) {
-                flatpickr("#return_datetime", {
-                    showMonths: 3,
-                    dateFormat: "d M, Y",
-                    minDate: "today",
-                    defaultDate: fourDaysLater,
-                    locale: {
-                        firstDayOfWeek: 1
-                    },
-                    onChange: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length > 0) {
-                            selectedDate = selectedDates[0];
-                            returnDatetime.value = `${selectedDate.getDate()} ${months[selectedDate.getMonth()]} ${selectedDate.getFullYear()}, 12:00pm`;
-                        }
-                    }
-                });
-            }
+            // Close modal when clicking outside
+            document.getElementById('calendarModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeCalendarModal();
+                }
+            });
         });
     </script>
 </body>
