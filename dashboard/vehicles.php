@@ -352,6 +352,8 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     exit;
 }
 
+$vehicle_search = trim($_GET['vehicle_search'] ?? '');
+
 // Get all vehicles for this tenant
 $stmt = $pdo->prepare("SELECT * FROM vehicles WHERE tenant_id = ? ORDER BY created_at DESC");
 $stmt->execute([$_SESSION['tenant_id']]);
@@ -361,6 +363,81 @@ $vehicles = $stmt->fetchAll();
 $stmt = $pdo->prepare("SELECT id, name FROM contract_templates WHERE tenant_id = ? ORDER BY name ASC");
 $stmt->execute([$_SESSION['tenant_id']]);
 $contract_templates = $stmt->fetchAll();
+
+// Helpers for schedule view
+if (!function_exists('minutes_from_time')) {
+    function minutes_from_time(?string $time): ?int
+    {
+        if (!$time) {
+            return null;
+        }
+        [$hour, $minute] = array_pad(explode(':', $time), 2, '00');
+        return (int)$hour * 60 + (int)$minute;
+    }
+}
+
+$selected_schedule_date = $_GET['schedule_date'] ?? date('Y-m-d');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $selected_schedule_date)) {
+    $selected_schedule_date = date('Y-m-d');
+}
+$prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 day'));
+$nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 day'));
+
+$timelineStartHour = 9;
+$timelineEndHour = 17;
+$timelineStartMinutes = $timelineStartHour * 60;
+$timelineEndMinutes = $timelineEndHour * 60;
+$totalTimelineMinutes = max(60, $timelineEndMinutes - $timelineStartMinutes);
+$hourColumns = max(1, $timelineEndHour - $timelineStartHour);
+
+$assignmentStatusColors = [
+    'pending' => 'bg-amber-100 text-amber-900 border-amber-200',
+    'confirmed' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'active' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'completed' => 'bg-gray-100 text-gray-700 border-gray-200',
+];
+
+$assignmentStmt = $pdo->prepare("SELECT b.*, v.name AS vehicle_name, v.brand, v.model, v.category, v.images, v.license_plate
+    FROM bookings b
+    LEFT JOIN vehicles v ON b.vehicle_id = v.id
+    WHERE b.tenant_id = ? AND b.status != 'cancelled' AND b.pickup_date <= ? AND b.return_date >= ?");
+$assignmentStmt->execute([$_SESSION['tenant_id'], $selected_schedule_date, $selected_schedule_date]);
+$vehicleAssignments = $assignmentStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$assignmentsByVehicle = [];
+foreach ($vehicleAssignments as $assignment) {
+    if (!isset($assignmentsByVehicle[$assignment['vehicle_id']])) {
+        $assignmentsByVehicle[$assignment['vehicle_id']] = [];
+    }
+    $assignmentsByVehicle[$assignment['vehicle_id']][] = $assignment;
+}
+
+$vehicleAvatarPalette = [
+    'bg-rose-100 text-rose-700',
+    'bg-sky-100 text-sky-600',
+    'bg-amber-100 text-amber-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-indigo-100 text-indigo-700',
+    'bg-purple-100 text-purple-700',
+    'bg-cyan-100 text-cyan-700',
+    'bg-lime-100 text-lime-700',
+];
+
+if (!empty($vehicle_search)) {
+    $filteredVehicles = array_values(array_filter($vehicles, function ($vehicle) use ($vehicle_search) {
+        $haystack = strtolower(
+            ($vehicle['brand'] ?? '') . ' ' .
+            ($vehicle['model'] ?? '') . ' ' .
+            ($vehicle['license_plate'] ?? '') . ' ' .
+            ($vehicle['category'] ?? '')
+        );
+        return strpos($haystack, strtolower($vehicle_search)) !== false;
+    }));
+} else {
+    $filteredVehicles = $vehicles;
+}
+
+$filteredVehicleCount = count($filteredVehicles);
 
 // Check if we're in add mode or edit mode
 $show_add_form = isset($_GET['action']) && $_GET['action'] === 'add';
@@ -513,130 +590,136 @@ endif; ?>
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
             <?php if (!$show_add_form && !$show_edit_form): ?>
-            <!-- Vehicles List View -->
-
-            <!-- Vehicles Grid -->
-            <?php if (empty($vehicles)): ?>
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <div class="text-6xl mb-4">🚗</div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">No vehicles yet</h3>
-                <p class="text-gray-600 mb-6">Add your first vehicle to start accepting bookings</p>
-                <a href="/dashboard/vehicles.php?action=add" class="inline-block px-6 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800">
-                    Add Your First Vehicle
-                </a>
-            </div>
-            <?php
-    else: ?>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <?php foreach ($vehicles as $vehicle): ?>
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition relative">
-                    <?php if (isset($vehicle['featured']) && $vehicle['featured']): ?>
-                    <div class="absolute top-3 left-3 z-10 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                        </svg>
-                        Featured
+            <!-- Vehicle Schedule View -->
+            <div class="space-y-6">
+                <!-- Schedule Header -->
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-900">Vehicle Assignments</h2>
+                        <p class="text-sm text-gray-500">Track current bookings and availability for your fleet</p>
                     </div>
-                    <?php
-            endif; ?>
-                    <!-- Vehicle Image -->
-                    <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center rounded-t-lg overflow-hidden">
-                        <?php
-            $image_url = null;
-            if ($vehicle['images']) {
-                $decoded = json_decode($vehicle['images'], true);
-                if (is_array($decoded) && !empty($decoded)) {
-                    $image_url = $decoded[0];
-                }
-                else if (!is_array($decoded)) {
-                    $image_url = $vehicle['images'];
-                }
-            }
-            if ($image_url):
-?>
-                        <img src="<?= htmlspecialchars($image_url)?>" alt="<?= htmlspecialchars($vehicle['name'])?>" class="w-full h-full object-cover">
-                        <?php
-            else: ?>
-                        <svg class="w-20 h-20 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                        </svg>
-                        <?php
-            endif; ?>
-                    </div>
-                    
-                    <!-- Vehicle Info -->
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900"><?= htmlspecialchars($vehicle['name'])?></h3>
-                                <p class="text-sm text-gray-600">Licence plate : <?= htmlspecialchars($vehicle['license_plate'] ?? '')?></p>
-                            </div>
-                            <div class="relative" x-data="{ open: false }">
-                                <button @click="open = !open" class="p-2 rounded-full hover:bg-gray-100 transition">
-                                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
-                                    </svg>
-                                </button>
-                                <div x-show="open" 
-                                     @click.away="open = false"
-                                     x-transition:enter="transition ease-out duration-100"
-                                     x-transition:enter-start="transform opacity-0 scale-95"
-                                     x-transition:enter-end="transform opacity-100 scale-100"
-                                     x-transition:leave="transition ease-in duration-75"
-                                     x-transition:leave-start="transform opacity-100 scale-100"
-                                     x-transition:leave-end="transform opacity-0 scale-95"
-                                     class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20"
-                                     style="display: none;">
-                                    <a href="/dashboard/vehicles.php?action=edit&id=<?= $vehicle['id']?>" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                        <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                        <span class="font-medium">Edit Vehicle</span>
-                                    </a>
-                                    <button onclick="toggleFeatured(<?= $vehicle['id']?>, <?= isset($vehicle['featured']) && $vehicle['featured'] ? 'false' : 'true'?>)" class="flex items-center w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                        <svg class="w-5 h-5 mr-3 text-yellow-500" fill="<?= isset($vehicle['featured']) && $vehicle['featured'] ? 'currentColor' : 'none'?>" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                                        </svg>
-                                        <span class="font-medium"><?= isset($vehicle['featured']) && $vehicle['featured'] ? 'Unmark as Featured' : 'Mark as Featured'?></span>
-                                    </button>
-                                    <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>&tenant=<?= urlencode($tenant['subdomain'])?>" target="_blank" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                        <svg class="w-5 h-5 mr-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        <span class="font-medium">View Vehicle</span>
-                                    </a>
-                                    <hr class="my-1 border-gray-200">
-                                    <button onclick="showConfirmation('Delete Vehicle', 'Are you sure you want to delete this vehicle? This action cannot be undone.', function() { window.location.href='/dashboard/vehicles.php?delete=<?= $vehicle['id']?>'; }, 'Delete', 'bg-red-600 hover:bg-red-700')" class="flex items-center w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition">
-                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                        <span class="font-medium">Delete Vehicle</span>
-                                    </button>
-                                </div>
-                            </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="relative">
+                            <input type="text" name="vehicle_search" value="<?= htmlspecialchars($vehicle_search)?>" placeholder="Search vehicles" class="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" onkeydown="if(event.key==='Enter'){ window.location='/dashboard/vehicles.php?vehicle_search='+encodeURIComponent(this.value); }">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"></path>
+                            </svg>
                         </div>
-                        
-                        <!-- Toggle Switch -->
-                        <div class="flex items-center space-x-3">
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" <?= $vehicle['availability'] ? 'checked' : ''?> class="sr-only peer" onchange="window.location.href='/dashboard/vehicles.php?toggle=<?= $vehicle['id']?>'">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                            <span class="text-sm font-medium <?= $vehicle['availability'] ? 'text-blue-600' : 'text-gray-500'?>">
-                                <?= $vehicle['availability'] ? 'Active' : 'Inactive'?>
-                            </span>
+                        <button class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-gray-300">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 12.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 019 17v-4.586L3.293 6.707A1 1 0 013 6V4z"></path>
+                            </svg>
+                            Filters
+                        </button>
+                        <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2">
+                            <button onclick="window.location='/dashboard/vehicles.php?schedule_date=<?= $prevScheduleDate?>'" class="p-1 text-gray-500 hover:text-gray-900">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            <button class="text-sm font-semibold text-gray-700 flex items-center gap-2" onclick="document.getElementById('scheduleDatePicker').showPicker()">
+                                <?= date('F j, Y', strtotime($selected_schedule_date))?>
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </button>
+                            <input type="date" id="scheduleDatePicker" class="hidden" value="<?= htmlspecialchars($selected_schedule_date)?>" onchange="window.location='/dashboard/vehicles.php?schedule_date='+this.value">
+                            <button onclick="window.location='/dashboard/vehicles.php?schedule_date=<?= $nextScheduleDate?>'" class="p-1 text-gray-500 hover:text-gray-900">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
                         </div>
+                        <div class="flex items-center gap-2 border border-gray-200 rounded-lg p-1 bg-white text-sm">
+                            <button class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 font-medium">Day</button>
+                            <button class="px-3 py-1 text-gray-500 hover:text-gray-900">Week</button>
+                            <button class="px-3 py-1 text-gray-500 hover:text-gray-900">Month</button>
+                        </div>
+                        <button class="px-4 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-500">Add Assignment</button>
                     </div>
                 </div>
-                <?php
-        endforeach; ?>
-            </div>
-            <?php
-    endif; ?>
 
-            <?php
-else: ?>
+                <!-- Schedule Board -->
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="flex border-b border-gray-100 bg-gray-50 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <div class="w-60">Vehicles (<?= $filteredVehicleCount?>)</div>
+                        <div class="flex-1 grid grid-cols-<?= $hourColumns?> gap-0 text-center">
+                            <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
+                            <div><?= sprintf('%02d:00', $hour) ?></div>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        <?php if (empty($filteredVehicles)): ?>
+                        <div class="p-12 text-center text-gray-500 text-sm">No vehicles match your filters.</div>
+                        <?php else: ?>
+                        <?php foreach ($filteredVehicles as $index => $vehicle): 
+                            $palette = $vehicleAvatarPalette[$index % count($vehicleAvatarPalette)];
+                            $vehicleImage = null;
+                            if (!empty($vehicle['images'])) {
+                                $decoded = json_decode($vehicle['images'], true);
+                                if (is_array($decoded) && !empty($decoded)) {
+                                    $vehicleImage = $decoded[0];
+                                } elseif (!is_array($decoded)) {
+                                    $vehicleImage = $vehicle['images'];
+                                }
+                            }
+                            $vehicleBookings = $assignmentsByVehicle[$vehicle['id']] ?? [];
+                        ?>
+                        <div class="flex">
+                            <div class="w-60 px-6 py-4 flex items-center gap-3">
+                                <?php if ($vehicleImage): ?>
+                                <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['name'])?>" class="w-12 h-12 rounded-xl object-cover border border-gray-200">
+                                <?php else: ?>
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold <?= $palette ?>">
+                                    <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1))?>
+                                </div>
+                                <?php endif; ?>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900 leading-tight"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></p>
+                                    <p class="text-xs text-gray-500">
+                                        <?= htmlspecialchars($vehicle['category'] ?? 'Car')?> · <?= htmlspecialchars($vehicle['license_plate'] ?? 'No plate')?>
+                                    </p>
+                                    <p class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
+                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                                        Active
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex-1 relative border-l border-gray-100">
+                                <div class="grid grid-cols-<?= $hourColumns?> text-xs text-gray-300">
+                                    <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
+                                    <div class="border-l border-gray-100 min-h-[80px]"></div>
+                                    <?php endfor; ?>
+                                </div>
+                                <?php foreach ($vehicleBookings as $booking): 
+                                    $startMinutes = minutes_from_time($booking['pickup_time']) ?? $timelineStartMinutes;
+                                    $endMinutes = minutes_from_time($booking['return_time']) ?? $timelineEndMinutes;
+                                    $clampedStart = max($timelineStartMinutes, $startMinutes);
+                                    $clampedEnd = min($timelineEndMinutes, $endMinutes);
+                                    $offsetPercent = (($clampedStart - $timelineStartMinutes) / $totalTimelineMinutes) * 100;
+                                    $widthPercent = (($clampedEnd - $clampedStart) / $totalTimelineMinutes) * 100;
+                                    $statusClass = $assignmentStatusColors[$booking['status']] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+                                ?>
+                                <div class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-xs font-medium shadow-sm <?= $statusClass ?>" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 10) ?>%; min-width: 120px;">
+                                    <div class="flex items-center gap-2">
+                                        <span><?= htmlspecialchars($booking['customer_name'] ?? 'Guest')?> </span>
+                                        <span class="text-[10px] uppercase text-gray-400"><?= htmlspecialchars($booking['status'])?></span>
+                                    </div>
+                                    <p class="text-[11px] text-gray-500">
+                                        <?= date('M d h:ia', strtotime($booking['pickup_date'] . ' ' . ($booking['pickup_time'] ?? '09:00')))?> -
+                                        <?= date('M d h:ia', strtotime($booking['return_date'] . ' ' . ($booking['return_time'] ?? '17:00')))?>
+                                    </p>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
             <!-- Add/Edit Vehicle Form -->
             <div class="max-w-3xl">
                 <nav class="text-sm text-gray-500 mb-1">
