@@ -311,7 +311,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                         <div class="w-8 h-0.5 bg-yellow-400"></div>
                         <span class="text-sm font-medium text-yellow-400">Experience The Road In Style</span>
                     </div>
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 leading-tight">
                         <?= htmlspecialchars($content['hero_title'] ?? 'Reliable Car Rentals Backed by Quality Service')?>
                     </h1>
                     <p class="text-base md:text-lg text-gray-200 mb-8 leading-relaxed max-w-xl">
@@ -338,7 +338,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 
                 <!-- Right Contact Form -->
                 <div class="bg-white/45 backdrop-blur-lg rounded-2xl p-6 lg:p-8 shadow-2xl">
-                    <h3 class="text-2xl font-bold text-black mb-6">Need to Rent a Luxury Car?</h3>
+                    <h3 class="text-2xl font-semibold text-black mb-6">Need to Rent a Luxury Car?</h3>
                     <form onsubmit="handleContactSubmit(event)" class="space-y-5">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>

@@ -251,7 +251,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 </svg>
             </a>
             <span class="text-gray-300">/</span>
-            <a href="/fleet" class="hover:text-gray-900">Popular Cars</a>
+            <a href="/fleet" class="hover:text-gray-900">Our Fleet</a>
             <span class="text-gray-300">/</span>
             <span class="text-blue-600 font-medium"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></span>
         </nav>
@@ -274,31 +274,34 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     // Main large image
                     $main_img = $all_images[0] ?? 'https://via.placeholder.com/800x600?text=Vehicle+Image';
                     ?>
-                    <div class="col-span-4 md:col-span-2 aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden relative group">
+                    <div class="col-span-4 md:col-span-2 aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden relative group cursor-pointer" onclick="openLightbox(0)">
                         <img id="mainImage" src="<?= htmlspecialchars($main_img)?>" class="w-full h-full object-cover" alt="Main Vehicle Image">
                         <div class="absolute top-4 right-4 bg-white px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-700 shadow-sm">
-                            1/<?= max(count($all_images), 4)?>
+                            1/<?= count($all_images)?>
                         </div>
                     </div>
                     
                     <!-- Thumbnail images -->
                     <?php for ($i = 1; $i < 4; $i++): 
-                        $thumb = $all_images[$i] ?? $main_img;
+                        if (!isset($all_images[$i])) break;
+                        $thumb = $all_images[$i];
                     ?>
-                    <div class="col-span-2 md:col-span-1 aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:opacity-75 transition-opacity" onclick="changeMainImage('<?= htmlspecialchars($thumb)?>')">
+                    <div class="col-span-2 md:col-span-1 aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:opacity-75 transition-opacity" onclick="openLightbox(<?= $i?>)">
                         <img src="<?= htmlspecialchars($thumb)?>" class="w-full h-full object-cover" alt="Thumbnail <?= $i + 1?>">
                     </div>
                     <?php endfor; ?>
                     
                     <!-- See all photos button -->
-                    <div class="col-span-2 md:col-span-1 aspect-[4/3] bg-gray-900/80 rounded-xl overflow-hidden cursor-pointer hover:bg-gray-900 transition-colors flex items-center justify-center">
+                    <?php if (count($all_images) > 4): ?>
+                    <div class="col-span-2 md:col-span-1 aspect-[4/3] bg-gray-900/80 rounded-xl overflow-hidden cursor-pointer hover:bg-gray-900 transition-colors flex items-center justify-center" onclick="openLightbox(0)">
                         <div class="text-center text-white">
                             <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            <p class="text-sm font-semibold">See all photos (<?= max(count($all_images), 35)?>)</p>
+                            <p class="text-sm font-semibold">See all photos (<?= count($all_images)?>)</p>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Vehicle Title & Actions -->
@@ -319,15 +322,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             </button>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                            </svg>
-                            <span class="ml-1 text-sm font-semibold text-gray-900">4.8</span>
-                        </div>
-                        <a href="#reviews" class="text-sm text-blue-600 hover:underline font-medium">44 reviews</a>
-                    </div>
                 </div>
 
                 <!-- Tabs -->
@@ -338,9 +332,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         </button>
                         <button onclick="switchTab('policies')" id="tab-policies" class="tab-button pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
                             Policies
-                        </button>
-                        <button onclick="switchTab('reviews')" id="tab-reviews" class="tab-button pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
-                            Reviews
                         </button>
                     </nav>
                 </div>
@@ -563,6 +554,46 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         </div>
     </div>
 
+    <!-- Lightbox Modal -->
+    <div id="lightboxModal" class="calendar-modal" style="z-index: 9999;">
+        <div class="fixed inset-0 bg-black/95 flex items-center justify-center">
+            <button onclick="closeLightbox()" class="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors z-50">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            
+            <!-- Previous Button -->
+            <button onclick="previousImage()" class="absolute left-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors z-50">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            
+            <!-- Next Button -->
+            <button onclick="nextImage()" class="absolute right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors z-50">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+            
+            <!-- Image Container -->
+            <div class="max-w-6xl max-h-[90vh] w-full px-20">
+                <img id="lightboxImage" src="" class="w-full h-full object-contain" alt="Vehicle Image">
+                <div class="text-center mt-4">
+                    <span id="lightboxCounter" class="text-white text-lg font-semibold"></span>
+                </div>
+            </div>
+            
+            <!-- Thumbnail Strip -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 max-w-4xl w-full px-6">
+                <div id="lightboxThumbnails" class="flex gap-2 overflow-x-auto pb-2 justify-center">
+                    <!-- Thumbnails will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     </main>
 
     <!-- Calendar Modal -->
@@ -609,6 +640,10 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
     
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+        // Vehicle images array from PHP
+        const vehicleImages = <?= json_encode($all_images) ?>;
+        let currentLightboxIndex = 0;
+        
         let currentPickerType = null;
         let selectedDate = null;
         let selectedTime = null;
@@ -616,6 +651,85 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        // Lightbox functions
+        function openLightbox(index) {
+            currentLightboxIndex = index;
+            const modal = document.getElementById('lightboxModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            updateLightboxImage();
+            generateLightboxThumbnails();
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('lightboxModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function updateLightboxImage() {
+            const img = document.getElementById('lightboxImage');
+            const counter = document.getElementById('lightboxCounter');
+            img.src = vehicleImages[currentLightboxIndex];
+            counter.textContent = `${currentLightboxIndex + 1} / ${vehicleImages.length}`;
+        }
+
+        function previousImage() {
+            currentLightboxIndex = (currentLightboxIndex - 1 + vehicleImages.length) % vehicleImages.length;
+            updateLightboxImage();
+            updateThumbnailSelection();
+        }
+
+        function nextImage() {
+            currentLightboxIndex = (currentLightboxIndex + 1) % vehicleImages.length;
+            updateLightboxImage();
+            updateThumbnailSelection();
+        }
+
+        function generateLightboxThumbnails() {
+            const container = document.getElementById('lightboxThumbnails');
+            container.innerHTML = '';
+            
+            vehicleImages.forEach((img, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = `w-20 h-16 rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${index === currentLightboxIndex ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'}`;
+                thumb.onclick = () => {
+                    currentLightboxIndex = index;
+                    updateLightboxImage();
+                    updateThumbnailSelection();
+                };
+                
+                const thumbImg = document.createElement('img');
+                thumbImg.src = img;
+                thumbImg.className = 'w-full h-full object-cover';
+                thumbImg.alt = `Thumbnail ${index + 1}`;
+                
+                thumb.appendChild(thumbImg);
+                container.appendChild(thumb);
+            });
+        }
+
+        function updateThumbnailSelection() {
+            const thumbs = document.getElementById('lightboxThumbnails').children;
+            Array.from(thumbs).forEach((thumb, index) => {
+                if (index === currentLightboxIndex) {
+                    thumb.className = 'w-20 h-16 rounded-lg overflow-hidden cursor-pointer border-2 border-white transition-all';
+                } else {
+                    thumb.className = 'w-20 h-16 rounded-lg overflow-hidden cursor-pointer border-2 border-transparent opacity-60 hover:opacity-100 transition-all';
+                }
+            });
+        }
+
+        // Keyboard navigation for lightbox
+        document.addEventListener('keydown', function(e) {
+            const lightbox = document.getElementById('lightboxModal');
+            if (lightbox.classList.contains('active')) {
+                if (e.key === 'ArrowLeft') previousImage();
+                if (e.key === 'ArrowRight') nextImage();
+                if (e.key === 'Escape') closeLightbox();
+            }
+        });
 
         // Tab switching
         function switchTab(tabName) {
