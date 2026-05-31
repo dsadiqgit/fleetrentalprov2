@@ -29,6 +29,15 @@ $stmt = $pdo->prepare("SELECT * FROM tenant_settings WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
 $settings = $stmt->fetch();
 
+$raw_locations = $settings['pickup_location'] ?? '';
+$locations = [];
+if (!empty($raw_locations)) {
+    $locations = array_map('trim', preg_split('/[;\n\r]+/', $raw_locations));
+}
+if (empty($locations)) {
+    $locations = ['London Heathrow Airport', 'London City Centre', 'Gatwick Airport', 'Manchester Airport'];
+}
+
 $currency_code = $settings['currency'] ?? 'GBP';
 $currency_symbols = ['GBP' => '£', 'USD' => '$', 'EUR' => '€'];
 $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
@@ -483,7 +492,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
-                            <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                            <select name="pickup_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                                <?php foreach ($locations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Date</label>
@@ -496,7 +509,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
-                            <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                            <select name="return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                                <?php foreach ($locations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
@@ -590,7 +607,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
-                        <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <select name="mobile_pickup_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                            <?php foreach ($locations as $loc): ?>
+                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Date</label>
@@ -603,7 +624,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
-                        <input type="text" value="New York, NY" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <select name="mobile_return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                            <?php foreach ($locations as $loc): ?>
+                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
@@ -707,6 +732,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
     <?php include __DIR__ . '/includes/tenant_footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="/app/custom-select.js" defer></script>
     <script>
         // Vehicle images array from PHP
         const vehicleImages = <?= json_encode($all_images) ?>;
@@ -867,7 +893,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         function initializeCalendar() {
             calendarInstance = flatpickr("#modalCalendar", {
                 inline: true,
-                showMonths: 1,
+                showMonths: 2,
                 dateFormat: "Y-m-d",
                 minDate: "today",
                 locale: {

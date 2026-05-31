@@ -338,7 +338,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 
                 <!-- Right Contact Form -->
                 <div class="bg-white/45 backdrop-blur-lg rounded-2xl p-6 lg:p-8 shadow-2xl">
-                    <h3 class="text-2xl font-semibold text-black mb-6">Need to Rent a Luxury Car?</h3>
+                    <h3 class="text-2xl font-semibold text-black mb-6">Search Available Vehicles</h3>
                     <form onsubmit="handleContactSubmit(event)" class="space-y-5">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -369,7 +369,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                             $raw_locations = $settings['pickup_location'] ?? '';
                             $pickup_locations = [];
                             if (!empty($raw_locations)) {
-                                $pickup_locations = array_map('trim', preg_split('/[,;\n\r]+/', $raw_locations));
+                                $pickup_locations = array_map('trim', preg_split('/[;\n\r]+/', $raw_locations));
                             }
                             if (empty($pickup_locations)) {
                                 $pickup_locations = ['Dubai International Airport', 'Dubai Marina', 'Downtown Dubai', 'Jumeirah Beach'];
@@ -385,7 +385,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 
                         <button type="submit" 
                             class="w-full bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-full font-bold transition-all shadow-lg">
-                            Send Message
+                            Search Vehicle
                         </button>
                     </form>
                 </div>
@@ -674,6 +674,7 @@ endforeach; ?>
     <?php include __DIR__ . '/includes/tenant_footer.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="/app/custom-select.js" defer></script>
     <script>
         let currentPickerType = null;
         let selectedDate = null;
@@ -867,20 +868,34 @@ endforeach; ?>
             
             // Validate that dates are selected
             if (!data.pickup_datetime || !data.return_datetime) {
-                alert('Please select pickup and return dates.');
+                const modal = document.getElementById('dateErrorModal');
+                if (modal) modal.classList.remove('hidden');
                 return;
             }
             
-            // Show success message
-            alert('Thank you! We will contact you shortly about your rental request.');
-            
-            // You can add AJAX call here to save the contact form data
-            console.log('Contact form submitted:', data);
-            
-            // Redirect to fleet page with dates
-            // window.location.href = "/templates/fleet.php?tenant=<?= $tenant['subdomain']?>";
+            // Redirect to fleet page with selected search parameters
+            window.location.href = "/templates/fleet.php?tenant=<?= $tenant['subdomain']?>&pickup=" + encodeURIComponent(data.pickup_datetime) + "&return=" + encodeURIComponent(data.return_datetime) + "&location=" + encodeURIComponent(data.location);
+        }
+
+        function closeDateErrorModal() {
+            const modal = document.getElementById('dateErrorModal');
+            if (modal) modal.classList.add('hidden');
         }
     </script>
+
+    <!-- Validation Error Modal -->
+    <div id="dateErrorModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] max-w-md w-full shadow-2xl overflow-hidden p-8 text-center animate-fade-in-up">
+            <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-bounce">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Dates Required</h3>
+            <p class="text-gray-500 text-sm mb-6 leading-relaxed">Please make sure to select both your Pick-up and Return dates to search available vehicles.</p>
+            <button onclick="closeDateErrorModal()" class="w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md transition-all">Okay, Got it</button>
+        </div>
+    </div>
 </body>
 
 </html>

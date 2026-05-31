@@ -195,6 +195,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     if (!$error) {
+                        // Validate and format location lists
+                        $pickup_location = implode('; ', array_filter(array_map('trim', preg_split('/[;\r\n]+/', $pickup_location))));
+                        $dropoff_location = implode('; ', array_filter(array_map('trim', preg_split('/[;\r\n]+/', $dropoff_location))));
+
                         $stmt = $pdo->prepare("UPDATE tenants SET name = ?, logo = ? WHERE id = ?");
                         $stmt->execute([$company_name, $logo_path, $_SESSION['tenant_id']]);
 
@@ -864,12 +868,14 @@ endif; ?>
                     <!-- Pickup & Drop-off Locations -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-900 mb-2">Default Pickup Location</label>
-                            <input type="text" name="pickup_location" value="<?= htmlspecialchars($settings['pickup_location'] ?? '')?>" placeholder="e.g. Heathrow Terminal 2" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Default Pickup Location(s)</label>
+                            <input type="text" name="pickup_location" value="<?= htmlspecialchars($settings['pickup_location'] ?? '')?>" placeholder="e.g. Heathrow Terminal 2; Manchester Central Complex: Windmill St, Manchester, M2 3GX" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <p class="text-[10px] text-gray-400 mt-1">Separate multiple locations using a semicolon (;). Do not use commas to separate locations, as addresses may contain commas.</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-900 mb-2">Default Drop-off Location</label>
-                            <input type="text" name="dropoff_location" value="<?= htmlspecialchars($settings['dropoff_location'] ?? '')?>" placeholder="e.g. Heathrow Terminal 2" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Default Drop-off Location(s)</label>
+                            <input type="text" name="dropoff_location" value="<?= htmlspecialchars($settings['dropoff_location'] ?? '')?>" placeholder="e.g. Heathrow Terminal 2; Manchester Central Complex: Windmill St, Manchester, M2 3GX" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <p class="text-[10px] text-gray-400 mt-1">Separate multiple locations using a semicolon (;). Do not use commas to separate locations, as addresses may contain commas.</p>
                         </div>
                     </div>
 
