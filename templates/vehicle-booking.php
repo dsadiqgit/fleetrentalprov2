@@ -242,7 +242,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
 
     <?php include __DIR__ . '/includes/tenant_header.php'; ?>
     
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm text-gray-500 mb-8">
             <a href="/" class="hover:text-gray-900 flex items-center gap-1">
@@ -343,48 +343,108 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         <div>
                             <h2 class="text-xl font-bold text-gray-900 mb-4">Description</h2>
                             <p class="text-gray-600 leading-relaxed text-[15px]">
-                                <?= nl2br(htmlspecialchars($vehicle['description'] ?? 'Dolor enim eu tortor urna sed duis nulla. Aliquam vestibulum, nulla odio nisl vitae. In aliquet pellentesque aenean hac vestibulum turpis mi bibendum diam. Tempor integer aliquam in vitae malesuada fringilla. Elit nisi in eleifend sed nisi. Pulvinar at orci, proin imperdiet commodo consectetur convallis risus.'))?>
+                                <?= nl2br(htmlspecialchars($vehicle['description'] ?? 'No description provided.'))?>
                             </p>
-                            <ul class="mt-4 space-y-2 text-gray-600 text-[15px]">
-                                <li class="flex items-start">
-                                    <span class="mr-2">•</span>
-                                    <span>Ipsum sit mattis nulla quam nulla. Gravida id gravida ac enim mauris id.Diam elit, orci, tincidunt aenean tempus.</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="mr-2">•</span>
-                                    <span>Non pellentesque congue eget consectetur turpis.</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="mr-2">•</span>
-                                    <span>Sapien, dictum molestie sem tempor. Diam elit, orci, tincidunt aenean tempus.</span>
-                                </li>
-                            </ul>
+                            
+                            <?php
+                            $features = [];
+                            if (!empty($vehicle['vehicle_features'])) {
+                                $decoded_features = json_decode($vehicle['vehicle_features'], true);
+                                if (is_array($decoded_features)) {
+                                    $features = $decoded_features;
+                                }
+                            }
+                            ?>
+                            <?php if (!empty($features)): ?>
+                            <div class="mt-6">
+                                <h3 class="font-bold text-gray-900 text-sm mb-3">Key Features</h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <?php foreach ($features as $feat): ?>
+                                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                                        <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span><?= htmlspecialchars($feat) ?></span>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Car Specifications -->
                         <div>
                             <h2 class="text-xl font-bold text-gray-900 mb-4">Car Specifications</h2>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-500 shadow-sm border border-gray-100">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Transmission</p>
+                                        <p class="font-semibold text-sm text-gray-900"><?= ucfirst(htmlspecialchars($vehicle['transmission'] ?? 'Automatic'))?></p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-500 shadow-sm border border-gray-100">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 9.172V5L8 4z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Fuel Type</p>
+                                        <p class="font-semibold text-sm text-gray-900"><?= ucfirst(htmlspecialchars($vehicle['fuel_type'] ?? 'Petrol'))?></p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-500 shadow-sm border border-gray-100">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Seats</p>
+                                        <p class="font-semibold text-sm text-gray-900"><?= htmlspecialchars($vehicle['seats'] ?? '5')?> Seats</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-500 shadow-sm border border-gray-100">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Doors & Bags</p>
+                                        <p class="font-semibold text-sm text-gray-900"><?= htmlspecialchars($vehicle['doors'] ?? '5')?>D / <?= htmlspecialchars($vehicle['bags'] ?? '2')?> Bags</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-500 shadow-sm border border-gray-100">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                         </svg>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-gray-500">Engine/Cylinders:</p>
-                                        <p class="font-semibold text-gray-900"><?= htmlspecialchars($vehicle['engine'] ?? '6 Cylinders')?></p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Engine Capacity</p>
+                                        <p class="font-semibold text-sm text-gray-900"><?= htmlspecialchars($vehicle['engine_capacity'] ?? 'N/A')?></p>
                                     </div>
                                 </div>
+
                                 <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-500 shadow-sm border border-gray-100">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
                                         </svg>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-gray-500">Max Torque:</p>
-                                        <p class="font-semibold text-gray-900"><?= htmlspecialchars($vehicle['torque'] ?? '630Nm')?></p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Mileage</p>
+                                        <p class="font-semibold text-sm text-gray-900 truncate"><?= !empty($vehicle['unlimited_mileage']) ? 'Unlimited' : htmlspecialchars($vehicle['mileage_limit'] ?? '300') . ' mi/day' ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -452,37 +512,45 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     <!-- Pricing Breakdown -->
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <h3 class="font-bold text-gray-900 mb-4">Pricing Breakdown</h3>
+                        
+                        <!-- Minimum Days warning -->
+                        <div id="min_days_warning" class="hidden p-3 mb-4 text-xs font-semibold text-amber-700 bg-amber-50 rounded-xl border border-amber-100 flex items-center gap-2">
+                        </div>
+                        
                         <div class="space-y-3 text-sm">
+                            <!-- Base rate total -->
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Rental price</span>
-                                <span class="font-semibold text-gray-900"><?= $currency_symbol?>4340</span>
+                                <span class="text-gray-600">Rental Price (<span id="breakdown_duration">0 days</span>)</span>
+                                <span id="breakdown_base_total" class="font-semibold text-gray-900"><?= $currency_symbol?>0.00</span>
                             </div>
                             <div class="flex justify-between text-xs text-gray-500">
-                                <span><?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?>/day (x7 days)</span>
+                                <span id="breakdown_base_rate"><?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?>/day</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">3+ day discount</span>
-                                <span class="font-semibold text-green-600">-<?= $currency_symbol?>217</span>
+                            
+                            <!-- Discount package row -->
+                            <div id="breakdown_discount_row" class="hidden flex justify-between">
+                                <span id="breakdown_discount_label" class="text-gray-600">Discount</span>
+                                <span id="breakdown_discount_total" class="font-semibold text-green-600">-<?= $currency_symbol?>0.00</span>
                             </div>
-                            <div class="flex justify-between text-xs text-gray-500">
-                                <span>Extended trip discount (5%)</span>
+                            
+                            <!-- Security deposit row -->
+                            <div id="breakdown_deposit_row" class="hidden space-y-1">
+                                <div class="flex justify-between">
+                                    <span id="breakdown_deposit_label" class="text-gray-600">Security Deposit</span>
+                                    <span id="breakdown_deposit_total" class="font-semibold text-gray-900"><?= $currency_symbol?>0.00</span>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500">
+                                    <span id="breakdown_deposit_note">Payable</span>
+                                </div>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Refundable deposit</span>
-                                <span class="font-semibold text-gray-900"><?= $currency_symbol?>500</span>
-                            </div>
-                            <div class="flex justify-between text-xs text-gray-500">
-                                <span>Refunded by Oct 14th</span>
-                            </div>
+                            
+                            <!-- Total Price row -->
                             <div class="flex justify-between pt-3 border-t border-gray-200">
                                 <span class="font-bold text-gray-900">Total Price Due</span>
-                                <span class="font-bold text-gray-900"><?= $currency_symbol?>4623</span>
-                            </div>
-                            <div class="text-xs text-gray-500">
-                                <?= $currency_symbol?>500 Refunded by Oct 14th
+                                <span id="breakdown_total_due" class="font-bold text-gray-900"><?= $currency_symbol?>0.00</span>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-4">* Your total rent amount will be calculated depending on the pick-up and drop-off dates.</p>
+                        <p class="text-xs text-gray-500 mt-4">* Your total rent amount is calculated dynamically depending on your selected pick-up and drop-off dates.</p>
                     </div>
                 </div>
             </div>
@@ -846,8 +914,151 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             return div;
         }
 
+        // Live Pricing Configuration from backend
+        const priceConfig = {
+            price_per_day: parseFloat(<?= json_encode($vehicle['price_per_day']) ?> || 0),
+            daily_pricing: <?= json_encode(json_decode($vehicle['daily_pricing'] ?? '[]', true) ?? []) ?>,
+            pricing_packages: <?= json_encode(json_decode($vehicle['pricing_packages'] ?? '[]', true) ?? []) ?>,
+            require_deposit: parseInt(<?= json_encode($vehicle['require_deposit'] ?? 0) ?> || 0),
+            deposit: parseFloat(<?= json_encode($vehicle['deposit'] ?? 0) ?> || 0),
+            deposit_type: <?= json_encode($vehicle['deposit_type'] ?? 'collection') ?>,
+            min_days: parseInt(<?= json_encode($vehicle['min_days'] ?? 1) ?> || 1),
+            currency_symbol: <?= json_encode($currency_symbol) ?>
+        };
+
+        let pickupDateObj = null;
+        let returnDateObj = null;
+
+        function parseTimeString(timeStr) {
+            const match = timeStr.toLowerCase().match(/^(\d+):(\d+)(am|pm)$/);
+            if (!match) return { hours: 10, minutes: 0 };
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            const ampm = match[3];
+            if (ampm === 'pm' && hours < 12) hours += 12;
+            if (ampm === 'am' && hours === 12) hours = 0;
+            return { hours, minutes };
+        }
+
+        function calculatePriceBreakdown() {
+            if (!pickupDateObj || !returnDateObj) return;
+            
+            const diffMs = returnDateObj.getTime() - pickupDateObj.getTime();
+            if (diffMs <= 0) {
+                document.getElementById('breakdown_duration').innerText = '0 days';
+                document.getElementById('breakdown_base_total').innerText = priceConfig.currency_symbol + '0.00';
+                document.getElementById('breakdown_total_due').innerText = priceConfig.currency_symbol + '0.00';
+                return;
+            }
+            
+            const msPerDay = 24 * 60 * 60 * 1000;
+            let diffDays = Math.floor(diffMs / msPerDay);
+            const remainderMs = diffMs % msPerDay;
+            if (remainderMs > 60 * 60 * 1000) {
+                diffDays += 1;
+            }
+            if (diffDays < 1) diffDays = 1;
+            
+            // Check minimum days
+            const minDays = priceConfig.min_days || 1;
+            const warningEl = document.getElementById('min_days_warning');
+            if (diffDays < minDays) {
+                if (warningEl) {
+                    warningEl.innerHTML = `
+                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span>Minimum rental period is ${minDays} days.</span>
+                    `;
+                    warningEl.classList.remove('hidden');
+                }
+            } else {
+                if (warningEl) warningEl.classList.add('hidden');
+            }
+            
+            // Calculate Base Price
+            let totalBasePrice = 0;
+            const tempDate = new Date(pickupDateObj);
+            const daysOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            
+            for (let i = 0; i < diffDays; i++) {
+                const dayName = daysOfWeek[tempDate.getDay()];
+                if (priceConfig.daily_pricing && priceConfig.daily_pricing[dayName]) {
+                    totalBasePrice += parseFloat(priceConfig.daily_pricing[dayName]);
+                } else {
+                    totalBasePrice += priceConfig.price_per_day;
+                }
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+            
+            // Calculate Discount
+            let discountAmount = 0;
+            let appliedPackage = null;
+            if (priceConfig.pricing_packages && priceConfig.pricing_packages.length > 0) {
+                const sortedPackages = [...priceConfig.pricing_packages].sort((a, b) => b.days - a.days);
+                for (const pkg of sortedPackages) {
+                    if (diffDays >= pkg.days) {
+                        appliedPackage = pkg;
+                        break;
+                    }
+                }
+            }
+            if (appliedPackage) {
+                const discountPercent = parseFloat(appliedPackage.discount || 0);
+                discountAmount = totalBasePrice * (discountPercent / 100);
+            }
+            
+            // Calculate Deposit
+            let depositAmount = 0;
+            let depositNote = '';
+            if (priceConfig.require_deposit === 1) {
+                depositAmount = parseFloat(priceConfig.deposit || 0);
+                if (priceConfig.deposit_type === 'booking') {
+                    depositNote = 'Payable now at booking (Fully Refunded)';
+                } else {
+                    depositNote = 'Payable upon collection at desk (Fully Refunded)';
+                }
+            }
+            
+            const subtotal = totalBasePrice - discountAmount;
+            const totalDue = subtotal + (priceConfig.deposit_type === 'booking' ? depositAmount : 0);
+            
+            const currency = priceConfig.currency_symbol;
+            
+            // Update UI elements
+            document.getElementById('breakdown_duration').innerText = `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+            document.getElementById('breakdown_base_rate').innerText = `${currency}${priceConfig.price_per_day.toFixed(2)}/day`;
+            document.getElementById('breakdown_base_total').innerText = `${currency}${totalBasePrice.toFixed(2)}`;
+            
+            const discountRow = document.getElementById('breakdown_discount_row');
+            if (discountAmount > 0 && appliedPackage) {
+                document.getElementById('breakdown_discount_label').innerText = `${appliedPackage.days}+ Day Discount (${appliedPackage.discount}%)`;
+                document.getElementById('breakdown_discount_total').innerText = `-${currency}${discountAmount.toFixed(2)}`;
+                discountRow.classList.remove('hidden');
+            } else {
+                discountRow.classList.add('hidden');
+            }
+            
+            const depositRow = document.getElementById('breakdown_deposit_row');
+            if (depositAmount > 0) {
+                document.getElementById('breakdown_deposit_label').innerText = `Security Deposit (${priceConfig.deposit_type === 'booking' ? 'Pay now' : 'Pay at collection'})`;
+                document.getElementById('breakdown_deposit_total').innerText = `${currency}${depositAmount.toFixed(2)}`;
+                document.getElementById('breakdown_deposit_note').innerText = depositNote;
+                depositRow.classList.remove('hidden');
+            } else {
+                depositRow.classList.add('hidden');
+            }
+            
+            document.getElementById('breakdown_total_due').innerText = `${currency}${totalDue.toFixed(2)}`;
+            
+            // Update main book buttons
+            const bookBtns = document.querySelectorAll('button[onclick="openBookingModal()"]');
+            bookBtns.forEach(btn => {
+                btn.innerHTML = `Book Now - ${currency}${totalDue.toFixed(2)}`;
+            });
+        }
+
         function selectTime(time, period, element) {
-            // Remove previous selection
             document.querySelectorAll('.time-slot').forEach(slot => {
                 slot.classList.remove('selected');
             });
@@ -855,19 +1066,28 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             element.classList.add('selected');
             selectedTime = `${time}${period.toLowerCase()}`;
             
-            // Update the input field and close modal
             setTimeout(() => {
                 if (selectedDate && selectedTime) {
                     const inputId = currentPickerType === 'pickup' ? 'pickup_datetime' : 'return_datetime';
                     const mobileInputId = currentPickerType === 'pickup' ? 'mobile_pickup_datetime' : 'mobile_return_datetime';
                     const input = document.getElementById(inputId);
                     const mobileInput = document.getElementById(mobileInputId);
-                    const dayName = days[selectedDate.getDay()];
-                    const formattedValue = `${selectedDate.getDate()} ${months[selectedDate.getMonth()]}, ${selectedTime}`;
                     
+                    const formattedValue = `${selectedDate.getDate()} ${months[selectedDate.getMonth()]}, ${selectedTime}`;
                     if (input) input.value = formattedValue;
                     if (mobileInput) mobileInput.value = formattedValue;
                     
+                    const parsedTime = parseTimeString(selectedTime);
+                    const dateWithTime = new Date(selectedDate);
+                    dateWithTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+                    
+                    if (currentPickerType === 'pickup') {
+                        pickupDateObj = dateWithTime;
+                    } else {
+                        returnDateObj = dateWithTime;
+                    }
+                    
+                    calculatePriceBreakdown();
                     closeCalendarModal();
                 }
             }, 300);
@@ -881,19 +1101,38 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             // Set default date values
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(10, 0, 0, 0);
             
             const fourDaysLater = new Date();
             fourDaysLater.setDate(fourDaysLater.getDate() + 4);
+            fourDaysLater.setHours(12, 0, 0, 0);
             
+            pickupDateObj = tomorrow;
+            returnDateObj = fourDaysLater;
+
             const pickupDatetime = document.getElementById('pickup_datetime');
             const returnDatetime = document.getElementById('return_datetime');
+            const mobilePickupDatetime = document.getElementById('mobile_pickup_datetime');
+            const mobileReturnDatetime = document.getElementById('mobile_return_datetime');
             
+            const pickupFormatted = `${tomorrow.getDate()} ${months[tomorrow.getMonth()]}, 10:00am`;
+            const returnFormatted = `${fourDaysLater.getDate()} ${months[fourDaysLater.getMonth()]}, 12:00pm`;
+
             if (pickupDatetime && !pickupDatetime.value) {
-                pickupDatetime.value = `${tomorrow.getDate()} ${months[tomorrow.getMonth()]}, 10:00am`;
+                pickupDatetime.value = pickupFormatted;
             }
             if (returnDatetime && !returnDatetime.value) {
-                returnDatetime.value = `${fourDaysLater.getDate()} ${months[fourDaysLater.getMonth()]}, 12:00pm`;
+                returnDatetime.value = returnFormatted;
             }
+            if (mobilePickupDatetime && !mobilePickupDatetime.value) {
+                mobilePickupDatetime.value = pickupFormatted;
+            }
+            if (mobileReturnDatetime && !mobileReturnDatetime.value) {
+                mobileReturnDatetime.value = returnFormatted;
+            }
+
+            // Perform initial price breakdown load
+            calculatePriceBreakdown();
 
             // Close modal when clicking outside
             document.getElementById('calendarModal').addEventListener('click', function(e) {

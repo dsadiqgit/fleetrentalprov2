@@ -603,7 +603,7 @@ $currency_symbols = ['GBP' => '£', 'USD' => '$', 'EUR' => '€'];
 $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 ?>
     <header class="border-b border-gray-200 sticky top-0 z-[100] transition-colors duration-300" style="background-color: var(--header-color);">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <!-- Logo -->
                 <div class="flex items-center space-x-3">
@@ -655,7 +655,7 @@ endif; ?>
                 
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent rounded-[20px]"></div>
 
-                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-60">
+                <div class="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-60">
                     <div class="text-white max-w-3xl">
                         <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight leading-tight">
                             <span class="editable block w-full h-full" data-field="hero_title" contenteditable="false">
@@ -741,7 +741,7 @@ endif; ?>
                         REMOVE
                     </button>
                 </div>
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
                         <div>
                             <h2 class="text-[32px] font-bold text-gray-900 mb-3 tracking-tight editable" data-field="vehicles_title" contenteditable="false">
@@ -871,7 +871,7 @@ endif; ?>
                     </button>
                 </div>
 
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="grid lg:grid-cols-2 gap-8 items-start mb-16">
                         <div>
                             <span class="text-blue-500 font-bold tracking-widest text-sm uppercase mb-4 block editable" data-field="services_title" contenteditable="false">
@@ -956,7 +956,7 @@ endif; ?>
                         REMOVE
                     </button>
                 </div>
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="grid lg:grid-cols-2 gap-16 items-center">
                         <div class="editable-image relative" data-field="about_image">
                             <span class="edit-tooltip">Click to change image</span>
@@ -1016,7 +1016,7 @@ endif; ?>
                         REMOVE
                     </button>
                 </div>
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="text-center mb-16">
                         <h2 class="text-4xl font-extrabold text-gray-900 mb-4">
                             <span class="editable block w-full h-full" data-field="testimonial_title" contenteditable="false">
@@ -1090,7 +1090,7 @@ endif; ?>
                     </button>
                 </div>
                 
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
                         <div class="grid lg:grid-cols-5">
                             <div class="lg:col-span-2 bg-gray-900 p-12 text-white flex flex-col justify-between">
@@ -1164,7 +1164,7 @@ endforeach; ?>
 
             <!-- Footer -->
             <footer class="bg-gray-900 text-white py-20">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="grid md:grid-cols-4 gap-12 mb-16 border-b border-gray-800 pb-16">
                         <div class="col-span-2">
                              <div class="flex items-center space-x-3 mb-8">

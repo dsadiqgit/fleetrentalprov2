@@ -67,7 +67,7 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
         <!-- Hero Section -->
         <div class="relative overflow-hidden">
 
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+            <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
                 <div class="grid lg:grid-cols-2 gap-12 items-center">
                     <div>
                         <h1 class="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
@@ -553,7 +553,7 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
 
     <!-- Core Features Section -->
     <div class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-12 gap-8 items-start">
                 <!-- Left side - Feature grid (5 columns) -->
                 <div class="lg:col-span-5">
@@ -1266,7 +1266,7 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
 
         <!-- Footer -->
         <footer class="bg-gray-900 text-gray-300 py-12">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid md:grid-cols-4 gap-8">
                     <div>
                         <div class="text-white text-xl font-bold mb-4">

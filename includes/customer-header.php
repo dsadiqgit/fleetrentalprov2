@@ -4,7 +4,7 @@ $active_bookings = ($current_page === 'customer.php') ? 'text-blue-600 bg-blue-5
 $active_contracts = ($current_page === 'customer-contracts.php') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50';
 ?>
 <nav class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <!-- Left side: Logo and Desktop Nav -->
             <div class="flex items-center gap-8">

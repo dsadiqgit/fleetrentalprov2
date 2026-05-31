@@ -14,7 +14,7 @@ function is_header_active($page)
 <!-- Navbar -->
 <nav id="mainNav"
     class="bg-white border-b border-gray-100 sticky top-0 z-[100] w-full" style="transition: transform 0.3s ease-in-out;">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div class="flex justify-between items-center h-16">
             <a href="/" class="flex items-center">
                 <img src="/assets/images/fleet-logo-black.svg" alt="Fleet Rental Pro" class="h-10">

@@ -8,7 +8,7 @@ $tenant_id = getTenantId();
 ?>
 
 <footer class="bg-gray-900 text-white py-16 mt-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-4 gap-12 text-center md:text-left">
             <!-- Company Info -->
             <div class="md:col-span-1">

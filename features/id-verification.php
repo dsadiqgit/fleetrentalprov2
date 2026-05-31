@@ -196,7 +196,7 @@
          BREADCRUMB
     ═══════════════════════════════════════════ -->
     <nav aria-label="Breadcrumb" class="bg-white border-b border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <ol class="flex items-center space-x-2 text-sm text-gray-500">
                 <li><a href="/" class="hover:text-blue-600 transition">Home</a></li>
                 <li aria-hidden="true"><span class="mx-1">/</span></li>
@@ -218,7 +218,7 @@
                 fetchpriority="high">
             <div class="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
         </div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl">
                 <div
                     class="inline-flex items-center space-x-2 bg-white/10 rounded-full px-3 py-1 mb-6 border border-white/20">
@@ -274,7 +274,7 @@
     <!-- ═══════════════════════════════════════════
          METRICS CARD
     ═══════════════════════════════════════════ -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="bg-[#0b1120] rounded-3xl p-10 md:p-14 text-white shadow-2xl overflow-hidden relative">
             <div class="absolute right-0 top-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
             <div class="relative z-10">
@@ -305,7 +305,7 @@
     <!-- ═══════════════════════════════════════════
          TEXT & BULLETS  H3s target long-tail keywords
     ═══════════════════════════════════════════ -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="grid lg:grid-cols-2 gap-16 items-center">
             <div>
                 <!-- H2 -->
@@ -385,7 +385,7 @@
          FEATURE SHOWCASE
     ═══════════════════════════════════════════ -->
     <div class="bg-white py-24 border-t border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <span class="text-blue-600 font-semibold tracking-wide uppercase text-sm">Workflow Integration</span>
                 <!-- H2 -->
@@ -460,7 +460,7 @@
          4-CARD GRID  H3s are feature-specific, keyword-rich
     ═══════════════════════════════════════════ -->
     <div class="bg-[#fafafa] py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- H2 -->
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">Complete Car Rental Identity Verification</h2>
             <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Every layer of authentication works together to
@@ -532,7 +532,7 @@
          INTERACTIVE TABS  Verification Workflow
     ═══════════════════════════════════════════ -->
     <div class="bg-white py-24" id="interactive-tabs-6bb549fbc29543500f77faaa7e05f387">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- H2 -->
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">How Car Rental ID Verification Works</h2>
             <p class="text-center text-gray-600 mb-16 max-w-2xl mx-auto">From booking confirmation to verified identity
@@ -664,7 +664,7 @@
          TESTIMONIALS  quotes rewritten to match ID verification
     ═══════════════════════════════════════════ -->
     <div class="bg-gray-50 py-20 border-t border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">Trusted by car rental operators to stop fraud
             </h2>
             <p class="text-center text-gray-600 mb-12 max-w-xl mx-auto">Fleet operators across the UK and Europe use our

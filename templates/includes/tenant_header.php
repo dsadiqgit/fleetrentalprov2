@@ -76,7 +76,7 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
 
 <header class="border-b border-gray-100 sticky top-0 z-[1200] transition-all duration-300" 
         style="background-color: var(--header-color); backdrop-filter: blur(8px);">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16 md:h-20">
             <!-- Logo Section -->
             <a href="<?= $tenant_home ?>" class="flex items-center space-x-3 group">

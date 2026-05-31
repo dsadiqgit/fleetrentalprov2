@@ -303,7 +303,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         style="background-image: url('<?= htmlspecialchars($content['hero_image'])?>');">
         <div class="absolute inset-0 bg-black/60 rounded-[20px]"></div>
 
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16 lg:py-24">
+        <div class="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16 lg:py-24">
             <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                 <!-- Left Content -->
                 <div class="text-white">
@@ -416,7 +416,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     elseif ($section === 'vehicles' && !($content['vehicles_hidden'] ?? 0)): ?>
     <!-- Vehicles Section -->
     <section id="fleet" class="py-16 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="mb-8">
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Exotic Car Rental</h2>
                 <p class="text-gray-600">Discover Exotic Car Rental cars</p>
@@ -501,7 +501,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     <?php elseif ($section === 'services' && !($content['services_hidden'] ?? 0)): ?>
     <!-- Services Section -->
     <section id="services" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="text-center mb-16">
                 <h2 class="text-3xl font-bold text-gray-900 mb-3 tracking-tight">Our Car Rental Services</h2>
@@ -574,7 +574,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     elseif ($section === 'contact' && !($content['contact_hidden'] ?? 0)): ?>
     <!-- Contact -->
     <section id="contact" class="py-24 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
                 <div class="grid lg:grid-cols-5">
                     <div class="lg:col-span-2 bg-gray-900 p-12 text-white flex flex-col justify-between">

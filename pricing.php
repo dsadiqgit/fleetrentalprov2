@@ -25,7 +25,7 @@ require_once __DIR__ . '/config/config.php';
 
     <!-- Hero Section -->
     <div class="bg-white pt-16 pb-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="inline-block px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium mb-6">
                 PRICING
             </div>
@@ -48,7 +48,7 @@ require_once __DIR__ . '/config/config.php';
 
     <!-- Feature Comparison Table -->
     <div id="compare" class="py-16 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-gray-900 mb-4">Everything runs on one platform.</h2>
                 <p class="text-lg text-gray-600">All your tools in one place for managing your rental business. No add-ons or hidden fees.</p>
@@ -123,7 +123,7 @@ require_once __DIR__ . '/config/config.php';
 
     <!-- Pricing Cards -->
     <div class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-gray-900 mb-4">Choose the plan that fits your current stage.</h2>
                 <p class="text-lg text-gray-600">It's easy to switch between plans as you grow. No hidden fees or long-term contracts.</p>
@@ -244,7 +244,7 @@ require_once __DIR__ . '/config/config.php';
 
     <!-- Enterprise Section -->
     <div class="py-20 bg-gray-900 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
                     <div class="inline-block px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-medium mb-6">

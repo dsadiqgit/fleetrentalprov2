@@ -35,7 +35,7 @@
                 onerror="this.src='https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=2000'">
             <div class="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
         </div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl">
                 <div
                     class="inline-flex items-center space-x-2 bg-white/10 rounded-full px-3 py-1 mb-6 border border-white/20">
@@ -82,7 +82,7 @@
     </div>
 
     <!-- Wide Metrics Card -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="bg-[#0b1120] rounded-3xl p-10 md:p-14 text-white shadow-2xl overflow-hidden relative">
             <div class="absolute right-0 top-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
             <div class="relative z-10">
@@ -108,7 +108,7 @@
     </div>
 
     <!-- Text & Bullets Split -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="grid lg:grid-cols-2 gap-16 items-center">
             <div>
                 <h2 class="text-4xl font-bold text-gray-900 mb-6 tracking-tight">Secure. Scalable.<br><span
@@ -175,7 +175,7 @@
 
     <!-- Feature Showcase Focus -->
     <div class="bg-white py-24 border-t border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <span class="text-blue-600 font-semibold tracking-wide uppercase text-sm">Workflow Integration</span>
                 <h2 class="text-4xl font-bold text-gray-900 mt-2 mb-4">Frictionless Checkout Experience</h2>
@@ -244,7 +244,7 @@
 
     <!-- 4-Card Grid -->
     <div class="bg-[#fafafa] py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Stop worrying about collections</h2>
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Card 1 -->
@@ -304,7 +304,7 @@
 
     <!-- Active Tab Split Section -->
     <div class="bg-white py-24" id="interactive-tabs-b4b20812c4c91497eb7f63861030a107">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-16">Stripe Integration Configuration</h2>
             <div class="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
 
@@ -446,7 +446,7 @@
 
     <!-- Testimonials / Quote Grid -->
     <div class="bg-gray-50 py-20 border-t border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Built for the operations of modern fleets
             </h2>
             <div class="grid md:grid-cols-2 gap-8">

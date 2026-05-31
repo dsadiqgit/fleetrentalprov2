@@ -21,7 +21,7 @@ require_once __DIR__ . '/../config/database.php';
         UK Fleets 2030 Report: Subscriptions are expected to double. <a href="#" class="underline ml-1">Read the Forecast</a>
     </div>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+    <main class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <!-- Date / Segment -->
         <div class="mb-8">
             <span class="text-xs font-bold text-blue-600 uppercase tracking-widest mr-4">Market Trends</span>

@@ -44,7 +44,7 @@ if (!$vehicle) {
 <body class="bg-gray-50">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-2">
                     <div class="w-8 h-8 bg-gray-300 rounded"></div>
@@ -56,7 +56,7 @@ if (!$vehicle) {
 
     <!-- Back Button -->
     <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <a href="/templates/vehicle-details.php?id=<?= $vehicle_id ?>" class="inline-flex items-center text-blue-600 hover:text-blue-700">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -68,7 +68,7 @@ if (!$vehicle) {
 
     <!-- Booking Form -->
     <section class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-3 gap-8">
                 <!-- Booking Form -->
                 <div class="md:col-span-2">
@@ -211,7 +211,7 @@ if (!$vehicle) {
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-white py-12 mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center">
                 <div class="flex items-center justify-center space-x-2 mb-4">
                     <div class="w-8 h-8 bg-white rounded"></div>

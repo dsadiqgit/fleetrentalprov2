@@ -198,7 +198,7 @@
                 width="2000" height="1333" loading="eager" fetchpriority="high">
             <div class="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
         </div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl">
                 <div
                     class="inline-flex items-center space-x-2 bg-white/10 rounded-full px-3 py-1 mb-6 border border-white/20">
@@ -254,7 +254,7 @@
     <!-- ═══════════════════════════════════════════
          METRICS CARD
     ═══════════════════════════════════════════ -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="bg-[#0b1120] rounded-3xl p-10 md:p-14 text-white shadow-2xl overflow-hidden relative">
             <div class="absolute right-0 top-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
             <div class="relative z-10">
@@ -285,7 +285,7 @@
     <!-- ═══════════════════════════════════════════
          TEXT & BULLETS SPLIT
     ═══════════════════════════════════════════ -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="grid lg:grid-cols-2 gap-16 items-center">
             <div>
                 <!-- H2: secondary keyword -->
@@ -363,7 +363,7 @@
          FEATURE SHOWCASE — Real-Time Sync
     ═══════════════════════════════════════════ -->
     <div class="bg-white py-24 border-t border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <span class="text-blue-600 font-semibold tracking-wide uppercase text-sm">Workflow Integration</span>
                 <!-- H2 -->
@@ -437,7 +437,7 @@
          4-CARD GRID
     ═══════════════════════════════════════════ -->
     <div class="bg-[#fafafa] py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- H2 -->
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">Advanced Fleet Calendar Capabilities</h2>
             <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Every feature is designed to reduce operational
@@ -503,7 +503,7 @@
          INTERACTIVE TABS — Scheduling Workflow
     ═══════════════════════════════════════════ -->
     <div class="bg-white py-24" id="interactive-scheduling-section">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <span class="text-blue-600 font-bold tracking-[0.2em] uppercase text-xs">Efficient Logistics</span>
                 <h2 class="text-4xl font-extrabold text-gray-900 mt-3 mb-4">How the Fleet Booking Calendar Works</h2>
@@ -696,7 +696,7 @@
          TESTIMONIALS
     ═══════════════════════════════════════════ -->
     <div class="bg-gray-50 py-20 border-t border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">Trusted by modern car rental operators</h2>
             <p class="text-center text-gray-600 mb-12 max-w-xl mx-auto">Fleet managers across the UK and Europe use our
                 booking calendar to run tighter, more profitable operations.</p>

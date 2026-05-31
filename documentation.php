@@ -70,7 +70,7 @@ require_once __DIR__ . '/config/database.php';
 <body class="bg-white text-slate-900" style="font-family: 'Inter', sans-serif;">
     <?php include __DIR__ . '/includes/header.php'; ?>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col lg:flex-row gap-12">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col lg:flex-row gap-12">
 
         <!-- Desktop Sidebar Navigation -->
         <aside class="hidden lg:block w-64 flex-shrink-0">

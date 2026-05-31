@@ -19,7 +19,7 @@ require_once __DIR__ . '/../config/database.php';
         Announcing our latest Security & Compliance updates. <a href="#" class="underline ml-1">Learn more</a>
     </div>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+    <main class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <!-- Breadcrumbs / Date -->
         <div class="mb-8">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">January 15, 2026</span>

@@ -1,6 +1,6 @@
 <!-- Footer -->
 <footer class="bg-gray-900 text-white py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-4 gap-8">
             <div>
                 <img src="/assets/images/fleet-logo-black.svg" alt="Fleet Rental Pro" class="h-10 mb-4 brightness-0 invert">

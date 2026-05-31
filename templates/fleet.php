@@ -256,7 +256,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 
     <!-- Search and Filter Section -->
     <section class="bg-white border-b border-gray-200 py-3 md:py-6 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Mobile Search Capsule -->
             <div class="mobile-search-capsule">
                 <button onclick="toggleMobileSearch()" class="search-pill-mobile">
@@ -459,7 +459,7 @@ endforeach; ?>
     <!-- Search Status Bar -->
     <?php if ($search || $type_filter || ($pickup_date && $dropoff_date)): ?>
     <section class="bg-blue-50 py-3 border-b border-blue-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-2 text-sm text-blue-800">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -505,7 +505,7 @@ endif; ?>
 
     <!-- Vehicles Grid -->
     <section class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <p class="text-gray-600 mb-8">Showing <?= count($vehicles)?> available vehicle<?= count($vehicles) !== 1 ? 's' : ''?></p>
 
             <?php if (empty($vehicles)): ?>

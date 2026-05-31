@@ -50,7 +50,7 @@ $featured_post = ($current_page == 1 && $selected_category == 'All') ? array_shi
         </div>
     </div>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <main class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <!-- Hero Header -->
         <div class="mb-16">
             <p class="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">Articles, announcements, news, and more</p>

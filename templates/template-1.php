@@ -138,7 +138,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         style="background-image: url('<?= htmlspecialchars($content['hero_image'])?>');">
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent rounded-[20px]"></div>
 
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-60">
+        <div class="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-60">
             <div class="text-white max-w-3xl">
                 <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight leading-tight">
                     <?= htmlspecialchars($content['hero_title'] ?? 'Rent a Car for Every Journey')?>
@@ -218,7 +218,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     elseif ($section === 'vehicles' && !($content['vehicles_hidden'] ?? 0)): ?>
     <!-- Vehicles Section -->
     <section id="fleet" class="py-24 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
                 <div>
                     <h2 class="text-[32px] font-bold text-gray-900 mb-3 tracking-tight">Top picks vehicle this month
@@ -321,7 +321,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     <?php elseif ($section === 'services' && !($content['services_hidden'] ?? 0)): ?>
     <!-- Services Section -->
     <section id="services" class="py-24 bg-[#0F1219]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-8 items-start mb-16">
                 <div>
                     <span class="text-blue-500 font-bold tracking-widest text-sm uppercase mb-4 block editable" data-field="services_title">
@@ -391,7 +391,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     elseif ($section === 'about' && !($content['about_hidden'] ?? 0)): ?>
     <!-- About Section -->
     <section id="about" class="py-24 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
                 <div class="relative">
                     <img src="<?= htmlspecialchars($content['about_image'])?>"
@@ -434,7 +434,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     elseif ($section === 'testimonials' && !($content['testimonials_hidden'] ?? 0)): ?>
     <!-- Testimonials -->
     <section class="py-24 bg-white overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-4xl font-extrabold text-gray-900 mb-4">
                     <?= htmlspecialchars($content['testimonial_title'] ?? 'Our Customers')?>
@@ -486,7 +486,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     elseif ($section === 'contact' && !($content['contact_hidden'] ?? 0)): ?>
     <!-- Contact -->
     <section id="contact" class="py-24 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
                 <div class="grid lg:grid-cols-5">
                     <div class="lg:col-span-2 bg-gray-900 p-12 text-white flex flex-col justify-between">

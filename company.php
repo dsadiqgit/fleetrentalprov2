@@ -139,7 +139,7 @@
          BREADCRUMB
     ═══════════════════════════════════════════ -->
     <nav aria-label="Breadcrumb" class="bg-white border-b border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <ol class="flex items-center space-x-2 text-sm text-gray-500">
                 <li><a href="/" class="hover:text-blue-600 transition">Home</a></li>
                 <li aria-hidden="true"><span class="mx-1">/</span></li>
@@ -158,7 +158,7 @@
                 width="2000" height="1333" loading="eager" fetchpriority="high">
             <div class="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
         </div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl">
                 <div
                     class="inline-flex items-center space-x-2 bg-white/10 rounded-full px-4 py-1.5 mb-6 border border-white/20">
@@ -206,7 +206,7 @@
          OUR MISSION  Split Text/Image
     ═══════════════════════════════════════════ -->
     <div class="py-24 bg-white overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
                 <div class="relative">
                     <div class="absolute -left-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -272,7 +272,7 @@
          INTERACTIVE TABS  The Evolution of Fleet Rental Pro
     ═══════════════════════════════════════════ -->
     <div class="bg-[#fafafa] py-24" id="interactive-tabs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">Why operators choose Fleet Rental Pro</h2>
             <p class="text-center text-gray-600 mb-16 max-w-2xl mx-auto">Providing more than just a car rental website -
                 we provide the tools to run your entire empire.</p>
@@ -355,7 +355,7 @@
          TESTIMONIALS
     ═══════════════════════════════════════════ -->
     <div class="bg-white py-24 border-t border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">What our partners say</h2>
             <div class="grid md:grid-cols-2 gap-8">
                 <div class="bg-gray-50 p-8 rounded-3xl border border-gray-100">
@@ -415,7 +415,7 @@ endfor; ?>
     ═══════════════════════════════════════════ -->
     <div class="bg-gray-900 py-24 relative overflow-hidden">
         <div class="absolute top-0 right-0 w-1/3 h-1/3 bg-blue-600/10 blur-[120px] rounded-full"></div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-16">
                 <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Driving Results with Innovation</h2>
                 <p class="text-gray-400 max-w-2xl mx-auto">Providing a high-conversion car rental website and rock-solid

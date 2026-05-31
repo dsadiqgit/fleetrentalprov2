@@ -143,6 +143,27 @@ if ($now < $trial_end) {
 // Handle form submission
 $error = '';
 $success = '';
+$formPost = $_POST ?? [];
+$current_tab = sanitize($_POST['current_tab'] ?? $_GET['tab'] ?? 'basic');
+$current_pricing_tab = sanitize($_POST['current_pricing_tab'] ?? $_GET['pricing_tab'] ?? 'daily');
+$price_validation_error = false;
+$make_error = false;
+$model_error = false;
+
+function field_raw($name, $default = '') {
+    global $formPost, $show_edit_form, $edit_vehicle;
+    if (isset($formPost[$name]) && $formPost[$name] !== '') {
+        return $formPost[$name];
+    }
+    if ($show_edit_form && isset($edit_vehicle[$name])) {
+        return $edit_vehicle[$name];
+    }
+    return $default;
+}
+
+function field_value($name, $default = '') {
+    return htmlspecialchars(field_raw($name, $default));
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $brand = sanitize($_POST['make'] ?? '');
@@ -248,7 +269,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $pricing_packages_json = '[]';
 
     if (empty($brand) || empty($model) || $price_per_day <= 0) {
+        $price_validation_error = $price_per_day <= 0;
+        $make_error = empty($brand);
+        $model_error = empty($model);
         $error = 'Please fill in brand, model, and price per day';
+        
+        // Dynamically override current_tab so Alpine loads on the correct tab!
+        if ($make_error || $model_error) {
+            $current_tab = 'basic';
+        } else if ($price_validation_error) {
+            $current_tab = 'pricing';
+        }
     }
     else {
         try {
@@ -315,7 +346,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
             }
 
-            header('Location: /dashboard/vehicles.php?action=edit&id=' . $target_vid . '&success=1&tab=' . $current_tab . '&pricing_tab=' . $current_pricing_tab);
+            if ($_POST['action'] === 'add_vehicle') {
+                header('Location: /dashboard/vehicles.php?created_success=1');
+            } else {
+                header('Location: /dashboard/vehicles.php?action=edit&id=' . $target_vid . '&success=1&tab=' . $current_tab . '&pricing_tab=' . $current_pricing_tab);
+            }
             exit;
         }
         catch (Exception $e) {
@@ -473,6 +508,9 @@ if ($show_edit_form) {
     <link rel="stylesheet" href="/app/custom.css">
     <script src="/app/custom-select.js" defer></script>
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
         .sidebar-item {
             transition: all 0.2s;
         }
@@ -594,10 +632,6 @@ endif; ?>
             <div class="space-y-6">
                 <!-- Schedule Header -->
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-semibold text-gray-900">Vehicle Assignments</h2>
-                        <p class="text-sm text-gray-500">Track current bookings and availability for your fleet</p>
-                    </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="relative">
                             <input type="text" name="vehicle_search" value="<?= htmlspecialchars($vehicle_search)?>" placeholder="Search vehicles" class="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" onkeydown="if(event.key==='Enter'){ window.location='/dashboard/vehicles.php?vehicle_search='+encodeURIComponent(this.value); }">
@@ -667,24 +701,41 @@ endif; ?>
                             $vehicleBookings = $assignmentsByVehicle[$vehicle['id']] ?? [];
                         ?>
                         <div class="flex">
-                            <div class="w-60 px-6 py-4 flex items-center gap-3">
-                                <?php if ($vehicleImage): ?>
-                                <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['name'])?>" class="w-12 h-12 rounded-xl object-cover border border-gray-200">
-                                <?php else: ?>
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold <?= $palette ?>">
-                                    <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1))?>
-                                </div>
-                                <?php endif; ?>
-                                <div>
-                                    <p class="text-sm font-semibold text-gray-900 leading-tight"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></p>
-                                    <p class="text-xs text-gray-500">
-                                        <?= htmlspecialchars($vehicle['category'] ?? 'Car')?> · <?= htmlspecialchars($vehicle['license_plate'] ?? 'No plate')?>
-                                    </p>
-                                    <p class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
-                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                                        Active
-                                    </p>
-                                </div>
+                            <div class="w-60 px-4 py-4 flex items-center justify-between gap-2 border-r border-gray-100">
+                                <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="flex items-center gap-3 group flex-1 min-w-0">
+                                    <?php if ($vehicleImage): ?>
+                                    <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>" class="w-10 h-10 rounded-xl object-cover border border-gray-200 group-hover:scale-105 transition-transform duration-200">
+                                    <?php else: ?>
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-semibold <?= $palette ?> group-hover:scale-105 transition-transform duration-200">
+                                        <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1))?>
+                                    </div>
+                                    <?php endif; ?>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-xs font-semibold text-gray-900 leading-tight group-hover:text-blue-600 group-hover:underline transition-colors truncate"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></p>
+                                        <p class="text-[10px] text-gray-500 truncate">
+                                            <?= htmlspecialchars($vehicle['category'] ?? 'Car')?> · <?= htmlspecialchars($vehicle['license_plate'] ?? 'No plate')?>
+                                        </p>
+                                        <?php if (($vehicle['availability'] ?? 1) == 1): ?>
+                                        <p class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
+                                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                                            Active
+                                        </p>
+                                        <?php else: ?>
+                                        <p class="text-[10px] text-gray-400 font-semibold flex items-center gap-1 mt-1">
+                                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                            Disabled
+                                        </p>
+                                        <?php endif; ?>
+                                    </div>
+                                </a>
+                                
+                                <!-- Availability Toggle Switch -->
+                                <button type="button" 
+                                        onclick="window.location.href='/dashboard/vehicles.php?toggle=<?= $vehicle['id'] ?>'" 
+                                        class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none <?= (($vehicle['availability'] ?? 1) == 1) ? 'bg-blue-600' : 'bg-gray-200' ?>"
+                                        title="<?= (($vehicle['availability'] ?? 1) == 1) ? 'Deactivate Vehicle' : 'Activate Vehicle' ?>">
+                                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out <?= (($vehicle['availability'] ?? 1) == 1) ? 'translate-x-4' : 'translate-x-0' ?>"></span>
+                                </button>
                             </div>
                             <div class="flex-1 relative border-l border-gray-100">
                                 <div class="grid grid-cols-<?= $hourColumns?> text-xs text-gray-300">
@@ -701,7 +752,7 @@ endif; ?>
                                     $widthPercent = (($clampedEnd - $clampedStart) / $totalTimelineMinutes) * 100;
                                     $statusClass = $assignmentStatusColors[$booking['status']] ?? 'bg-gray-100 text-gray-700 border-gray-200';
                                 ?>
-                                <div class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-xs font-medium shadow-sm <?= $statusClass ?>" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 10) ?>%; min-width: 120px;">
+                                <button type="button" onclick="openBookingModal(<?= (int)$booking['id']?>)" class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-left text-xs font-medium shadow-sm <?= $statusClass ?> hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/60" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 10) ?>%; min-width: 120px;">
                                     <div class="flex items-center gap-2">
                                         <span><?= htmlspecialchars($booking['customer_name'] ?? 'Guest')?> </span>
                                         <span class="text-[10px] uppercase text-gray-400"><?= htmlspecialchars($booking['status'])?></span>
@@ -710,7 +761,7 @@ endif; ?>
                                         <?= date('M d h:ia', strtotime($booking['pickup_date'] . ' ' . ($booking['pickup_time'] ?? '09:00')))?> -
                                         <?= date('M d h:ia', strtotime($booking['return_date'] . ' ' . ($booking['return_time'] ?? '17:00')))?>
                                     </p>
-                                </div>
+                                </button>
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -719,18 +770,92 @@ endif; ?>
                     </div>
                 </div>
             </div>
+
+            <!-- Booking Details Modal -->
+            <div id="bookingModal"
+                class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-[2rem] w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col relative"
+                    onclick="event.stopPropagation()">
+                    <div
+                        class="p-8 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+                        <div>
+                            <h3 class="text-xl font-black text-gray-900 uppercase tracking-tighter">Management</h3>
+                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">Booking Operations
+                            </p>
+                        </div>
+                        <button onclick="closeBookingModal()"
+                            class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div id="bookingModalContent" class="p-8 overflow-y-auto flex-1">
+                        <!-- Content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contract Preview Modal -->
+            <div id="contractPreviewModal"
+                class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+                <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                    <div
+                        class="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white text-gray-900">
+                        <div>
+                            <h3 class="text-xl font-black uppercase tracking-tighter">Contract Preview</h3>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Agreement Details
+                            </p>
+                        </div>
+                        <button onclick="closeContractPreviewModal()"
+                            class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="contractPreviewContent" class="p-8 overflow-y-auto bg-gray-50 flex-1">
+                        <!-- Content will be injected here -->
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-white flex justify-end">
+                        <button onclick="closeContractPreviewModal()"
+                            class="px-8 py-3 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200">Close
+                            Preview</button>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (isset($_GET['created_success']) && $_GET['created_success'] == 1): ?>
+            <div id="successCreatedModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div class="bg-white rounded-[2rem] max-w-md w-full shadow-2xl overflow-hidden p-8 text-center animate-fade-in-up">
+                    <div class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Created Successfully!</h3>
+                    <p class="text-gray-500 font-bold text-sm mb-8 leading-relaxed">Your vehicle has been created successfully and is now active in your fleet.</p>
+                    <button onclick="closeSuccessCreatedModal()" class="w-full py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-gray-200 transition-all hover:-translate-y-0.5">Got it</button>
+                </div>
+            </div>
+            <script>
+                function closeSuccessCreatedModal() {
+                    const modal = document.getElementById('successCreatedModal');
+                    if (modal) modal.remove();
+                    // Quietly remove created_success parameter from URL without page reload
+                    const url = new URL(window.location);
+                    url.searchParams.delete('created_success');
+                    window.history.replaceState({}, document.title, url);
+                }
+            </script>
+            <?php endif; ?>
+
             <?php else: ?>
             <!-- Add/Edit Vehicle Form -->
-            <div class="max-w-3xl">
-                <nav class="text-sm text-gray-500 mb-1">
-                    <a href="/dashboard/" class="hover:text-gray-700">Dashboard</a>
-                    <span class="mx-2">/</span>
-                    <a href="/dashboard/vehicles.php" class="hover:text-gray-700">Vehicles</a>
-                    <span class="mx-2">/</span>
-                    <span class="text-gray-900"><?= $show_edit_form ? 'Edit Vehicle' : 'Create Vehicle'?></span>
-                </nav>
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8"><?= $show_edit_form ? 'Edit Vehicle' : 'Create Vehicle'?></h1>
-
+            <div class="max-w-5xl mx-auto">
                 <?php if ($error): ?>
                 <div id="vehicle-error-message" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
                     <?= htmlspecialchars($error)?>
@@ -746,20 +871,56 @@ endif; ?>
                 <?php
     endif; ?>
 
-                <!-- HTML5 Client-Side Validation Error -->
-                <div id="html5-error-message" style="display: none;" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-3">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <div>
-                        <p class="font-medium text-sm">Action Required: Missing Information</p>
-                        <p class="text-xs mt-0.5 opacity-90 text-red-700">You must fill out the <strong id="invalid-field-name">required</strong> field before saving. Please check across all tabs if necessary.</p>
-                    </div>
-                </div>
-
                 <div x-data="{ 
-                    vehicleTab: '<?= $_GET['tab'] ?? 'basic'?>', 
-                    pricingTab: '<?= $_GET['pricing_tab'] ?? 'daily'?>' 
-                }">
-                <form method="POST" enctype="multipart/form-data" class="space-y-8" @submit="document.getElementById('html5-error-message').style.display='none'" @invalid.capture="$event.preventDefault(); let err = document.getElementById('html5-error-message'); err.style.display='flex'; let fn = 'required'; if ($event.target.labels && $event.target.labels.length > 0) { fn = $event.target.labels[0].innerText.replace('*','').trim(); } else { let parent = $event.target.closest('div'); if (parent) { let label = parent.querySelector('label'); if (label) fn = label.innerText.replace('*','').trim(); } } if (fn === 'required' && $event.target.name) { fn = $event.target.name.replace(/_/g, ' '); fn = fn.charAt(0).toUpperCase() + fn.slice(1); } document.getElementById('invalid-field-name').innerText = `\u0022${fn}\u0022`; err.scrollIntoView({ behavior:'smooth', block:'center' });">
+                    vehicleTab: '<?= htmlspecialchars($current_tab)?>', 
+                    pricingTab: '<?= htmlspecialchars($current_pricing_tab)?>' 
+                }" class="space-y-8">
+
+                    <!-- Hero header -->
+                    <?php
+                        $stepNavigation = [
+                            ['label' => 'Vehicle Information', 'tab' => 'basic'],
+                            ['label' => 'Service & Repairing', 'tab' => 'images'],
+                            ['label' => 'Owner Information', 'tab' => 'settings'],
+                            ['label' => 'Rental Setting', 'tab' => 'pricing'],
+                        ];
+                        $activeCircleClasses = 'bg-white text-blue-600 shadow-lg border-2 border-blue-500';
+                        $inactiveCircleClasses = 'bg-white/70 text-blue-200 border border-blue-100';
+                    ?>
+                    <div class="bg-gradient-to-br from-blue-100/90 via-blue-100 to-blue-50 border border-blue-200 rounded-[32px] shadow-lg p-6 md:p-8 text-gray-900 overflow-hidden">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div class="space-y-1">
+                                <h1 class="text-3xl font-bold leading-tight tracking-tight">Add Your Car for Rental</h1>
+                                <p class="text-sm text-blue-700/80">Please fill in all the details to get approval for rental permission.</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 justify-end">
+                                <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-white bg-white/80 text-sm font-semibold text-blue-800 shadow-sm hover:shadow-md transition">Cancel</a>
+                                <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : 'pricing'), $data)" x-show="vehicleTab !== 'pricing'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
+                                <button form="vehicleForm" type="submit" x-show="vehicleTab === 'pricing'" class="px-5 py-2.5 rounded-full bg-green-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Submit</button>
+                            </div>
+                        </div>
+                        <div class="mt-8">
+                            <div class="relative">
+                                <div class="hidden md:block absolute inset-x-6 top-1/2 -translate-y-1/2">
+                                    <div class="h-[2px] bg-blue-200"></div>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 relative z-10">
+                                    <?php foreach ($stepNavigation as $stepIdx => $step): ?>
+                                    <button type="button" id="step-btn-<?= $step['tab']?>" @click="navigateToTab('<?= $step['tab']?>', $data)" class="flex flex-col items-center text-center gap-2 md:gap-1 focus:outline-none">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm transition-all" :class="vehicleTab === '<?= $step['tab']?>' ? '<?= $activeCircleClasses?>' : '<?= $inactiveCircleClasses?>'">
+                                            <?= str_pad($stepIdx + 1, 2, '0', STR_PAD_LEFT)?>
+                                        </div>
+                                        <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-[0.4em] text-blue-500/70">
+                                            <?= $step['label']?>
+                                        </span>
+                                    </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="vehicleForm" method="POST" enctype="multipart/form-data" class="space-y-8" @submit="showHtml5Error = false" @invalid.capture="handleFormInvalid($event, $data)">
                     <input type="hidden" name="action" value="<?= $show_edit_form ? 'edit_vehicle' : 'add_vehicle'?>">
                     <?php if ($show_edit_form): ?>
                     <input type="hidden" name="vehicle_id" value="<?= $edit_vehicle['id']?>">
@@ -769,23 +930,17 @@ endif; ?>
                     <input type="hidden" name="current_tab" :value="vehicleTab">
                     <input type="hidden" name="current_pricing_tab" :value="pricingTab">
 
-                    <!-- Tab Navigation -->
-                    <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-6">
-                        <button type="button" @click="vehicleTab = 'basic'" :class="vehicleTab === 'basic' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-4 py-2 font-medium text-sm border-b-2 transition-colors">Vehicle Information</button>
-                        <button type="button" @click="vehicleTab = 'images'" :class="vehicleTab === 'images' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-4 py-2 font-medium text-sm border-b-2 transition-colors">Images</button>
-                        <button type="button" @click="vehicleTab = 'settings'" :class="vehicleTab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-4 py-2 font-medium text-sm border-b-2 transition-colors">Rental Settings</button>
-                        <button type="button" @click="vehicleTab = 'pricing'" :class="vehicleTab === 'pricing' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-4 py-2 font-medium text-sm border-b-2 transition-colors">Pricing</button>
-                        <?php if ($show_edit_form): ?>
-                        <button type="button" @click="vehicleTab = 'calendar'" :class="vehicleTab === 'calendar' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-4 py-2 font-medium text-sm border-b-2 transition-colors">Availability Calendar</button>
-                        <?php
-    endif; ?>
-                    </div>
-                    
                     <!-- Basic Information Tab -->
                     <div x-show="vehicleTab === 'basic'" class="space-y-8" x-cloak>
 
-                        <div>
-                            <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Vehicle information</h2>
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">Vehicle Information</h2>
+                                    <p class="text-sm text-gray-500">Provide basic details about the vehicle.</p>
+                                </div>
+                                <span class="px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-full">Step 1</span>
+                            </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                 <div>
                                     <?php
@@ -802,8 +957,8 @@ endif; ?>
         "Tesla", "Toyota", "Vauxhall", "Volkswagen", "Volvo"
     ];
 ?>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Make *</label>
-                                <select id="make_select" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white select-with-custom focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <label class="block text-sm font-medium <?= $make_error ? 'text-red-600' : 'text-gray-700' ?> mb-2">Make *</label>
+                                <select id="make_select" class="w-full px-4 py-2 border <?= $make_error ? 'border-red-500 focus:ring-red-200 ring-1 ring-red-100' : 'border-gray-300' ?> rounded-lg bg-white select-with-custom focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     <option value="">Select Make</option>
                                     <?php foreach ($popular_makes as $make): ?>
                                         <option value="<?= htmlspecialchars($make)?>"><?= htmlspecialchars($make)?></option>
@@ -811,12 +966,15 @@ endif; ?>
     endforeach; ?>
                                     <option value="Other">Other...</option>
                                 </select>
+                                <?php if ($make_error): ?>
+                                    <p class="text-xs text-red-600 mt-2">Please select a Make.</p>
+                                <?php endif; ?>
                                 <input type="text" id="make_custom" placeholder="Enter custom make" class="w-full hidden mt-2 px-4 py-2 border border-blue-300 bg-blue-50 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <input type="hidden" name="make" id="make_input" value="<?= $show_edit_form ? htmlspecialchars($edit_vehicle['brand']) : ''?>">
+                                <input type="hidden" name="make" id="make_input" value="<?= field_value('make')?>">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Model *</label>
-                                <select id="model_select" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white select-with-custom focus:ring-2 focus:ring-blue-500 focus:border-transparent" <?= $show_edit_form ? '' : 'disabled'?>>
+                                <label class="block text-sm font-medium <?= $model_error ? 'text-red-600' : 'text-gray-700' ?> mb-2">Model *</label>
+                                <select id="model_select" class="w-full px-4 py-2 border <?= $model_error ? 'border-red-500 focus:ring-red-200 ring-1 ring-red-100' : 'border-gray-300' ?> rounded-lg bg-white select-with-custom focus:ring-2 focus:ring-blue-500 focus:border-transparent" <?= $show_edit_form ? '' : 'disabled'?>>
                                     <option value="">Select Model</option>
                                     <?php if ($show_edit_form && !empty($edit_vehicle['model'])): ?>
                                         <option value="<?= htmlspecialchars($edit_vehicle['model'])?>" selected><?= htmlspecialchars($edit_vehicle['model'])?></option>
@@ -824,19 +982,22 @@ endif; ?>
     endif; ?>
                                     <option value="Other">Other...</option>
                                 </select>
+                                <?php if ($model_error): ?>
+                                    <p class="text-xs text-red-600 mt-2">Please select a Model.</p>
+                                <?php endif; ?>
                                 <input type="text" id="model_custom" placeholder="Enter custom model" class="w-full hidden mt-2 px-4 py-2 border border-blue-300 bg-blue-50 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <input type="hidden" name="model" id="model_input" value="<?= $show_edit_form ? htmlspecialchars($edit_vehicle['model']) : ''?>">
+                                <input type="hidden" name="model" id="model_input" value="<?= field_value('model')?>">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Registration <span class="text-red-500">*</span></label>
-                                <input type="text" name="license_plate" required value="<?= $show_edit_form ? htmlspecialchars($edit_vehicle['license_plate'] ?? '') : ''?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. AB12 CDE">
+                                <input type="text" name="license_plate" required value="<?= field_value('license_plate')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. AB12 CDE">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
                                 <select name="year" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     <?php
     $current_year = date('Y');
-    $selected_year = $show_edit_form ? $edit_vehicle['year'] : $current_year;
+    $selected_year = field_raw('year', $current_year);
     for ($y = $current_year; $y >= 2005; $y--):
 ?>
                                         <option value="<?= $y?>" <?= $selected_year == $y ? 'selected' : ''?>><?= $y?></option>
@@ -848,64 +1009,68 @@ endif; ?>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
                                 <select name="type" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 appearance-none cursor-pointer hover:border-gray-400 transition-colors"
                                         style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;"">
-                                    <option value="sedan" <?= $show_edit_form && $edit_vehicle['category'] === 'sedan' ? 'selected' : ''?>>Sedan</option>
-                                    <option value="suv" <?= $show_edit_form && $edit_vehicle['category'] === 'suv' ? 'selected' : ''?>>SUV</option>
-                                    <option value="coupe" <?= $show_edit_form && $edit_vehicle['category'] === 'coupe' ? 'selected' : ''?>>Coupe</option>
-                                    <option value="truck" <?= $show_edit_form && $edit_vehicle['category'] === 'truck' ? 'selected' : ''?>>Truck</option>
-                                    <option value="van" <?= $show_edit_form && $edit_vehicle['category'] === 'van' ? 'selected' : ''?>>Van</option>
+                                    <option value="sedan" <?= field_raw('type', 'sedan') === 'sedan' ? 'selected' : ''?>>Sedan</option>
+                                    <option value="suv" <?= field_raw('type', 'sedan') === 'suv' ? 'selected' : ''?>>SUV</option>
+                                    <option value="coupe" <?= field_raw('type', 'sedan') === 'coupe' ? 'selected' : ''?>>Coupe</option>
+                                    <option value="truck" <?= field_raw('type', 'sedan') === 'truck' ? 'selected' : ''?>>Truck</option>
+                                    <option value="van" <?= field_raw('type', 'sedan') === 'van' ? 'selected' : ''?>>Van</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
                                 <select name="transmission" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 appearance-none cursor-pointer hover:border-gray-400 transition-colors"
                                         style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;"">
-                                    <option value="automatic" <?= $show_edit_form && $edit_vehicle['transmission'] === 'automatic' ? 'selected' : ''?>>Automatic</option>
-                                    <option value="manual" <?= $show_edit_form && $edit_vehicle['transmission'] === 'manual' ? 'selected' : ''?>>Manual</option>
-                                    <option value="semi_auto" <?= $show_edit_form && $edit_vehicle['transmission'] === 'semi_auto' ? 'selected' : ''?>>Semi Auto</option>
+                                    <option value="automatic" <?= field_raw('transmission', 'automatic') === 'automatic' ? 'selected' : ''?>>Automatic</option>
+                                    <option value="manual" <?= field_raw('transmission', 'automatic') === 'manual' ? 'selected' : ''?>>Manual</option>
+                                    <option value="semi_auto" <?= field_raw('transmission', 'automatic') === 'semi_auto' ? 'selected' : ''?>>Semi Auto</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
                                 <select name="fuel_type" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 appearance-none cursor-pointer hover:border-gray-400 transition-colors"
                                         style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;"">
-                                    <option value="petrol" <?= $show_edit_form && $edit_vehicle['fuel_type'] === 'petrol' ? 'selected' : ''?>>Petrol</option>
-                                    <option value="diesel" <?= $show_edit_form && $edit_vehicle['fuel_type'] === 'diesel' ? 'selected' : ''?>>Diesel</option>
-                                    <option value="electric" <?= $show_edit_form && $edit_vehicle['fuel_type'] === 'electric' ? 'selected' : ''?>>Electric</option>
-                                    <option value="hybrid" <?= $show_edit_form && $edit_vehicle['fuel_type'] === 'hybrid' ? 'selected' : ''?>>Hybrid</option>
+                                    <option value="petrol" <?= field_raw('fuel_type', 'petrol') === 'petrol' ? 'selected' : ''?>>Petrol</option>
+                                    <option value="diesel" <?= field_raw('fuel_type', 'petrol') === 'diesel' ? 'selected' : ''?>>Diesel</option>
+                                    <option value="electric" <?= field_raw('fuel_type', 'petrol') === 'electric' ? 'selected' : ''?>>Electric</option>
+                                    <option value="hybrid" <?= field_raw('fuel_type', 'petrol') === 'hybrid' ? 'selected' : ''?>>Hybrid</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
                                 <select name="seats" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg">
-                                    <option value="2" <?= $show_edit_form && $edit_vehicle['seats'] == 2 ? 'selected' : ''?>>2 seats</option>
-                                    <option value="4" <?= $show_edit_form && $edit_vehicle['seats'] == 4 ? 'selected' : ''?>>4 seats</option>
-                                    <option value="5" <?=!$show_edit_form || $edit_vehicle['seats'] == 5 ? 'selected' : ''?>>5 seats</option>
-                                    <option value="7" <?= $show_edit_form && $edit_vehicle['seats'] == 7 ? 'selected' : ''?>>7 seats</option>
-                                    <option value="8" <?= $show_edit_form && $edit_vehicle['seats'] == 8 ? 'selected' : ''?>>8+ seats</option>
+                                    <?php $selected_seats = (int) field_raw('seats', 5); ?>
+                                    <option value="2" <?= $selected_seats === 2 ? 'selected' : ''?>>2 seats</option>
+                                    <option value="4" <?= $selected_seats === 4 ? 'selected' : ''?>>4 seats</option>
+                                    <option value="5" <?= $selected_seats === 5 ? 'selected' : ''?>>5 seats</option>
+                                    <option value="7" <?= $selected_seats === 7 ? 'selected' : ''?>>7 seats</option>
+                                    <option value="8" <?= $selected_seats >= 8 ? 'selected' : ''?>>8+ seats</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Doors</label>
-                                <input type="number" name="doors" value="<?= $show_edit_form ? $edit_vehicle['doors'] : '5'?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                <input type="number" name="doors" value="<?= field_value('doors', '5')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Exterior Colour</label>
-                                <input type="text" name="exterior_color" value="<?= $show_edit_form ? htmlspecialchars($edit_vehicle['exterior_color']) : 'Blue'?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                <input type="text" name="exterior_color" value="<?= field_value('exterior_color', 'Blue')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Interior Colour</label>
-                                <input type="text" name="interior_color" value="<?= $show_edit_form ? htmlspecialchars($edit_vehicle['interior_color']) : 'Brown'?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                <input type="text" name="interior_color" value="<?= field_value('interior_color', 'Brown')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Engine Capacity (L)</label>
-                                <input type="text" name="engine_capacity" value="<?= $show_edit_form ? htmlspecialchars($edit_vehicle['engine_capacity']) : '1.6'?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                <input type="text" name="engine_capacity" value="<?= field_value('engine_capacity', '1.6')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                             </div>
                             <div class="col-span-2">
                                 <?php
     $saved_features = [];
-    if ($show_edit_form && !empty($edit_vehicle['vehicle_features'])) {
+    $raw_features = field_raw('vehicle_features', '');
+    if (!empty($raw_features)) {
+        $saved_features = json_decode($raw_features, true) ?? [];
+    } elseif ($show_edit_form && !empty($edit_vehicle['vehicle_features'])) {
         $saved_features = json_decode($edit_vehicle['vehicle_features'], true) ?? [];
     }
 ?>
@@ -925,15 +1090,16 @@ endif; ?>
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Description</label>
-                                <textarea name="description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter car description..."><?= $show_edit_form ? htmlspecialchars($edit_vehicle['description'] ?? '') : ''?></textarea>
+                                <textarea name="description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter car description..."><?= field_value('description')?></textarea>
                             </div>
                             </div>
                         </div>
 
                         <!-- Featured Vehicle -->
+                        <?php $featured_checked = isset($formPost['featured']) || ($show_edit_form && !empty($edit_vehicle['featured'])); ?>
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="featured" <?= $show_edit_form && isset($edit_vehicle['featured']) && $edit_vehicle['featured'] ? 'checked' : ''?> class="sr-only peer">
+                                <input type="checkbox" name="featured" <?= $featured_checked ? 'checked' : ''?> class="sr-only peer">
                                 <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 <span class="ml-3 text-sm font-medium text-gray-700">Mark as Featured Vehicle</span>
                             </label>
@@ -999,8 +1165,14 @@ endif; ?>
                     <!-- Rental Settings Tab -->
                     <div x-show="vehicleTab === 'settings'" class="space-y-8" x-cloak>
 
-                        <div>
-                            <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Rental Policy & Documents</h2>
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">Rental Policy & Documents</h2>
+                                    <p class="text-sm text-gray-500">Specify deposit requirements and renter qualifications.</p>
+                                </div>
+                                <span class="px-3 py-1 text-xs font-semibold text-amber-600 bg-amber-50 rounded-full">Step 2</span>
+                            </div>
                             <div class="space-y-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -1081,19 +1253,29 @@ endif; ?>
 
                     <!-- Pricing Tab -->
                     <div x-show="vehicleTab === 'pricing'" class="space-y-8" x-cloak>
-                        <div id="pricing-settings-container">
-                            <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Pricing settings</h2>
-                            <div class="flex flex-wrap gap-2 sm:space-x-4 mb-4 border-b border-gray-200">
-                                <button type="button" @click="pricingTab = 'daily'" :class="pricingTab === 'daily' ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:text-gray-700 border-transparent'" class="px-3 sm:px-4 py-2 font-medium text-sm sm:text-base border-b-2 transition-colors">Daily rate</button>
-                                <button type="button" @click="pricingTab = 'packages'" :class="pricingTab === 'packages' ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:text-gray-700 border-transparent'" class="px-3 sm:px-4 py-2 font-medium text-sm sm:text-base border-b-2 transition-colors">Pricing packages</button>
+                        <div id="pricing-settings-container" class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">Pricing Settings</h2>
+                                    <p class="text-sm text-gray-500">Adjust daily rates and custom packages.</p>
+                                </div>
+                                <span class="px-3 py-1 text-xs font-semibold text-violet-600 bg-violet-50 rounded-full">Step 4</span>
+                            </div>
+                            <div class="flex flex-wrap gap-3 mb-6">
+                                <button type="button" @click="pricingTab = 'daily'" :class="pricingTab === 'daily' ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-4 py-2 rounded-xl font-medium text-sm transition">Daily rate</button>
+                                <button type="button" @click="pricingTab = 'packages'" :class="pricingTab === 'packages' ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-4 py-2 rounded-xl font-medium text-sm transition">Pricing packages</button>
                             </div>
                             
                             <!-- Daily Rate Content -->
                             <div x-show="pricingTab === 'daily'">
+                                <?php $priceErrorClass = $price_validation_error ? 'border-red-500 focus:ring-red-200 ring-1 ring-red-100' : ''; ?>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Default price per day (GBP) *</label>
-                                        <input type="number" step="0.01" name="price_per_day" required placeholder="120" value="<?= $show_edit_form ? $edit_vehicle['price_per_day'] : ''?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Default price per day (GBP)</label>
+                                        <input type="number" step="0.01" name="price_per_day" placeholder="120" value="<?= field_value('price_per_day')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 <?= $priceErrorClass?>">
+                                        <?php if ($price_validation_error): ?>
+                                        <p class="text-xs text-red-600 mt-2">Please provide the default price per day before continuing.</p>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="col-span-1 sm:col-span-2 mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                                         <label class="block text-sm font-medium text-gray-900 mb-3">Dynamic Pricing per Day of Week</label>
@@ -1103,7 +1285,8 @@ endif; ?>
     $day_labels = ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'];
     $current_pricing = $show_edit_form && !empty($edit_vehicle['daily_pricing']) ? json_decode($edit_vehicle['daily_pricing'], true) : [];
     foreach ($day_labels as $d_key => $d_label):
-        $d_price = $current_pricing[$d_key] ?? '';
+        $posted_day_price = $formPost['price_' . $d_key] ?? '';
+        $d_price = $posted_day_price !== '' ? $posted_day_price : ($current_pricing[$d_key] ?? '');
 ?>
                                             <div>
                                                 <label class="block text-xs font-semibold text-gray-700 mb-1"><?= $d_label?></label>
@@ -1149,9 +1332,14 @@ endif; ?>
                     <?php if ($show_edit_form): ?>
                     <div x-show="vehicleTab === 'calendar'" class="space-y-8" x-cloak>
 
-                        <div>
-                            <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Availability Management</h2>
-                            <p class="text-sm text-gray-600 mb-6 font-medium">Block specific dates for maintenance or view existing customer bookings on the calendar below.</p>
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">Availability Management</h2>
+                                    <p class="text-sm text-gray-500">Block maintenance days or inspect bookings at a glance.</p>
+                                </div>
+                                <span class="px-3 py-1 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-full">Live</span>
+                            </div>
                             
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div>
@@ -1214,11 +1402,189 @@ endif; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+        function navigateToTab(targetTab, alpineData) {
+            const currentTab = alpineData.vehicleTab;
+            const steps = ['basic', 'images', 'settings', 'pricing', 'calendar'];
+            const currentIdx = steps.indexOf(currentTab);
+            const targetIdx = steps.indexOf(targetTab);
+            
+            // Going backwards is always allowed
+            if (targetIdx <= currentIdx) {
+                alpineData.vehicleTab = targetTab;
+                return;
+            }
+            
+            // Going forward: validate each intermediate tab
+            for (let i = currentIdx; i < targetIdx; i++) {
+                const stepTab = steps[i];
+                const tabEl = document.querySelector(`div[x-show="vehicleTab === '${stepTab}'"]`);
+                if (tabEl) {
+                    // Custom validation for Make / Model since they use hidden inputs
+                    if (stepTab === 'basic') {
+                        const makeInput = document.getElementById('make_input');
+                        const modelInput = document.getElementById('model_input');
+                        const makeVal = makeInput ? makeInput.value.trim() : '';
+                        const modelVal = modelInput ? modelInput.value.trim() : '';
+                        
+                        if (!makeVal) {
+                            showNotification('Missing details: Please select a Make.', 'error');
+                            const makeSelect = document.getElementById('make_select');
+                            if (makeSelect) {
+                                makeSelect.style.borderColor = '#ef4444';
+                                makeSelect.style.boxShadow = '0 0 0 1px #ef4444';
+                                makeSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                makeSelect.focus();
+                            }
+                            alpineData.vehicleTab = 'basic';
+                            return;
+                        }
+                        if (!modelVal) {
+                            showNotification('Missing details: Please select a Model.', 'error');
+                            const modelSelect = document.getElementById('model_select');
+                            if (modelSelect) {
+                                modelSelect.style.borderColor = '#ef4444';
+                                modelSelect.style.boxShadow = '0 0 0 1px #ef4444';
+                                modelSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                modelSelect.focus();
+                            }
+                            alpineData.vehicleTab = 'basic';
+                            return;
+                        }
+                    }
+                    
+                    // Validate standard required inputs on this tab
+                    const requiredInputs = tabEl.querySelectorAll('[required]');
+                    for (const input of requiredInputs) {
+                        if (!input.checkValidity()) {
+                            alpineData.vehicleTab = stepTab;
+                            setTimeout(() => {
+                                handleFormInvalid({ target: input, preventDefault: () => {} }, alpineData);
+                            }, 50);
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            // If all validation passed, switch to target tab
+            alpineData.vehicleTab = targetTab;
+        }
+        window.navigateToTab = navigateToTab;
+
+        function handleFormInvalid(event, alpineData) {
+            event.preventDefault();
+            const target = event.target;
+            
+            // 1. Find which tab has the invalid field
+            const tabDiv = target.closest('[x-show*="vehicleTab"]');
+            let tabName = '';
+            if (tabDiv) {
+                const xShow = tabDiv.getAttribute('x-show');
+                const match = xShow.match(/vehicleTab\s*===\s*'([^']+)'/);
+                if (match && match[1]) {
+                    tabName = match[1];
+                    if (alpineData) {
+                        alpineData.vehicleTab = tabName;
+                    }
+                }
+            }
+            
+            // 2. Add visual validation highlights (1px solid red border around the input/select, label, or wrapper)
+            target.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            target.style.borderColor = '#ef4444';
+            target.style.boxShadow = '0 0 0 1px #ef4444';
+            
+            // Find closest label
+            let label = null;
+            if (target.id) {
+                label = document.querySelector(`label[for="${target.id}"]`);
+            }
+            if (!label) {
+                const parent = target.closest('div');
+                if (parent) {
+                    label = parent.querySelector('label');
+                }
+            }
+            
+            if (label) {
+                label.style.border = '1px solid #ef4444';
+                label.style.borderRadius = '8px';
+                label.style.padding = '2px 6px';
+                label.style.backgroundColor = '#fef2f2';
+                label.style.color = '#b91c1c';
+                label.style.display = 'inline-block';
+            }
+            
+            // Highlight the stepper button for the tab containing the error
+            if (tabName) {
+                const stepBtn = document.getElementById(`step-btn-${tabName}`);
+                if (stepBtn) {
+                    const circle = stepBtn.querySelector('.rounded-full');
+                    if (circle) {
+                        circle.style.border = '2px solid #ef4444';
+                        circle.style.backgroundColor = '#fef2f2';
+                        circle.style.color = '#b91c1c';
+                    }
+                }
+            }
+            
+            // Get field display name for notifications
+            let fn = 'required';
+            if (label) {
+                fn = label.innerText.replace('*','').trim();
+            } else if (target.name) {
+                fn = target.name.replace(/_/g, ' ');
+                fn = fn.charAt(0).toUpperCase() + fn.slice(1);
+            }
+            
+            if (typeof showNotification === 'function') {
+                showNotification('Missing details: Please complete the "' + fn + '" field.', 'error');
+            }
+            
+            // Clear the highlight when the user starts typing/editing
+            const clearHighlight = () => {
+                target.style.borderColor = '';
+                target.style.boxShadow = '';
+                target.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+                if (label) {
+                    label.style.border = '';
+                    label.style.borderRadius = '';
+                    label.style.padding = '';
+                    label.style.backgroundColor = '';
+                    label.style.color = '';
+                    label.style.display = '';
+                }
+                if (tabName) {
+                    const stepBtn = document.getElementById(`step-btn-${tabName}`);
+                    if (stepBtn) {
+                        const circle = stepBtn.querySelector('.rounded-full');
+                        if (circle) {
+                            circle.style.border = '';
+                            circle.style.backgroundColor = '';
+                            circle.style.color = '';
+                        }
+                    }
+                }
+                target.removeEventListener('input', clearHighlight);
+                target.removeEventListener('change', clearHighlight);
+            };
+            target.addEventListener('input', clearHighlight);
+            target.addEventListener('change', clearHighlight);
+            
+            // Scroll the target element into view
+            setTimeout(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.focus();
+            }, 100);
+        }
+        window.handleFormInvalid = handleFormInvalid;
+
         // Init Flatpickr Multi-Select for blocked dates
         const unavailableDatesInput = document.getElementById('unavailable_dates');
         const selectedDatesTagsContainer = document.getElementById('selected-dates-tags');
         // Helper to render selected dates as removable tags
         function renderSelectedDates(dates) {
+            if (!selectedDatesTagsContainer) return;
             selectedDatesTagsContainer.innerHTML = '';
             dates.forEach(function(date) {
                 const tag = document.createElement('span');
@@ -1480,9 +1846,896 @@ endif; ?>
         function toggleFeatured(vehicleId, featured) {
             window.location.href = '/dashboard/vehicles.php?toggle_featured=' + vehicleId + '&featured=' + featured;
         }
+
+        function viewBooking(id) {
+            openBookingModal(id);
+        }
+
+        function updateSecurityDeposit(bookingId) {
+            const amount = document.getElementById('deposit-amount').value;
+            const status = document.getElementById('deposit-status').value;
+            const method = document.getElementById('deposit-method').value;
+
+            fetch('/dashboard/update-booking-deposit.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    booking_id: bookingId,
+                    amount: amount,
+                    status: status,
+                    method: method
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Security deposit updated successfully');
+                    } else {
+                        showNotification(data.message, 'error');
+                    }
+                })
+                .catch(err => showNotification('Error updating deposit', 'error'));
+        }
+
+        function openBookingModal(bookingId, initialTab = 'details') {
+            const modal = document.getElementById('bookingModal');
+            const content = document.getElementById('bookingModalContent');
+            if (!modal || !content) return;
+
+            modal.classList.remove('hidden');
+            content.innerHTML = `
+                <div class="flex items-center justify-center py-20">
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="animate-spin rounded-full h-12 w-12 border-[3px] border-blue-600/20 border-t-blue-600"></div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Retrieving Data</p>
+                    </div>
+                </div>
+            `;
+
+            fetch('/dashboard/get-booking-details.php?id=' + bookingId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayBookingDetails(data.booking, data.condition_reports, data.contract, data.available_templates);
+                        if (initialTab !== 'details') switchModalTab(initialTab);
+                    } else {
+                        content.innerHTML = `
+                            <div class="text-center py-12">
+                                <p class="text-red-600 font-bold">${data.message || 'Failed to load booking details'}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    content.innerHTML = `
+                        <div class="text-center py-12">
+                            <p class="text-red-600 font-bold">Error loading booking details</p>
+                            <p class="text-[10px] text-gray-400 mt-2">${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function displayBookingDetails(booking, reports, contract, available_templates = []) {
+            const pickupReport = reports && reports.pickup ? reports.pickup : null;
+            const returnReport = reports && reports.return ? reports.return : null;
+
+            const statusMap = {
+                'pending': 'bg-amber-50 text-amber-600 border border-amber-100',
+                'confirmed': 'bg-blue-50 text-blue-600 border border-blue-100',
+                'active': 'bg-green-50 text-green-600 border border-green-100',
+                'completed': 'bg-gray-50 text-gray-600 border border-gray-100',
+                'cancelled': 'bg-red-50 text-red-600 border border-red-100'
+            };
+
+            const paymentMap = {
+                'unpaid': 'bg-amber-100 text-amber-800',
+                'partial': 'bg-blue-100 text-blue-800',
+                'paid': 'bg-green-100 text-green-800',
+                'refunded': 'bg-red-100 text-red-800'
+            };
+
+            const prepareMiscPhotos = (report) => {
+                let html = '';
+                try {
+                    const misc = (report && report.misc_photos) ? JSON.parse(report.misc_photos) : [];
+                    for (let i = 0; i < 4; i++) {
+                        if (misc[i]) {
+                            html += `<div class="aspect-square rounded-xl bg-gray-100 overflow-hidden shadow-sm border border-gray-100 group relative">
+                                <img src="${misc[i]}" class="w-full h-full object-cover">
+                            </div>`;
+                        } else {
+                            html += `<div class="aspect-square rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center p-2 text-center text-gray-300">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2" /></svg>
+                            </div>`;
+                        }
+                    }
+                } catch (e) {
+                    for (let i = 0; i < 4; i++) html += `<div class="aspect-square rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center"><svg class="w-5 h-5 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2.5"/></svg></div>`;
+                }
+                return html;
+            };
+
+            const renderPhotoField = (id, label, icon, currentPath, type) => {
+                const hasPhoto = currentPath && currentPath !== '';
+                const isRequired = !hasPhoto;
+                return `
+                    <div class="relative group condition-photo-wrapper" data-id="${id}" data-has-photo="${hasPhoto}">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">${label}${isRequired ? ' <span class="text-red-500">*</span>' : ''}</label>
+                        <div onclick="this.querySelector('input').click()" class="relative aspect-video rounded-2xl bg-gray-50 border-2 border-dashed ${isRequired ? 'border-red-100/50' : 'border-gray-200'} hover:border-blue-300 transition-all cursor-pointer overflow-hidden flex items-center justify-center group/photo">
+                            ${hasPhoto ?
+                        `<img src="${currentPath}" class="w-full h-full object-cover transition-transform group-hover/photo:scale-110">
+                         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
+                            <span class="text-[10px] text-white font-bold uppercase tracking-widest">Replace Photo</span>
+                         </div>` :
+                        `<div class="text-center">
+                                    <svg class="w-8 h-8 text-gray-300 mb-1 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span class="text-[10px] text-gray-400 font-medium">Click to upload</span>
+                                 </div>`
+                    }
+                            <input type="file" name="${id}" class="hidden" ${isRequired ? 'required' : ''} onchange="previewConditionPhoto(this)">
+                        </div>
+                    </div>
+                `;
+            };
+
+            const content = document.getElementById('bookingModalContent');
+            if (!content) return;
+
+            content.innerHTML = `
+                <div class="flex items-center justify-center mb-8">
+                    <div class="flex h-11 w-fit max-w-full items-center rounded-full border border-gray-100 bg-gray-50/50 p-1 select-none backdrop-blur-sm">
+                        <button onclick="switchModalTab('details')" id="tab-btn-details" class="flex cursor-pointer items-center gap-2 rounded-full px-5 py-1.5 font-bold whitespace-nowrap transition-all text-[11px] uppercase tracking-widest bg-white shadow-sm text-blue-600">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Information
+                        </button>
+                        <button onclick="switchModalTab('condition')" id="tab-btn-condition" class="flex cursor-pointer items-center gap-2 rounded-full px-5 py-1.5 font-bold whitespace-nowrap transition-all text-[11px] uppercase tracking-widest text-[#4b5058] hover:text-black">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Condition
+                        </button>
+                        <button onclick="switchModalTab('contract')" id="tab-btn-contract" class="flex cursor-pointer items-center gap-2 rounded-full px-5 py-1.5 font-bold whitespace-nowrap transition-all text-[11px] uppercase tracking-widest text-[#4b5058] hover:text-black">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Contract
+                        </button>
+                    </div>
+                </div>
+
+                <div id="tab-content-details" class="tab-pane space-y-8 animate-fade-in-up">
+                    <div class="grid md:grid-cols-12 gap-6">
+                        <div class="md:col-span-8 space-y-6">
+                            <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)]">
+                                <div class="flex items-center justify-between mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ref</span>
+                                        <p class="text-xl font-black text-gray-900 leading-none">#${String(booking.id).padStart(5, '0')}</p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${statusMap[booking.status] || 'bg-gray-100 text-gray-800'}">
+                                            ${booking.status}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-6 p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 mb-8">
+                                    <div class="flex-1 text-center">
+                                        <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">Pickup</p>
+                                        <p class="text-base font-black text-gray-900">${new Date(booking.pickup_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1">
+                                        <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-width="2.5" /></svg>
+                                        <span class="text-[9px] font-black text-gray-300 uppercase tracking-tighter">${booking.total_days} Days</span>
+                                    </div>
+                                    <div class="flex-1 text-center">
+                                        <p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">Return</p>
+                                        <p class="text-base font-black text-gray-900">${new Date(booking.return_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="p-5 bg-gray-50/30 rounded-2xl border border-gray-100/50 group hover:bg-white hover:border-blue-100 transition-all">
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Vehicle</p>
+                                        <p class="text-sm font-black text-gray-900 leading-tight small-vechicle-fix">${booking.brand} ${booking.model}</p>
+                                        <p class="text-[10px] text-gray-400 mt-1">${booking.year} • ${(booking.category || '').toUpperCase()}</p>
+                                    </div>
+                                    <div class="p-5 bg-gray-50/30 rounded-2xl border border-gray-100/50 group hover:bg-white hover:border-blue-100 transition-all">
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Customer</p>
+                                        <p class="text-sm font-black text-gray-900 leading-tight truncate">${booking.customer_name}</p>
+                                        <p class="text-[10px] text-gray-400 mt-1 truncate">${booking.customer_email}</p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 grid grid-cols-3 gap-4 pt-6 border-t border-gray-50">
+                                    <div>
+                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Price / Day</p>
+                                        <p class="text-sm font-black text-gray-900">£${parseFloat(booking.price_per_day).toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tax Amount</p>
+                                        <p class="text-sm font-black text-gray-900">£${parseFloat(booking.tax_amount || 0).toLocaleString()}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-1">Grand Total</p>
+                                        <p class="text-sm font-black text-blue-600">£${parseFloat(booking.total_price).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-4 flex flex-col gap-4">
+                            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quick Actions</h4>
+                            <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)] space-y-3">
+                                <button onclick="updateBookingStatus(${booking.id}, 'confirmed')" class="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-gray-200 hover:bg-black hover:-translate-y-0.5 transition-all">Confirm</button>
+                                <button onclick="updateBookingStatus(${booking.id}, 'active')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all">Start Trip</button>
+                                <div class="pt-4 mt-2 border-t border-gray-50">
+                                    <button onclick="updateBookingStatus(${booking.id}, 'cancelled')" class="w-full py-3 bg-white text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-red-50 hover:bg-red-50 transition-all">Void Agreement</button>
+                                </div>
+                            </div>
+
+                            ${booking.notes ? `
+                                <div class="bg-amber-50/50 p-6 rounded-3xl border border-amber-100 group shadow-sm">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2.5" /></svg>
+                                        <p class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Internal Notes</p>
+                                    </div>
+                                    <p class="text-xs text-amber-900/80 font-bold italic leading-relaxed">"${booking.notes}"</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between ml-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <h4 class="text-[11px] font-black text-gray-900 uppercase tracking-widest">Financial Guarantee</h4>
+                            </div>
+                            <div class="px-3 py-1 bg-blue-50 rounded-full border border-blue-100 text-[9px] font-black text-blue-600 uppercase tracking-tighter shadow-sm">Securing Assets</div>
+                        </div>
+                        <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-[0_15px_40px_-20px_rgba(0,0,0,0.08)] p-8 space-y-10 border-t-2 border-t-blue-500/10">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div class="space-y-3">
+                                    <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Amount Secured</label>
+                                    <div class="relative group">
+                                        <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-900 font-black text-sm">£</div>
+                                        <input type="number" id="deposit-amount" value="${booking.security_deposit || 0}" class="w-full bg-gray-50/50 border border-transparent rounded-3xl pl-10 pr-6 py-5 text-sm font-black focus:bg-white focus:border-blue-500/20 focus:ring-8 focus:ring-blue-500/5 transition-all outline-none shadow-inner">
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Status Tracking</label>
+                                    <div class="relative">
+                                        <select id="deposit-status" class="w-full bg-gray-50/50 border border-transparent rounded-3xl pl-6 pr-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] focus:bg-white focus:border-blue-500/20 transition-all outline-none appearance-none shadow-inner cursor-pointer">
+                                            <option value="unpaid" ${booking.security_deposit_status === 'unpaid' ? 'selected' : ''}>⚠️ Outstanding</option>
+                                            <option value="paid" ${booking.security_deposit_status === 'paid' ? 'selected' : ''}>💎 Fully Paid</option>
+                                            <option value="refunded" ${booking.security_deposit_status === 'refunded' ? 'selected' : ''}>🔄 Refunded</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="3" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Payment Channel</label>
+                                    <div class="relative">
+                                        <select id="deposit-method" class="w-full bg-gray-50/50 border border-transparent rounded-3xl pl-6 pr-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] focus:bg-white focus:border-blue-500/20 transition-all outline-none appearance-none shadow-inner cursor-pointer">
+                                            <option value="" ${!booking.security_deposit_method ? 'selected' : ''}>Not Set</option>
+                                            <option value="cash" ${booking.security_deposit_method === 'cash' ? 'selected' : ''}>💵 Cash Deposit</option>
+                                            <option value="card" ${booking.security_deposit_method === 'card' ? 'selected' : ''}>💳 Terminal</option>
+                                            <option value="stripe" ${booking.security_deposit_method === 'stripe' ? 'selected' : ''}>🌍 Online Payment</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="3" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="updateSecurityDeposit(${booking.id})" class="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-[12px] uppercase tracking-[0.4em] shadow-2xl shadow-blue-500/20 hover:bg-blue-700 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-5 group/btn">
+                                <span class="bg-white/20 p-2 rounded-xl group-hover/btn:rotate-12 transition-transform">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="3" /></svg>
+                                </span>
+                                Synchronize Deposit Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-content-condition" class="tab-pane hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-black text-gray-900 uppercase tracking-tighter">Condition Report</h4>
+                        <div class="flex p-1 bg-gray-100 rounded-xl">
+                            <button type="button" onclick="switchConditionTab('pickup')" id="tab-pickup-btn" class="px-4 py-1.5 text-[10px] font-black rounded-lg transition-all bg-white shadow-sm text-blue-600 uppercase">Pickup</button>
+                            <button type="button" onclick="switchConditionTab('return')" id="tab-return-btn" class="px-4 py-1.5 text-[10px] font-black rounded-lg transition-all text-gray-500 hover:text-gray-700 uppercase">Return</button>
+                        </div>
+                    </div>
+
+                    <div id="section-pickup" class="space-y-6">
+                        <form onsubmit="submitConditionReport(event, 'pickup', ${booking.id})">
+                            <div class="bg-gray-50 rounded-3xl p-6 space-y-8 border border-gray-100">
+                                <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Mileage at Pickup</label>
+                                     <input type="number" name="mileage" value="${pickupReport ? pickupReport.mileage : ''}" required class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none" placeholder="00,000">
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Vehicle Photos</p>
+                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                        ${renderPhotoField('photo_front', 'Front View', '', pickupReport ? pickupReport.photo_front : '', 'pickup')}
+                                        ${renderPhotoField('photo_back', 'Rear View', '', pickupReport ? pickupReport.photo_back : '', 'pickup')}
+                                        ${renderPhotoField('photo_left', 'Left Side', '', pickupReport ? pickupReport.photo_left : '', 'pickup')}
+                                        ${renderPhotoField('photo_right', 'Right Side', '', pickupReport ? pickupReport.photo_right : '', 'pickup')}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Alloys & Rims</p>
+                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                        ${renderPhotoField('photo_rim1', 'Front Left', '', pickupReport ? pickupReport.photo_rim1 : '', 'pickup')}
+                                        ${renderPhotoField('photo_rim2', 'Front Right', '', pickupReport ? pickupReport.photo_rim2 : '', 'pickup')}
+                                        ${renderPhotoField('photo_rim3', 'Rear Left', '', pickupReport ? pickupReport.photo_rim3 : '', 'pickup')}
+                                        ${renderPhotoField('photo_rim4', 'Rear Right', '', pickupReport ? pickupReport.photo_rim4 : '', 'pickup')}
+                                    </div>
+                                </div>
+                                <div class="pt-6 border-t border-gray-200">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1 italic">Additional Photos (up to 4)</p>
+                                    <div class="grid grid-cols-4 gap-4 mb-4" id="misc-pickup-preview">
+                                        ${prepareMiscPhotos(pickupReport)}
+                                    </div>
+                                    <label class="block">
+                                        <span class="sr-only">Upload images</span>
+                                        <input type="file" name="misc_photos[]" multiple accept="image/*" onchange="previewMiscPhotos(this, 'pickup')" class="block w-full text-[10px] text-gray-400 file:mr-4 file:py-2 file:px-6 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-gray-900 file:text-white hover:file:bg-black transition-all cursor-pointer">
+                                    </label>
+                                </div>
+                                <button type="submit" class="w-full py-4 bg-gray-900 text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-gray-200 hover:scale-[1.02] transition-all">Update Pickup Status</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="section-return" class="hidden space-y-6">
+                        <form onsubmit="submitConditionReport(event, 'return', ${booking.id})">
+                            <div class="bg-gray-50 rounded-3xl p-6 space-y-8 border border-gray-100">
+                                <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Mileage at Return</label>
+                                     <input type="number" name="mileage" value="${returnReport ? returnReport.mileage : ''}" required class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none" placeholder="00,000">
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Vehicle Photos</p>
+                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                        ${renderPhotoField('photo_front', 'Front View', '', returnReport ? returnReport.photo_front : '', 'return')}
+                                        ${renderPhotoField('photo_back', 'Rear View', '', returnReport ? returnReport.photo_back : '', 'return')}
+                                        ${renderPhotoField('photo_left', 'Left Side', '', returnReport ? returnReport.photo_left : '', 'return')}
+                                        ${renderPhotoField('photo_right', 'Right Side', '', returnReport ? returnReport.photo_right : '', 'return')}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Alloys & Rims</p>
+                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                        ${renderPhotoField('photo_rim1', 'Front Left', '', returnReport ? returnReport.photo_rim1 : '', 'return')}
+                                        ${renderPhotoField('photo_rim2', 'Front Right', '', returnReport ? returnReport.photo_rim2 : '', 'return')}
+                                        ${renderPhotoField('photo_rim3', 'Rear Left', '', returnReport ? returnReport.photo_rim3 : '', 'return')}
+                                        ${renderPhotoField('photo_rim4', 'Rear Right', '', returnReport ? returnReport.photo_rim4 : '', 'return')}
+                                    </div>
+                                </div>
+                                <div class="pt-6 border-t border-gray-200">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1 italic">Additional Photos (up to 4)</p>
+                                    <div class="grid grid-cols-4 gap-4 mb-4" id="misc-return-preview">
+                                        ${prepareMiscPhotos(returnReport)}
+                                    </div>
+                                    <label class="block">
+                                        <span class="sr-only">Upload images</span>
+                                        <input type="file" name="misc_photos[]" multiple accept="image/*" onchange="previewMiscPhotos(this, 'return')" class="block w-full text-[10px] text-gray-400 file:mr-4 file:py-2 file:px-6 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-gray-900 file:text-white hover:file:bg-black transition-all cursor-pointer">
+                                    </label>
+                                </div>
+                                <button type="submit" class="w-full py-4 bg-blue-600 text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 hover:scale-[1.02] transition-all">Finalize Return Condition</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="tab-content-contract" class="tab-pane hidden space-y-6">
+                    <div class="bg-gray-50 rounded-3xl p-8 border border-gray-100">
+                        ${contract ? `
+                            <div class="flex items-center justify-between mb-8 pb-8 border-b border-gray-200">
+                                <div class="flex items-center gap-5">
+                                    <div class="w-16 h-16 bg-white rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center">
+                                        <svg class="w-8 h-8 ${contract.contract_status === 'signed' ? 'text-green-500' : 'text-amber-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2.5" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-base font-black text-gray-900 uppercase tracking-tighter">Agreement</h4>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="w-2.5 h-2.5 rounded-full ${contract.contract_status === 'signed' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}"></span>
+                                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                Status: <span class="${contract.contract_status === 'signed' ? 'text-green-600' : 'text-amber-600'}">${contract.contract_status.toUpperCase()}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button onclick="viewContractPDF(${booking.id})" class="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-900 rounded-2xl hover:bg-gray-50 transition-all text-xs font-black uppercase tracking-widest shadow-sm group">
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2.5"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2.5"/></svg>
+                                        View Agreement
+                                    </button>
+                                    ${contract.contract_status === 'signed' ? `
+                                        <a href="/api/download-contract.php?booking_id=${booking.id}" target="_blank" class="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all text-xs font-black uppercase tracking-widest shadow-2xl shadow-gray-200">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0 0l-4-4m4 4l4-4" stroke-width="2.5" /></svg>
+                                            Export PDF
+                                        </a>
+                                    ` : `
+                                        <div class="px-5 py-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-200 text-[10px] font-black uppercase tracking-widest">Awaiting Signature</div>
+                                    `}
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                    <div>
+                                        <p class="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Execution Detail</p>
+                                        <p class="text-xs font-bold text-gray-900">${contract.contract_status === 'signed' ? 'Signed successfully' : 'Invitation sent to client'}</p>
+                                    </div>
+                                </div>
+
+                                ${contract.contract_status !== 'signed' ? `
+                                <div class="p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
+                                    <p class="text-xs text-blue-900 font-black uppercase tracking-[0.1em] mb-3">Quick Link</p>
+                                    <div class="flex items-center gap-3">
+                                        <input type="text" value="${window.location.origin}/templates/contract-sign.php?booking_id=${booking.id}&token=${contract.signing_token}" readonly 
+                                               class="flex-1 bg-white border border-blue-100 rounded-xl px-4 py-3 text-[10px] text-gray-500 font-mono shadow-sm">
+                                        <button onclick="copyContractLink(this)" class="p-3.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-all shadow-xl shadow-blue-200">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" stroke-width="2.5" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        ` : `
+                            <div class="text-center py-12">
+                                <div class="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                    <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2" /></svg>
+                                </div>
+                                <h4 class="text-lg font-black text-gray-900 uppercase tracking-tighter mb-2">No Active Contract</h4>
+                                <p class="text-xs text-gray-400 mb-10 max-w-[280px] mx-auto font-bold leading-relaxed">This booking does not have an electronic agreement. you can send one manually below.</p>
+                                
+                                ${available_templates && available_templates.length > 0 ? `
+                                    <div class="max-w-xs mx-auto space-y-5">
+                                        <div class="text-left bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Template Selection</label>
+                                            <select id="selected-template-id" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none">
+                                                ${available_templates.map(tmpl => `<option value="${tmpl.id}">${tmpl.name}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <button onclick="generateManualContract(${booking.id})" id="send-contract-btn" class="w-full py-4 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-gray-200 flex items-center justify-center gap-3">
+                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                             Send Invitation
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 font-bold text-amber-700 text-xs italic">No published templates found.</div>
+                                `}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+
+            // Initialize custom selects for dynamically injected content
+            if (window.initCustomSelects) {
+                setTimeout(() => window.initCustomSelects(), 0);
+            }
+        }
+
+        function switchModalTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('animate-fade-in-up');
+            });
+
+            const target = document.getElementById('tab-content-' + tabId);
+            if (!target) return;
+            target.classList.remove('hidden');
+            target.classList.add('animate-fade-in-up');
+
+            document.querySelectorAll('[id^="tab-btn-"]').forEach(btn => {
+                btn.classList.add('text-[#4b5058]', 'hover:text-black');
+                btn.classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+            });
+
+            const activeBtn = document.getElementById('tab-btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-[#4b5058]', 'hover:text-black');
+                activeBtn.classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+            }
+        }
+
+        function copyContractLink(btn) {
+            const input = btn.previousElementSibling;
+            if (!input) return;
+            input.select();
+            document.execCommand('copy');
+
+            const originalSvg = btn.innerHTML;
+            btn.innerHTML = '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3" /></svg>';
+            btn.classList.remove('bg-blue-600');
+            btn.classList.add('bg-green-500');
+
+            setTimeout(() => {
+                btn.innerHTML = originalSvg;
+                btn.classList.remove('bg-green-500');
+                btn.classList.add('bg-blue-600');
+            }, 2000);
+        }
+
+        function closeBookingModal() {
+            const modal = document.getElementById('bookingModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function generateManualContract(bookingId) {
+            const templateIdEl = document.getElementById('selected-template-id');
+            const btn = document.getElementById('send-contract-btn');
+            if (!templateIdEl || !btn) return;
+
+            const templateId = templateIdEl.value;
+            if (!templateId) {
+                showNotification('Please select a template', 'error');
+                return;
+            }
+
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Sending...';
+
+            try {
+                const response = await fetch('/dashboard/generate-manual-contract.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ booking_id: bookingId, template_id: templateId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    openBookingModal(bookingId, 'contract');
+                } else {
+                    showNotification(data.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            } catch (error) {
+                showNotification('Failed to generate contract', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        }
+
+        function updateBookingStatus(bookingId, status) {
+            showConfirmation(
+                'Update Booking Status',
+                'Are you sure you want to update this booking status?',
+                () => {
+                    fetch('/dashboard/update-booking-status.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ booking_id: bookingId, status: status })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showNotification('Booking status updated successfully', 'success');
+                                closeBookingModal();
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                showNotification('Error: ' + data.message, 'error');
+                            }
+                        })
+                        .catch(() => {
+                            showNotification('Error updating booking status', 'error');
+                        });
+                },
+                'Update Status',
+                'bg-blue-600 hover:bg-blue-700'
+            );
+        }
+
+        function deleteSingleBooking(bookingId) {
+            showConfirmation(
+                'Delete Booking',
+                'Are you sure you want to move this booking to deleted? You can restore it later from the Deleted view.',
+                () => {
+                    fetch('/dashboard/delete-booking.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ booking_ids: [bookingId] })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showNotification('Booking moved to deleted');
+                                closeBookingModal();
+                                setTimeout(() => window.location.reload(), 1000);
+                            } else {
+                                showNotification(data.message || 'Error deleting booking', 'error');
+                            }
+                        })
+                        .catch(() => {
+                            showNotification('An error occurred while deleting the booking', 'error');
+                        });
+                },
+                'Delete Booking',
+                'bg-red-600 hover:bg-red-700'
+            );
+        }
+
+        function restoreSingleBooking(bookingId) {
+            showConfirmation(
+                'Restore Booking',
+                'Are you sure you want to restore this booking to the active list?',
+                () => {
+                    fetch('/dashboard/restore-booking.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ booking_ids: [bookingId] })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showNotification('Booking restored successfully');
+                                closeBookingModal();
+                                setTimeout(() => window.location.reload(), 1000);
+                            } else {
+                                showNotification(data.message || 'Error restoring booking', 'error');
+                            }
+                        })
+                        .catch(() => {
+                            showNotification('An error occurred while restoring the booking', 'error');
+                        });
+                },
+                'Restore Booking',
+                'bg-blue-600 hover:bg-blue-700'
+            );
+        }
+
+        const bookingModalEl = document.getElementById('bookingModal');
+        if (bookingModalEl) {
+            bookingModalEl.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeBookingModal();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeBookingModal();
+            }
+        });
+
+        function switchConditionTab(type) {
+            const pickupBtn = document.getElementById('tab-pickup-btn');
+            const returnBtn = document.getElementById('tab-return-btn');
+            const pickupSec = document.getElementById('section-pickup');
+            const returnSec = document.getElementById('section-return');
+
+            const activeClass = 'bg-white shadow-sm text-blue-600';
+            const inactiveClass = 'text-[#4b5058] hover:text-black';
+
+            pickupSec?.classList.remove('animate-fade-in-up');
+            returnSec?.classList.remove('animate-fade-in-up');
+
+            if (type === 'pickup') {
+                pickupBtn && (pickupBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${activeClass} uppercase`);
+                returnBtn && (returnBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${inactiveClass} uppercase`);
+                pickupSec?.classList.remove('hidden');
+                returnSec?.classList.add('hidden');
+                void pickupSec?.offsetWidth;
+                pickupSec?.classList.add('animate-fade-in-up');
+            } else {
+                returnBtn && (returnBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${activeClass} uppercase`);
+                pickupBtn && (pickupBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${inactiveClass} uppercase`);
+                returnSec?.classList.remove('hidden');
+                pickupSec?.classList.add('hidden');
+                void returnSec?.offsetWidth;
+                returnSec?.classList.add('animate-fade-in-up');
+            }
+        }
+
+        function previewConditionPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                const container = input.parentElement;
+
+                reader.onload = function (e) {
+                    let img = container.querySelector('img');
+                    if (!img) {
+                        const placeholder = container.querySelector('.text-center');
+                        placeholder && placeholder.classList.add('hidden');
+
+                        img = document.createElement('img');
+                        img.className = 'w-full h-full object-cover';
+                        container.appendChild(img);
+                    }
+                    img.src = e.target.result;
+                    const wrapper = container.closest('.condition-photo-wrapper');
+                    if (wrapper) wrapper.dataset.hasPhoto = 'true';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function previewMiscPhotos(input, type) {
+            const container = document.getElementById(`misc-${type}-preview`);
+            if (!container) return;
+
+            const files = Array.from(input.files || []).slice(0, 4);
+            container.innerHTML = '';
+
+            for (let i = 0; i < 4; i++) {
+                const div = document.createElement('div');
+                div.className = 'aspect-square rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden';
+
+                if (files[i]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        div.className = 'aspect-square rounded-xl bg-gray-100 overflow-hidden shadow-sm border border-gray-100';
+                        div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                    };
+                    reader.readAsDataURL(files[i]);
+                    container.appendChild(div);
+                } else {
+                    div.innerHTML = `<svg class="w-5 h-5 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2.5" stroke-linecap="round"></path></svg>`;
+                    container.appendChild(div);
+                }
+            }
+        }
+
+        function showValidationError(message) {
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4';
+            overlay.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden transform transition-all">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Upload Required</h3>
+                <p class="text-gray-600 text-sm mb-6">${message}</p>
+                <button onclick="this.closest('.fixed').remove()" class="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all">Got it</button>
+            </div>
+        </div>
+    `;
+            document.body.appendChild(overlay);
+        }
+
+        function submitConditionReport(event, type, bookingId) {
+            event.preventDefault();
+            const form = event.target;
+
+            if (type === 'pickup') {
+                const photoFields = ['photo_front', 'photo_back', 'photo_left', 'photo_right', 'photo_rim1', 'photo_rim2', 'photo_rim3', 'photo_rim4'];
+                const missing = [];
+                photoFields.forEach(field => {
+                    const wrapper = form.querySelector(`.condition-photo-wrapper[data-id="${field}"]`);
+                    const input = form.querySelector(`input[name="${field}"]`);
+                    const hasExisting = wrapper && wrapper.dataset.hasPhoto === 'true';
+                    const hasNew = input && input.files && input.files.length > 0;
+
+                    if (!hasExisting && !hasNew) {
+                        missing.push(field.replace('photo_', '').replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()));
+                    }
+                });
+
+                if (missing.length > 0) {
+                    showValidationError('Please upload all mandatory photos: ' + missing.join(', ') + '. <br><br>Front, Back, Sides and 4 Rims are required.');
+                    return;
+                }
+            }
+
+            const formData = new FormData(form);
+            formData.append('booking_id', bookingId);
+            formData.append('report_type', type);
+
+            const btn = form.querySelector('button[type="submit"]');
+            const originalText = btn ? btn.innerText : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Saving...';
+            }
+
+            fetch('/dashboard/upload-condition-report.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(async response => {
+                    const text = await response.text();
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Server Error: ' + text);
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        showStatusToast(data.message || 'Report saved successfully');
+                        openBookingModal(bookingId);
+                    } else {
+                        showNotification(data.message || 'Failed to save report', 'error');
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerText = originalText;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Upload failed: ' + error.message, 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = originalText;
+                    }
+                });
+        }
+
+        function showStatusToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] font-bold text-sm tracking-wide transition-all duration-500 opacity-0 -translate-y-4';
+            toast.innerText = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', '-translate-y-4');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-4');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function viewContractPDF(bookingId) {
+            const modal = document.getElementById('contractPreviewModal');
+            const content = document.getElementById('contractPreviewContent');
+            if (!modal || !content) return;
+
+            modal.classList.remove('hidden');
+            content.innerHTML = `
+        <div class="w-full h-full min-h-[600px] flex flex-col">
+            <iframe src="/dashboard/preview-contract.php?booking_id=${bookingId}" class="w-full flex-1 border-0 rounded-xl" style="height: 60vh;"></iframe>
+        </div>
+    `;
+        }
+
+        function closeContractPreviewModal() {
+            const modal = document.getElementById('contractPreviewModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        if (typeof window !== 'undefined') {
+            const bookingModalGlobals = {
+                openBookingModal,
+                switchModalTab,
+                closeBookingModal,
+                copyContractLink,
+                generateManualContract,
+                updateSecurityDeposit,
+                updateBookingStatus,
+                deleteSingleBooking,
+                restoreSingleBooking,
+                switchConditionTab,
+                previewConditionPhoto,
+                previewMiscPhotos,
+                submitConditionReport,
+                viewContractPDF,
+                closeContractPreviewModal
+            };
+
+            Object.entries(bookingModalGlobals).forEach(([key, fn]) => {
+                if (typeof fn === 'function') {
+                    window[key] = fn;
+                }
+            });
+        }
+
     </script>
-    
-    <?php include __DIR__ . '/../includes/confirmation-modal.php'; ?>
 
     <script>
             // Pricing Packages Vanilla Array Logistics

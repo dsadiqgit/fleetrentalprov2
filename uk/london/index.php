@@ -17,7 +17,7 @@
 
     <!-- Hero Section -->
     <div class="bg-gradient-to-br from-blue-50 to-white py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h1 class="text-5xl font-bold text-gray-900 mb-6">Car Rental Software in London</h1>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">Streamline your London car rental business with our comprehensive management platform. Trusted by rental companies across the UK.</p>
@@ -27,7 +27,7 @@
 
     <!-- Features Section -->
     <div class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-4xl font-bold text-gray-900 mb-4">Why London Rental Companies Choose Us</h2>
                 <p class="text-xl text-gray-600">Everything you need to manage your fleet efficiently</p>
@@ -69,7 +69,7 @@
 
     <!-- CTA Section -->
     <div class="py-20 bg-gradient-to-br from-blue-600 to-blue-700">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-4xl font-bold text-white mb-6">Ready to Transform Your London Rental Business?</h2>
             <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">Join hundreds of rental companies using our platform to streamline operations and grow revenue.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
@@ -88,7 +88,7 @@
 
     <!-- Local Info Section -->
     <div class="py-20 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-12">
                 <div>
                     <h2 class="text-3xl font-bold text-gray-900 mb-6">Serving London's Car Rental Industry</h2>

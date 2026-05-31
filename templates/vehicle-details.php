@@ -53,7 +53,7 @@ $similar_vehicles = $stmt->fetchAll();
 
     <!-- Back Button -->
     <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <a href="/templates/fleet.php" class="inline-flex items-center text-blue-600 hover:text-blue-700">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -65,7 +65,7 @@ $similar_vehicles = $stmt->fetchAll();
 
     <!-- Vehicle Details -->
     <section class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-2 gap-12">
                 <!-- Vehicle Image -->
                 <div>
@@ -221,7 +221,7 @@ $similar_vehicles = $stmt->fetchAll();
     <!-- Similar Vehicles -->
     <?php if (!empty($similar_vehicles)): ?>
     <section class="py-12 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-2xl font-bold text-gray-900 mb-8">Similar Vehicles</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <?php foreach ($similar_vehicles as $similar): ?>
