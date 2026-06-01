@@ -418,15 +418,45 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $selected_schedule_date)) {
 $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 day'));
 $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 day'));
 
-$timelineStartHour = 9;
-$timelineEndHour = 17;
+$schedule_view = $_GET['schedule_view'] ?? 'day';
+if (!in_array($schedule_view, ['day', 'week', 'month'])) {
+    $schedule_view = 'day';
+}
+
+$timelineStartHour = 8;
+$timelineEndHour = 18;
 $timelineStartMinutes = $timelineStartHour * 60;
 $timelineEndMinutes = $timelineEndHour * 60;
 $totalTimelineMinutes = max(60, $timelineEndMinutes - $timelineStartMinutes);
 $hourColumns = max(1, $timelineEndHour - $timelineStartHour);
 
+if ($schedule_view === 'week') {
+    $start_date_ts = strtotime($selected_schedule_date);
+    $monday_ts = strtotime('monday this week', $start_date_ts);
+    $query_start_date = date('Y-m-d', $monday_ts);
+    $query_end_date = date('Y-m-d', strtotime('+6 days', $monday_ts));
+    
+    $week_days = [];
+    for ($d = 0; $d < 7; $d++) {
+        $week_days[] = date('Y-m-d', strtotime("+$d days", $monday_ts));
+    }
+} elseif ($schedule_view === 'month') {
+    $month_start_date = date('Y-m-01', strtotime($selected_schedule_date));
+    $days_in_month = date('t', strtotime($selected_schedule_date));
+    $query_start_date = $month_start_date;
+    $query_end_date = date('Y-m-' . $days_in_month, strtotime($selected_schedule_date));
+    
+    $month_days = [];
+    for ($d = 0; $d < $days_in_month; $d++) {
+        $month_days[] = date('Y-m-d', strtotime("+$d days", strtotime($month_start_date)));
+    }
+} else {
+    $query_start_date = $selected_schedule_date;
+    $query_end_date = $selected_schedule_date;
+}
+
 $assignmentStatusColors = [
-    'pending' => 'bg-amber-100 text-amber-900 border-amber-200',
+    'pending' => 'bg-blue-100 text-blue-900 border-blue-200',
     'confirmed' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
     'active' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
     'completed' => 'bg-gray-100 text-gray-700 border-gray-200',
@@ -436,7 +466,7 @@ $assignmentStmt = $pdo->prepare("SELECT b.*, v.name AS vehicle_name, v.brand, v.
     FROM bookings b
     LEFT JOIN vehicles v ON b.vehicle_id = v.id
     WHERE b.tenant_id = ? AND b.status != 'cancelled' AND b.pickup_date <= ? AND b.return_date >= ?");
-$assignmentStmt->execute([$_SESSION['tenant_id'], $selected_schedule_date, $selected_schedule_date]);
+$assignmentStmt->execute([$_SESSION['tenant_id'], $query_end_date, $query_start_date]);
 $vehicleAssignments = $assignmentStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $assignmentsByVehicle = [];
@@ -646,7 +676,7 @@ endif; ?>
                             Filters
                         </button>
                         <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2">
-                            <button onclick="window.location='/dashboard/vehicles.php?schedule_date=<?= $prevScheduleDate?>'" class="p-1 text-gray-500 hover:text-gray-900">
+                            <button onclick="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= $prevScheduleDate?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="p-1 text-gray-500 hover:text-gray-900">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
@@ -657,17 +687,20 @@ endif; ?>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </button>
-                            <input type="date" id="scheduleDatePicker" class="hidden" value="<?= htmlspecialchars($selected_schedule_date)?>" onchange="window.location='/dashboard/vehicles.php?schedule_date='+this.value">
-                            <button onclick="window.location='/dashboard/vehicles.php?schedule_date=<?= $nextScheduleDate?>'" class="p-1 text-gray-500 hover:text-gray-900">
+                            <input type="date" id="scheduleDatePicker" class="hidden" value="<?= htmlspecialchars($selected_schedule_date)?>" onchange="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date='+this.value+'&vehicle_search=<?= urlencode($vehicle_search) ?>'">
+                            <button onclick="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= $nextScheduleDate?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="p-1 text-gray-500 hover:text-gray-900">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </button>
                         </div>
                         <div class="flex items-center gap-2 border border-gray-200 rounded-lg p-1 bg-white text-sm">
-                            <button class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 font-medium">Day</button>
-                            <button class="px-3 py-1 text-gray-500 hover:text-gray-900">Week</button>
-                            <button class="px-3 py-1 text-gray-500 hover:text-gray-900">Month</button>
+                            <a href="/dashboard/vehicles.php?schedule_view=day&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
+                               class="px-3 py-1 rounded-md <?= $schedule_view === 'day' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Day</a>
+                            <a href="/dashboard/vehicles.php?schedule_view=week&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
+                               class="px-3 py-1 rounded-md <?= $schedule_view === 'week' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Week</a>
+                            <a href="/dashboard/vehicles.php?schedule_view=month&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
+                               class="px-3 py-1 rounded-md <?= $schedule_view === 'month' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Month</a>
                         </div>
                         <button class="px-4 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-500">Add Assignment</button>
                     </div>
@@ -677,11 +710,25 @@ endif; ?>
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div class="flex border-b border-gray-100 bg-gray-50 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         <div class="w-60">Vehicles (<?= $filteredVehicleCount?>)</div>
+                        <?php if ($schedule_view === 'week'): ?>
+                        <div class="flex-1 grid grid-cols-7 gap-0 text-center">
+                            <?php foreach ($week_days as $day): ?>
+                            <div><?= date('D d/m', strtotime($day)) ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php elseif ($schedule_view === 'month'): ?>
+                        <div class="flex-1 grid grid-cols-<?= $days_in_month ?> gap-0 text-center text-[10px]">
+                            <?php foreach ($month_days as $day): ?>
+                            <div><?= date('j', strtotime($day)) ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
                         <div class="flex-1 grid grid-cols-<?= $hourColumns?> gap-0 text-center">
                             <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
                             <div><?= sprintf('%02d:00', $hour) ?></div>
                             <?php endfor; ?>
                         </div>
+                        <?php endif; ?>
                     </div>
                     <div class="divide-y divide-gray-100">
                         <?php if (empty($filteredVehicles)): ?>
@@ -738,29 +785,89 @@ endif; ?>
                                 </button>
                             </div>
                             <div class="flex-1 relative border-l border-gray-100">
+                                <?php if ($schedule_view === 'week'): ?>
+                                <div class="grid grid-cols-7 text-xs text-gray-300">
+                                    <?php for ($d = 0; $d < 7; $d++): ?>
+                                    <div class="border-l border-gray-100 min-h-[80px]"></div>
+                                    <?php endfor; ?>
+                                </div>
+                                <?php elseif ($schedule_view === 'month'): ?>
+                                <div class="grid grid-cols-<?= $days_in_month ?> text-xs text-gray-300">
+                                    <?php for ($d = 0; $d < $days_in_month; $d++): ?>
+                                    <div class="border-l border-gray-100 min-h-[80px]"></div>
+                                    <?php endfor; ?>
+                                </div>
+                                <?php else: ?>
                                 <div class="grid grid-cols-<?= $hourColumns?> text-xs text-gray-300">
                                     <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
                                     <div class="border-l border-gray-100 min-h-[80px]"></div>
                                     <?php endfor; ?>
                                 </div>
+                                <?php endif; ?>
+
                                 <?php foreach ($vehicleBookings as $booking): 
-                                    $startMinutes = minutes_from_time($booking['pickup_time']) ?? $timelineStartMinutes;
-                                    $endMinutes = minutes_from_time($booking['return_time']) ?? $timelineEndMinutes;
-                                    $clampedStart = max($timelineStartMinutes, $startMinutes);
-                                    $clampedEnd = min($timelineEndMinutes, $endMinutes);
-                                    $offsetPercent = (($clampedStart - $timelineStartMinutes) / $totalTimelineMinutes) * 100;
-                                    $widthPercent = (($clampedEnd - $clampedStart) / $totalTimelineMinutes) * 100;
                                     $statusClass = $assignmentStatusColors[$booking['status']] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+                                    
+                                    if ($schedule_view === 'day') {
+                                        // Pickup date is before shown date -> start at 8:00 AM
+                                        if ($booking['pickup_date'] < $selected_schedule_date) {
+                                            $clampedStart = $timelineStartMinutes;
+                                        } else {
+                                            $clampedStart = max($timelineStartMinutes, minutes_from_time($booking['pickup_time']) ?? $timelineStartMinutes);
+                                        }
+
+                                        // Return date is after shown date -> end at 6:00 PM
+                                        if ($booking['return_date'] > $selected_schedule_date) {
+                                            $clampedEnd = $timelineEndMinutes;
+                                        } else {
+                                            $clampedEnd = min($timelineEndMinutes, minutes_from_time($booking['return_time']) ?? $timelineEndMinutes);
+                                        }
+
+                                        $offsetPercent = (($clampedStart - $timelineStartMinutes) / $totalTimelineMinutes) * 100;
+                                        $widthPercent = (($clampedEnd - $clampedStart) / $totalTimelineMinutes) * 100;
+                                    } elseif ($schedule_view === 'week') {
+                                        $booking_start_ts = strtotime($booking['pickup_date'] . ' ' . ($booking['pickup_time'] ?? '00:00'));
+                                        $booking_end_ts = strtotime($booking['return_date'] . ' ' . ($booking['return_time'] ?? '23:59'));
+                                        
+                                        $timeline_start_ts = $monday_ts;
+                                        $timeline_end_ts = strtotime("+7 days", $monday_ts);
+                                        
+                                        $clampedStartTS = max($timeline_start_ts, $booking_start_ts);
+                                        $clampedEndTS = min($timeline_end_ts, $booking_end_ts);
+                                        
+                                        $total_seconds = 7 * 24 * 3600;
+                                        $offsetPercent = (($clampedStartTS - $timeline_start_ts) / $total_seconds) * 100;
+                                        $widthPercent = (($clampedEndTS - $clampedStartTS) / $total_seconds) * 100;
+                                    } elseif ($schedule_view === 'month') {
+                                        $booking_start_ts = strtotime($booking['pickup_date'] . ' ' . ($booking['pickup_time'] ?? '00:00'));
+                                        $booking_end_ts = strtotime($booking['return_date'] . ' ' . ($booking['return_time'] ?? '23:59'));
+                                        
+                                        $timeline_start_ts = strtotime($month_start_date);
+                                        $timeline_end_ts = strtotime("+$days_in_month days", strtotime($month_start_date));
+                                        
+                                        $clampedStartTS = max($timeline_start_ts, $booking_start_ts);
+                                        $clampedEndTS = min($timeline_end_ts, $booking_end_ts);
+                                        
+                                        $total_seconds = $days_in_month * 24 * 3600;
+                                        $offsetPercent = (($clampedStartTS - $timeline_start_ts) / $total_seconds) * 100;
+                                        $widthPercent = (($clampedEndTS - $clampedStartTS) / $total_seconds) * 100;
+                                    }
                                 ?>
-                                <button type="button" onclick="openBookingModal(<?= (int)$booking['id']?>)" class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-left text-xs font-medium shadow-sm <?= $statusClass ?> hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/60" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 10) ?>%; min-width: 120px;">
+                                <button type="button" onclick="openBookingModal(<?= (int)$booking['id']?>)" class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-left text-xs font-medium shadow-sm <?= $statusClass ?> hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/60" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 4) ?>%; min-width: <?= $schedule_view === 'month' ? '30px' : ($schedule_view === 'week' ? '80px' : '120px') ?>;">
+                                    <?php if ($schedule_view !== 'month'): ?>
                                     <div class="flex items-center gap-2">
-                                        <span><?= htmlspecialchars($booking['customer_name'] ?? 'Guest')?> </span>
-                                        <span class="text-[10px] uppercase text-gray-400"><?= htmlspecialchars($booking['status'])?></span>
+                                        <span class="truncate"><?= htmlspecialchars($booking['customer_name'] ?? 'Guest')?> </span>
+                                        <span class="text-[9px] uppercase text-gray-400 truncate"><?= htmlspecialchars($booking['status'])?></span>
                                     </div>
-                                    <p class="text-[11px] text-gray-500">
-                                        <?= date('M d h:ia', strtotime($booking['pickup_date'] . ' ' . ($booking['pickup_time'] ?? '09:00')))?> -
-                                        <?= date('M d h:ia', strtotime($booking['return_date'] . ' ' . ($booking['return_time'] ?? '17:00')))?>
+                                    <p class="text-[10px] text-gray-500 truncate">
+                                        <?= date('M d', strtotime($booking['pickup_date']))?> -
+                                        <?= date('M d', strtotime($booking['return_date']))?>
                                     </p>
+                                    <?php else: ?>
+                                    <div class="text-[9px] text-center font-bold" title="<?= htmlspecialchars($booking['customer_name'] ?? 'Guest') ?> (<?= htmlspecialchars($booking['status']) ?>)">
+                                        <?= strtoupper(substr($booking['customer_name'] ?? 'G', 0, 2)) ?>
+                                    </div>
+                                    <?php endif; ?>
                                 </button>
                                 <?php endforeach; ?>
                             </div>
