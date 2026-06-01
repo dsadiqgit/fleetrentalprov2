@@ -1025,6 +1025,7 @@ endif; ?>
                 const modalContentWrapper = document.getElementById('bookingModalContent');
 
                 modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
 
                 modalContentWrapper.innerHTML = `
         <div class="flex items-center justify-center py-12">
@@ -1522,6 +1523,7 @@ endif; ?>
 
             function closeBookingModal() {
                 document.getElementById('bookingModal').classList.add('hidden');
+                document.body.style.overflow = '';
             }
 
             async function generateManualContract(bookingId) {
@@ -1853,6 +1855,7 @@ endif; ?>
                 const content = document.getElementById('contractPreviewContent');
 
                 modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
                 content.innerHTML = `
         <div class="w-full h-full min-h-[600px] flex flex-col">
             <iframe src="/dashboard/preview-contract.php?booking_id=${bookingId}" class="w-full flex-1 border-0 rounded-xl" style="height: 60vh;"></iframe>
@@ -1862,6 +1865,12 @@ endif; ?>
 
             function closeContractPreviewModal() {
                 document.getElementById('contractPreviewModal').classList.add('hidden');
+                
+                // Only restore body scroll if main bookingModal is not open
+                const bookingModal = document.getElementById('bookingModal');
+                if (!bookingModal || bookingModal.classList.contains('hidden')) {
+                    document.body.style.overflow = '';
+                }
             }
         </script>
 

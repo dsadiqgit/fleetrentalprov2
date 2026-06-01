@@ -156,20 +156,30 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             padding: 10px !important;
         }
 
-        .flatpickr-months {
-            padding: 10px 10px 5px !important;
+        /* Force months headers to show side-by-side on multi-month view */
+        .flatpickr-calendar.showMonths .flatpickr-months {
+            display: flex !important;
+            justify-content: space-around !important;
             background: white !important;
-            display: flex !important; /* Fixed broken hidden months */
+            padding: 15px 20px 5px !important;
+            border-bottom: 1px solid #f3f4f6 !important;
+        }
+
+        .flatpickr-calendar.showMonths .flatpickr-months .flatpickr-month {
+            flex: 1 !important;
+            text-align: center !important;
+            display: block !important;
+            height: auto !important;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
 
         .flatpickr-current-month {
             font-size: 16px !important;
             font-weight: 700 !important;
             color: #1f2937 !important;
-        }
-
-        .flatpickr-month {
-            height: auto !important;
+            position: relative !important;
+            display: inline-block !important;
         }
 
         .flatpickr-prev-month,
@@ -646,7 +656,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         </div>
                     </div>
                     <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-sm mt-6">
-                        Continue to Book
+                        Continue Booking
                     </button>
                 </div>
             </div>
@@ -708,12 +718,22 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     </button>
                 </div>
                 
-                <!-- Calendar Container -->
-                <div id="modalCalendar" class="mb-8"></div>
+                <!-- Calendar Container Wrapper -->
+                <div id="calendarWrapper" class="mb-8">
+                    <div id="modalCalendar"></div>
+                </div>
                 
                 <!-- Time Selection -->
                 <div id="timeSelection" class="hidden">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Choose a time</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">Choose a time</h3>
+                        <button type="button" onclick="showCalendarFromTime()" class="md:hidden text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Back to Date
+                        </button>
+                    </div>
                     <div class="grid grid-cols-2 gap-6 mb-6">
                         <div>
                             <div class="flex items-center gap-2 mb-3">
@@ -878,6 +898,10 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
+            // Ensure calendar is visible when opening modal
+            const wrapper = document.getElementById('calendarWrapper');
+            if (wrapper) wrapper.classList.remove('hidden');
+            
             // Initialize calendar if not already done
             if (!calendarInstance) {
                 initializeCalendar();
@@ -891,7 +915,13 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         function closeCalendarModal() {
             const modal = document.getElementById('calendarModal');
             modal.classList.remove('active');
-            document.body.style.overflow = '';
+            
+            // Only restore body scroll if mobile bookingModal is not open
+            const bookingModal = document.getElementById('bookingModal');
+            if (!bookingModal || !bookingModal.classList.contains('active')) {
+                document.body.style.overflow = '';
+            }
+            
             selectedDate = null;
             selectedTime = null;
         }
@@ -909,9 +939,24 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     if (selectedDates.length > 0) {
                         selectedDate = selectedDates[0];
                         document.getElementById('timeSelection').classList.remove('hidden');
+                        
+                        // Hide calendar on mobile when date is selected
+                        if (window.innerWidth < 768) {
+                            const wrapper = document.getElementById('calendarWrapper');
+                            if (wrapper) wrapper.classList.add('hidden');
+                        }
                     }
                 }
             });
+        }
+
+        function showCalendarFromTime() {
+            const wrapper = document.getElementById('calendarWrapper');
+            if (wrapper) wrapper.classList.remove('hidden');
+            document.getElementById('timeSelection').classList.add('hidden');
+            if (calendarInstance) {
+                calendarInstance.redraw();
+            }
         }
 
         function generateTimeSlots() {

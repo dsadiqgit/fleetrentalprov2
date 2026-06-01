@@ -711,19 +711,19 @@ endif; ?>
                     <div class="flex border-b border-gray-100 bg-gray-50 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         <div class="w-60">Vehicles (<?= $filteredVehicleCount?>)</div>
                         <?php if ($schedule_view === 'week'): ?>
-                        <div class="flex-1 grid grid-cols-7 gap-0 text-center">
+                        <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                             <?php foreach ($week_days as $day): ?>
                             <div><?= date('D d/m', strtotime($day)) ?></div>
                             <?php endforeach; ?>
                         </div>
                         <?php elseif ($schedule_view === 'month'): ?>
-                        <div class="flex-1 grid grid-cols-<?= $days_in_month ?> gap-0 text-center text-[10px]">
+                        <div class="flex-1 grid gap-0 text-center text-[10px]" style="grid-template-columns: repeat(<?= $days_in_month ?>, minmax(0, 1fr));">
                             <?php foreach ($month_days as $day): ?>
                             <div><?= date('j', strtotime($day)) ?></div>
                             <?php endforeach; ?>
                         </div>
                         <?php else: ?>
-                        <div class="flex-1 grid grid-cols-<?= $hourColumns?> gap-0 text-center">
+                        <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(<?= $hourColumns?>, minmax(0, 1fr));">
                             <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
                             <div><?= sprintf('%02d:00', $hour) ?></div>
                             <?php endfor; ?>
@@ -786,19 +786,19 @@ endif; ?>
                             </div>
                             <div class="flex-1 relative border-l border-gray-100">
                                 <?php if ($schedule_view === 'week'): ?>
-                                <div class="grid grid-cols-7 text-xs text-gray-300">
+                                <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                                     <?php for ($d = 0; $d < 7; $d++): ?>
                                     <div class="border-l border-gray-100 min-h-[80px]"></div>
                                     <?php endfor; ?>
                                 </div>
                                 <?php elseif ($schedule_view === 'month'): ?>
-                                <div class="grid grid-cols-<?= $days_in_month ?> text-xs text-gray-300">
+                                <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(<?= $days_in_month ?>, minmax(0, 1fr));">
                                     <?php for ($d = 0; $d < $days_in_month; $d++): ?>
                                     <div class="border-l border-gray-100 min-h-[80px]"></div>
                                     <?php endfor; ?>
                                 </div>
                                 <?php else: ?>
-                                <div class="grid grid-cols-<?= $hourColumns?> text-xs text-gray-300">
+                                <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(<?= $hourColumns?>, minmax(0, 1fr));">
                                     <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
                                     <div class="border-l border-gray-100 min-h-[80px]"></div>
                                     <?php endfor; ?>
@@ -2009,6 +2009,7 @@ endif; ?>
             if (!modal || !content) return;
 
             modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
             content.innerHTML = `
                 <div class="flex items-center justify-center py-20">
                     <div class="flex flex-col items-center gap-4">
@@ -2493,6 +2494,7 @@ endif; ?>
         function closeBookingModal() {
             const modal = document.getElementById('bookingModal');
             if (modal) modal.classList.add('hidden');
+            document.body.style.overflow = '';
         }
 
         async function generateManualContract(bookingId) {
@@ -2823,6 +2825,7 @@ endif; ?>
             if (!modal || !content) return;
 
             modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
             content.innerHTML = `
         <div class="w-full h-full min-h-[600px] flex flex-col">
             <iframe src="/dashboard/preview-contract.php?booking_id=${bookingId}" class="w-full flex-1 border-0 rounded-xl" style="height: 60vh;"></iframe>
@@ -2833,6 +2836,12 @@ endif; ?>
         function closeContractPreviewModal() {
             const modal = document.getElementById('contractPreviewModal');
             if (modal) modal.classList.add('hidden');
+            
+            // Only restore body scroll if main bookingModal is not open
+            const bookingModal = document.getElementById('bookingModal');
+            if (!bookingModal || bookingModal.classList.contains('hidden')) {
+                document.body.style.overflow = '';
+            }
         }
 
         if (typeof window !== 'undefined') {

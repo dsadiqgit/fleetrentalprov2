@@ -319,7 +319,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                     </p>
                     <div class="flex flex-wrap gap-4">
                         <button onclick="document.getElementById('fleet')?.scrollIntoView({behavior: 'smooth'})" 
-                            class="bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2 shadow-lg">
+                            class="btn-primary-custom px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2 shadow-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                             </svg>
@@ -384,7 +384,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                         </div>
 
                         <button type="submit" 
-                            class="w-full bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-full font-bold transition-all shadow-lg">
+                            class="w-full btn-primary-custom text-black px-6 py-3 rounded-full font-bold transition-all shadow-lg">
                             Search Vehicle
                         </button>
                     </form>
