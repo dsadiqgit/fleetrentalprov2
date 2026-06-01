@@ -349,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($_POST['action'] === 'add_vehicle') {
                 header('Location: /dashboard/vehicles.php?created_success=1');
             } else {
-                header('Location: /dashboard/vehicles.php?action=edit&id=' . $target_vid . '&success=1&tab=' . $current_tab . '&pricing_tab=' . $current_pricing_tab);
+                header('Location: /dashboard/vehicles.php?updated_success=1');
             }
             exit;
         }
@@ -828,7 +828,15 @@ endif; ?>
                 </div>
             </div>
 
-            <?php if (isset($_GET['created_success']) && $_GET['created_success'] == 1): ?>
+            <?php 
+            $has_created_success = isset($_GET['created_success']) && $_GET['created_success'] == 1;
+            $has_updated_success = isset($_GET['updated_success']) && $_GET['updated_success'] == 1;
+            if ($has_created_success || $has_updated_success): 
+                $modalTitle = $has_created_success ? 'Created Successfully!' : 'Updated Successfully!';
+                $modalDesc = $has_created_success 
+                    ? 'Your vehicle has been created successfully and is now active in your fleet.' 
+                    : 'Your vehicle has been updated successfully and all changes are now live.';
+            ?>
             <div id="successCreatedModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                 <div class="bg-white rounded-[2rem] max-w-md w-full shadow-2xl overflow-hidden p-8 text-center animate-fade-in-up">
                     <div class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
@@ -836,8 +844,8 @@ endif; ?>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Created Successfully!</h3>
-                    <p class="text-gray-500 font-bold text-sm mb-8 leading-relaxed">Your vehicle has been created successfully and is now active in your fleet.</p>
+                    <h3 class="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tighter"><?= $modalTitle ?></h3>
+                    <p class="text-gray-500 font-bold text-sm mb-8 leading-relaxed"><?= $modalDesc ?></p>
                     <button onclick="closeSuccessCreatedModal()" class="w-full py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-gray-200 transition-all hover:-translate-y-0.5">Got it</button>
                 </div>
             </div>
@@ -845,9 +853,10 @@ endif; ?>
                 function closeSuccessCreatedModal() {
                     const modal = document.getElementById('successCreatedModal');
                     if (modal) modal.remove();
-                    // Quietly remove created_success parameter from URL without page reload
+                    // Quietly remove parameters from URL without page reload
                     const url = new URL(window.location);
                     url.searchParams.delete('created_success');
+                    url.searchParams.delete('updated_success');
                     window.history.replaceState({}, document.title, url);
                 }
             </script>
@@ -957,14 +966,14 @@ endif; ?>
         "Tesla", "Toyota", "Vauxhall", "Volkswagen", "Volvo"
     ];
 ?>
+                                <?php $current_make = field_value('make'); ?>
                                 <label class="block text-sm font-medium <?= $make_error ? 'text-red-600' : 'text-gray-700' ?> mb-2">Make *</label>
                                 <select id="make_select" class="w-full px-4 py-2 border <?= $make_error ? 'border-red-500 focus:ring-red-200 ring-1 ring-red-100' : 'border-gray-300' ?> rounded-lg bg-white select-with-custom focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     <option value="">Select Make</option>
                                     <?php foreach ($popular_makes as $make): ?>
-                                        <option value="<?= htmlspecialchars($make)?>"><?= htmlspecialchars($make)?></option>
-                                    <?php
-    endforeach; ?>
-                                    <option value="Other">Other...</option>
+                                        <option value="<?= htmlspecialchars($make)?>" <?= $current_make === $make ? 'selected' : '' ?>><?= htmlspecialchars($make)?></option>
+                                    <?php endforeach; ?>
+                                    <option value="Other" <?= ($current_make && !in_array($current_make, $popular_makes)) ? 'selected' : '' ?>>Other...</option>
                                 </select>
                                 <?php if ($make_error): ?>
                                     <p class="text-xs text-red-600 mt-2">Please select a Make.</p>
@@ -973,13 +982,13 @@ endif; ?>
                                 <input type="hidden" name="make" id="make_input" value="<?= field_value('make')?>">
                             </div>
                             <div>
+                                <?php $current_model = field_value('model'); ?>
                                 <label class="block text-sm font-medium <?= $model_error ? 'text-red-600' : 'text-gray-700' ?> mb-2">Model *</label>
-                                <select id="model_select" class="w-full px-4 py-2 border <?= $model_error ? 'border-red-500 focus:ring-red-200 ring-1 ring-red-100' : 'border-gray-300' ?> rounded-lg bg-white select-with-custom focus:ring-2 focus:ring-blue-500 focus:border-transparent" <?= $show_edit_form ? '' : 'disabled'?>>
+                                <select id="model_select" class="w-full px-4 py-2 border <?= $model_error ? 'border-red-500 focus:ring-red-200 ring-1 ring-red-100' : 'border-gray-300' ?> rounded-lg bg-white select-with-custom focus:ring-2 focus:ring-blue-500 focus:border-transparent" <?= ($show_edit_form || !empty($current_model)) ? '' : 'disabled'?>>
                                     <option value="">Select Model</option>
-                                    <?php if ($show_edit_form && !empty($edit_vehicle['model'])): ?>
-                                        <option value="<?= htmlspecialchars($edit_vehicle['model'])?>" selected><?= htmlspecialchars($edit_vehicle['model'])?></option>
-                                    <?php
-    endif; ?>
+                                    <?php if (!empty($current_model)): ?>
+                                        <option value="<?= htmlspecialchars($current_model)?>" selected><?= htmlspecialchars($current_model)?></option>
+                                    <?php endif; ?>
                                     <option value="Other">Other...</option>
                                 </select>
                                 <?php if ($model_error): ?>
@@ -1272,7 +1281,7 @@ endif; ?>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Default price per day (GBP)</label>
-                                        <input type="number" step="0.01" name="price_per_day" placeholder="120" value="<?= field_value('price_per_day')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 <?= $priceErrorClass?>">
+                                        <input type="number" step="0.01" name="price_per_day" required placeholder="120" value="<?= field_value('price_per_day')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 <?= $priceErrorClass?>">
                                         <?php if ($price_validation_error): ?>
                                         <p class="text-xs text-red-600 mt-2">Please provide the default price per day before continuing.</p>
                                         <?php endif; ?>
@@ -1417,7 +1426,7 @@ endif; ?>
             // Going forward: validate each intermediate tab
             for (let i = currentIdx; i < targetIdx; i++) {
                 const stepTab = steps[i];
-                const tabEl = document.querySelector(`div[x-show="vehicleTab === '${stepTab}'"]`);
+                const tabEl = document.querySelector(`[x-show*="'${stepTab}'"]`);
                 if (tabEl) {
                     // Custom validation for Make / Model since they use hidden inputs
                     if (stepTab === 'basic') {
@@ -1489,10 +1498,20 @@ endif; ?>
                 }
             }
             
+            // Handle Custom Select wrappers elegantly
+            let highlightEl = target;
+            if (target.tagName.toLowerCase() === 'select') {
+                const wrapper = target.nextSibling;
+                if (wrapper && wrapper.classList && wrapper.classList.contains('cs-wrapper')) {
+                    const trigger = wrapper.querySelector('.cs-trigger');
+                    if (trigger) highlightEl = trigger;
+                }
+            }
+            
             // 2. Add visual validation highlights (1px solid red border around the input/select, label, or wrapper)
-            target.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
-            target.style.borderColor = '#ef4444';
-            target.style.boxShadow = '0 0 0 1px #ef4444';
+            highlightEl.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            highlightEl.style.borderColor = '#ef4444';
+            highlightEl.style.boxShadow = '0 0 0 1px #ef4444';
             
             // Find closest label
             let label = null;
@@ -1543,9 +1562,9 @@ endif; ?>
             
             // Clear the highlight when the user starts typing/editing
             const clearHighlight = () => {
-                target.style.borderColor = '';
-                target.style.boxShadow = '';
-                target.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+                highlightEl.style.borderColor = '';
+                highlightEl.style.boxShadow = '';
+                highlightEl.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
                 if (label) {
                     label.style.border = '';
                     label.style.borderRadius = '';
@@ -1573,8 +1592,8 @@ endif; ?>
             
             // Scroll the target element into view
             setTimeout(() => {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                target.focus();
+                highlightEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                highlightEl.focus();
             }, 100);
         }
         window.handleFormInvalid = handleFormInvalid;
@@ -2907,6 +2926,17 @@ endif; ?>
                             modelCustom.value = initialModel;
                             modelCustom.classList.remove('hidden');
                         }
+                    }
+
+                    // Sync custom select UI for makeSelect
+                    if (typeof window.initCustomSelects === 'function') {
+                        const wrapperNode = makeSelect.nextElementSibling;
+                        if (wrapperNode && wrapperNode.classList.contains('cs-wrapper')) {
+                            wrapperNode.remove();
+                        }
+                        makeSelect.removeAttribute('data-custom-initialized');
+                        makeSelect.style.display = '';
+                        window.initCustomSelects();
                     }
                 }
 
