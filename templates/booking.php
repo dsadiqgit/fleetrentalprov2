@@ -96,7 +96,7 @@ if (!$vehicle) {
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-                                        <input type="tel" name="phone" placeholder="+44 7700 900000" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <input type="tel" name="phone" placeholder="Enter up to 12 digits" required maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Driver License Number *</label>

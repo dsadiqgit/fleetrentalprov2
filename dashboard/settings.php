@@ -903,7 +903,7 @@ endif; ?>
                     <!-- Phone Number -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">Phone number</label>
-                        <input type="tel" name="phone" value="<?= htmlspecialchars($settings['company_phone'] ?? '')?>" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="tel" name="phone" value="<?= htmlspecialchars($settings['company_phone'] ?? '')?>" maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter up to 12 digits">
                     </div>
 
                     <!-- Main Email -->

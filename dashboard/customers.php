@@ -982,9 +982,9 @@ endif; ?>
                 </div>
                 <div>
                     <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input type="text" id="phone" name="phone"
+                    <input type="text" id="phone" name="phone" maxlength="12" pattern="[0-9]{1,12}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                        placeholder="+1 234 567 8900">
+                        placeholder="Enter up to 12 digits">
                 </div>
                 <div>
                     <label for="license" class="block text-sm font-medium text-gray-700 mb-1">Driver's License

@@ -174,43 +174,7 @@ try {
     // Determine initial status and payment status
     $initial_status = ($payment_method === 'card') ? 'pending' : 'confirmed';
     $payment_status = 'unpaid';
-    $stripe_client_secret = null;
-
-    if ($payment_method === 'card' && !empty($stripe_settings['stripe_secret_key'])) {
-        try {
-            // Include Stripe PHP Library (assuming it's available via composer or manual include)
-            // If not available, we'll use a simple CURL request to Stripe API
-            $stripe_sk = $stripe_settings['stripe_secret_key'];
-            
-            $ch = curl_init('https://api.stripe.com/v1/payment_intents');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_USERPWD, $stripe_sk . ':');
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-                'amount' => round($total_price * 100), // Amount in cents
-                'currency' => strtolower($stripe_settings['currency'] ?? 'gbp'),
-                'payment_method_types' => ['card'],
-                'metadata' => [
-                    'tenant_id' => $tenant_id,
-                    'vehicle_id' => $booking_data['vehicle_id'],
-                    'customer_email' => $booking_data['customer_email']
-                ],
-                'description' => "Booking for " . $vehicle['brand'] . " " . $vehicle['model']
-            ]));
-            
-            $stripe_res = json_decode(curl_exec($ch), true);
-            curl_close($ch);
-            
-            if (isset($stripe_res['error'])) {
-                error_log("Stripe error: " . $stripe_res['error']['message']);
-                throw new Exception("Stripe initialization failed: " . $stripe_res['error']['message']);
-            }
-            
-            $stripe_client_secret = $stripe_res['client_secret'];
-        } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => 'Stripe error: ' . $e->getMessage()]);
-            exit;
-        }
-    }
+    // Stripe elements no longer used; Stripe Checkout Session URL will be generated after booking is created.
     
     // Insert or Update booking
     if ($booking_id) {
@@ -236,7 +200,7 @@ try {
             $booking_data['price_per_day'],
             $total_price,
             $security_deposit,
-            $stripe_res['id'] ?? null,
+            null,
             $booking_data['notes'] ?? '',
             $booking_id,
             $tenant_id
@@ -268,7 +232,7 @@ try {
             $security_deposit,
             'pending',
             $payment_status,
-            $stripe_res['id'] ?? null,
+            null,
             $booking_data['notes'] ?? ''
         ]);
         
@@ -428,17 +392,89 @@ try {
     }
     // =============================================
     
-    // Clear session data
-    unset($_SESSION['booking_data']);
-    unset($_SESSION['checkout_step']);
-    unset($_SESSION['didit_session_id']);
+    // If card payment selected, create a Stripe Checkout Session
+    $redirect_url = null;
+    if ($payment_method === 'card' && !empty($stripe_settings['stripe_secret_key'])) {
+        try {
+            $stripe_sk = $stripe_settings['stripe_secret_key'];
+            \Stripe\Stripe::setApiKey($stripe_sk);
+            
+            // Build absolute URLs dynamically to support subdirectories and custom local ports flawlessly
+            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+            $base_dir = '';
+            if (strpos($script_name, '/templates/') !== false) {
+                $base_dir = substr($script_name, 0, strpos($script_name, '/templates/'));
+            }
+            $dynamic_base_url = $protocol . "://" . $host . $base_dir;
+            
+            // Define SUCCESS and CANCEL urls
+            $success_url = $dynamic_base_url . '/templates/booking-confirmation.php?id=' . $booking_id . '&redirect_status=succeeded&session_id={CHECKOUT_SESSION_ID}';
+            $cancel_url = $dynamic_base_url . '/templates/checkout.php?vehicle_id=' . $booking_data['vehicle_id'] . '&cancelled=1';
+            
+            // Format pickup and drop-off dates & times nicely for Stripe invoice description
+            $pickup_ts = strtotime($booking_data['pickup_date']);
+            $return_ts = strtotime($booking_data['return_date']);
+            
+            $pickup_f = $pickup_ts ? date('D, M d, Y', $pickup_ts) : $booking_data['pickup_date'];
+            $return_f = $return_ts ? date('D, M d, Y', $return_ts) : $booking_data['return_date'];
+            
+            $pickup_t_f = date('g:i A', strtotime($booking_data['pickup_time']));
+            $return_t_f = date('g:i A', strtotime($booking_data['return_time']));
+            
+            $item_description = "Pick-up: " . $pickup_f . " at " . $pickup_t_f . " | " .
+                               "Drop-off: " . $return_f . " at " . $return_t_f;
+            
+            // Create Stripe Checkout Session
+            $stripe_session = \Stripe\Checkout\Session::create([
+                'payment_method_types' => ['card'],
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => strtolower($stripe_settings['currency'] ?? 'gbp'),
+                        'product_data' => [
+                            'name' => "Rental Booking: " . $vehicle['brand'] . " " . $vehicle['model'],
+                            'description' => $item_description,
+                        ],
+                        'unit_amount' => round($total_price * 100),
+                    ],
+                    'quantity' => 1,
+                ]],
+                'mode' => 'payment',
+                'success_url' => $success_url,
+                'cancel_url' => $cancel_url,
+                'customer_email' => $booking_data['customer_email'],
+                'metadata' => [
+                    'tenant_id' => $tenant_id,
+                    'booking_id' => $booking_id,
+                ]
+            ]);
+            
+            $redirect_url = $stripe_session->url;
+            
+            // Update the booking with the checkout session ID
+            $update_stmt = $pdo->prepare("UPDATE bookings SET stripe_payment_id = ? WHERE id = ? AND tenant_id = ?");
+            $update_stmt->execute([$stripe_session->id, $booking_id, $tenant_id]);
+            
+        } catch (Exception $stripeEx) {
+            echo json_encode(['success' => false, 'message' => 'Stripe Checkout Session initialization failed: ' . $stripeEx->getMessage()]);
+            exit;
+        }
+    }
+
+    // Only clear session data if NOT redirecting to Stripe (i.e., cash payment)
+    if (!$redirect_url) {
+        unset($_SESSION['booking_data']);
+        unset($_SESSION['checkout_step']);
+        unset($_SESSION['didit_session_id']);
+    }
     
     echo json_encode([
         'success' => true,
         'booking_id' => $booking_id,
         'message' => 'Booking initialized',
         'account_created' => $customerAccountCreated,
-        'client_secret' => $stripe_client_secret,
+        'redirect_url' => $redirect_url,
         'status' => $initial_status
     ]);
     

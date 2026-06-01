@@ -247,7 +247,7 @@ else: ?>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="tel" name="phone" placeholder="Phone number"
+                        <input type="tel" name="phone" placeholder="Phone number" maxlength="12" pattern="[0-9]{1,12}"
                             class="w-full bg-slate-50 border border-slate-100 rounded-lg py-3 px-4 text-slate-900 font-light placeholder-slate-400 outline-none focus:border-slate-900 focus:bg-white transition-all text-sm">
                         <select name="fleet_size" required
                             class="w-full bg-slate-50 border border-slate-100 rounded-lg py-3 px-4 text-slate-900 font-light outline-none focus:border-slate-900 focus:bg-white transition-all text-sm">
@@ -503,8 +503,8 @@ endif; ?>
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                        <input type="tel" name="phone" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <input type="tel" name="phone" required maxlength="12" pattern="[0-9]{1,12}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter up to 12 digits">
                     </div>
                     
                     <div>

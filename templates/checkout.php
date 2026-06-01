@@ -19,10 +19,11 @@ if ($vehicle['images']) {
     $vehicle_image = is_array($decoded) && !empty($decoded) ? $decoded[0] : $vehicle['images'];
 }
 
-$stmt = $pdo->prepare("SELECT require_license_verification FROM tenant_settings WHERE tenant_id = ?");
+$stmt = $pdo->prepare("SELECT require_license_verification, stripe_publishable_key FROM tenant_settings WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
 $settings = $stmt->fetch();
 $require_verification = $settings ? (bool)$settings['require_license_verification'] : false;
+$stripe_pk = $settings['stripe_publishable_key'] ?? '';
 
 // Get blocked dates
 $stmt = $pdo->prepare("SELECT pickup_date, return_date FROM bookings WHERE vehicle_id = ? AND status NOT IN ('cancelled', 'completed')");
@@ -37,6 +38,32 @@ $get_pickup_date = $_GET['pickup_date'] ?? ($booking_data['pickup_date'] ?? '');
 $get_pickup_time = $_GET['pickup_time'] ?? ($booking_data['pickup_time'] ?? '10:00');
 $get_return_date = $_GET['return_date'] ?? ($booking_data['return_date'] ?? '');
 $get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:00');
+$get_pickup_location = $_GET['pickup_location'] ?? ($booking_data['pickup_location'] ?? '');
+$get_return_location = $_GET['return_location'] ?? ($booking_data['return_location'] ?? '');
+
+$pickup_ts = strtotime($get_pickup_date);
+$pickup_date_display = $pickup_ts ? date('D, j M Y', $pickup_ts) : $get_pickup_date;
+
+$return_ts = strtotime($get_return_date);
+$return_date_display = $return_ts ? date('D, j M Y', $return_ts) : $get_return_date;
+
+$pickup_time_display = date('h:i a', strtotime($get_pickup_time));
+$return_time_display = date('h:i a', strtotime($get_return_time));
+
+$back_pickup_param = '';
+if ($pickup_ts) {
+    $back_pickup_param = date('j M', $pickup_ts) . ', ' . date('h:ia', strtotime($get_pickup_time));
+}
+$back_return_param = '';
+if ($return_ts) {
+    $back_return_param = date('j M', $return_ts) . ', ' . date('h:ia', strtotime($get_return_time));
+}
+
+$back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
+            "&pickup=" . urlencode($back_pickup_param) .
+            "&return=" . urlencode($back_return_param) .
+            "&pickup_location=" . urlencode($get_pickup_location) .
+            "&return_location=" . urlencode($get_return_location);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -45,6 +72,7 @@ $get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - <?= htmlspecialchars($tenant['name']) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
 </head>
@@ -112,28 +140,42 @@ $get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Phone *</label>
-                                <input type="tel" name="customer_phone" required class="w-full px-4 py-3 border rounded-lg">
+                                <input type="tel" name="customer_phone" required maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-3 border rounded-lg" placeholder="Enter up to 12 digits">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Licence Number *</label>
                                 <input type="text" name="customer_license" required class="w-full px-4 py-3 border rounded-lg">
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Pickup Date *</label>
-                                <input type="date" id="pickupDate" name="pickup_date" value="<?= htmlspecialchars($get_pickup_date) ?>" required class="w-full px-4 py-3 border rounded-lg">
+                            <!-- Date & Time Display Container (Read-only) -->
+                            <div class="col-span-1 md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-5 mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div class="space-y-3 w-full">
+                                    <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Rental Period Details</h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                                        <div class="border-l-4 border-blue-500 pl-3">
+                                            <span class="block text-xs font-semibold text-gray-400 uppercase">Pick-up</span>
+                                            <span class="block text-sm font-bold text-gray-800"><?= htmlspecialchars($pickup_date_display) ?></span>
+                                            <span class="block text-xs text-gray-500 font-medium"><?= htmlspecialchars($pickup_time_display) ?></span>
+                                        </div>
+                                        <div class="border-l-4 border-blue-500 pl-3">
+                                            <span class="block text-xs font-semibold text-gray-400 uppercase">Drop-off</span>
+                                            <span class="block text-sm font-bold text-gray-800"><?= htmlspecialchars($return_date_display) ?></span>
+                                            <span class="block text-xs text-gray-500 font-medium"><?= htmlspecialchars($return_time_display) ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="<?= htmlspecialchars($back_url) ?>" class="shrink-0 w-full sm:w-auto px-4 py-2.5 text-center text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors flex items-center justify-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Change Dates / Times
+                                </a>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Pickup Time *</label>
-                                <input type="time" name="pickup_time" value="<?= htmlspecialchars($get_pickup_time) ?>" required class="w-full px-4 py-3 border rounded-lg">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Return Date *</label>
-                                <input type="date" id="returnDate" name="return_date" value="<?= htmlspecialchars($get_return_date) ?>" required class="w-full px-4 py-3 border rounded-lg">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Return Time *</label>
-                                <input type="time" name="return_time" value="<?= htmlspecialchars($get_return_time) ?>" required class="w-full px-4 py-3 border rounded-lg">
-                            </div>
+
+                            <!-- Keep fields hidden for step submission -->
+                            <input type="hidden" id="pickupDate" name="pickup_date" value="<?= htmlspecialchars($get_pickup_date) ?>">
+                            <input type="hidden" name="pickup_time" value="<?= htmlspecialchars($get_pickup_time) ?>">
+                            <input type="hidden" id="returnDate" name="return_date" value="<?= htmlspecialchars($get_return_date) ?>">
+                            <input type="hidden" name="return_time" value="<?= htmlspecialchars($get_return_time) ?>">
                         </div>
                         <button id="step1SubmitBtn" type="submit" class="w-full px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
                             <?= $require_verification ? 'Continue to Verification →' : 'Continue to Payment →' ?>
@@ -181,6 +223,16 @@ $get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:
                                     <span class="ml-3 font-medium">Pay at Pickup</span>
                                 </label>
                             </div>
+                        </div>
+
+                        <!-- Stripe Card Element Container -->
+                        <div id="card-element-container" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3 transition-all">
+                            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <p class="text-xs text-blue-800 font-medium">
+                                You will be securely redirected to Stripe to enter your payment details.
+                            </p>
                         </div>
                         <div class="flex gap-4">
                             <button type="button" onclick="goToStep(<?= $require_verification ? 2 : 1 ?>)" class="flex-1 px-6 py-3 border rounded-lg">← Back</button>
@@ -252,39 +304,38 @@ $get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:
         const pricePerDay = <?= $vehicle['price_per_day'] ?>;
         const diditAppId = '3b64939d-1ba7-42df-b602-344cbc78e387';
         
-        // Initialize Availability Calendar
-        const bookedDatesLists = <?= json_encode($booked_dates) ?>;
-        const unavailableDatesStr = "<?= htmlspecialchars($vehicle['unavailable_dates'] ?? '') ?>";
-        const unavailableDatesMap = unavailableDatesStr ? unavailableDatesStr.split(", ") : [];
-        
-        const disableDates = bookedDatesLists.map(b => ({
-            from: b.pickup_date,
-            to: b.return_date
-        })).concat(unavailableDatesMap);
-
-        const returnFlatpickr = flatpickr("#returnDate", {
-            minDate: "today",
-            disable: disableDates,
-            dateFormat: "Y-m-d",
-            defaultDate: "<?= htmlspecialchars($get_return_date) ?>",
-            onChange: function() {
-                calculatePrice();
-            }
-        });
-
-        const pickupFlatpickr = flatpickr("#pickupDate", {
-            minDate: "today",
-            disable: disableDates,
-            dateFormat: "Y-m-d",
-            defaultDate: "<?= htmlspecialchars($get_pickup_date) ?>",
-            onChange: function(selectedDates, dateStr) {
-                returnFlatpickr.set('minDate', dateStr);
-                calculatePrice();
-            }
-        });
-
         // Run initial price calculation
         calculatePrice();
+
+        const stripePk = '<?= htmlspecialchars($stripe_pk) ?>';
+
+        if (!stripePk) {
+            // Hide card option if Stripe is not configured
+            const cardRadio = document.querySelector('input[name="payment_method"][value="card"]');
+            if (cardRadio) {
+                const label = cardRadio.closest('label');
+                if (label) label.classList.add('hidden');
+            }
+            const cashRadio = document.querySelector('input[name="payment_method"][value="cash"]');
+            if (cashRadio) {
+                cashRadio.checked = true;
+            }
+            const container = document.getElementById('card-element-container');
+            if (container) container.classList.add('hidden');
+        }
+
+        const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+        const cardContainer = document.getElementById('card-element-container');
+        
+        paymentMethodRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'card') {
+                    cardContainer.classList.remove('hidden');
+                } else {
+                    cardContainer.classList.add('hidden');
+                }
+            });
+        });
         
         function goToStep(step) {
             document.querySelectorAll('[id^="step"]').forEach(el => {
@@ -544,17 +595,82 @@ $get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:
             }
         };
 
+        // Form validation function
+        function validateCheckoutForm(form) {
+            const errors = [];
+            
+            // Get form values
+            const customerName = form.querySelector('[name="customer_name"]')?.value?.trim();
+            const customerEmail = form.querySelector('[name="customer_email"]')?.value?.trim();
+            const customerPhone = form.querySelector('[name="customer_phone"]')?.value?.trim();
+            const customerLicense = form.querySelector('[name="customer_license"]')?.value?.trim();
+            
+            // Validate name
+            if (!customerName || customerName.length < 2) {
+                errors.push('Please enter a valid full name (at least 2 characters).');
+            }
+            
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!customerEmail || !emailRegex.test(customerEmail)) {
+                errors.push('Please enter a valid email address.');
+            }
+            
+            // Validate phone (numeric only, max 12 digits)
+            const phoneRegex = /^[0-9]{1,12}$/;
+            if (!customerPhone || !phoneRegex.test(customerPhone)) {
+                errors.push('Please enter a valid phone number (up to 12 digits, numbers only).');
+            }
+            
+            // Validate license
+            if (!customerLicense || customerLicense.length < 3) {
+                errors.push('Please enter a valid driver\'s license number (at least 3 characters).');
+            }
+            
+            return errors;
+        }
+
         document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Validate form before submission
+            const form = e.target;
+            const validationErrors = validateCheckoutForm(form);
+            
+            if (validationErrors.length > 0) {
+                alert('Please fix the following errors:\n\n' + validationErrors.join('\n'));
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Redirecting to Stripe...';
+            }
+
             const formData = new FormData(e.target);
-            
-            const res = await fetch('/templates/process-booking.php', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await res.json();
-            if (result.success) {
+            const paymentMethod = formData.get('payment_method');
+
+            try {
+                const res = await fetch('/templates/process-booking.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await res.json();
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to process booking');
+                }
+
+                if (paymentMethod === 'card') {
+                    if (result.redirect_url) {
+                        window.location.href = result.redirect_url;
+                        return; // Wait for redirect
+                    } else {
+                        throw new Error('Failed to initialize card payment session. Please try again.');
+                    }
+                }
+
                 document.getElementById('bookingId').textContent = '#' + result.booking_id;
                 
                 // Show account created notice if a new account was made
@@ -566,6 +682,12 @@ $get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:
                 }
                 
                 goToStep(4);
+            } catch (error) {
+                alert('Error: ' + error.message);
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Complete Booking ✓';
+                }
             }
         });
     </script>

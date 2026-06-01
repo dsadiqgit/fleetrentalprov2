@@ -155,8 +155,12 @@ function field_raw($name, $default = '') {
     if (isset($formPost[$name]) && $formPost[$name] !== '') {
         return $formPost[$name];
     }
-    if ($show_edit_form && isset($edit_vehicle[$name])) {
-        return $edit_vehicle[$name];
+    $db_name = $name;
+    if ($name === 'make') {
+        $db_name = 'brand';
+    }
+    if ($show_edit_form && isset($edit_vehicle[$db_name])) {
+        return $edit_vehicle[$db_name];
     }
     return $default;
 }
