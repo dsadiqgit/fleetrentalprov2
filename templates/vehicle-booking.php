@@ -585,6 +585,10 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         </div>
                         <p class="text-xs text-gray-500 mt-4">* Your total rent amount is calculated dynamically depending on your selected pick-up and drop-off dates.</p>
                     </div>
+                    
+                    <button onclick="continueToCheckout('desktop')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-sm mt-6">
+                        Continue Booking
+                    </button>
                 </div>
             </div>
         </div>
@@ -655,7 +659,43 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             </svg>
                         </div>
                     </div>
-                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-sm mt-6">
+                    
+                    <!-- Mobile Pricing Breakdown -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="font-bold text-gray-900 mb-4 text-base">Pricing Breakdown</h3>
+                        
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Rental Price (<span id="mobile_breakdown_duration">0 days</span>)</span>
+                                <span id="mobile_breakdown_base_total" class="font-semibold text-gray-900"><?= $currency_symbol?>0.00</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span id="mobile_breakdown_base_rate"><?= $currency_symbol?><?= number_format($vehicle['price_per_day'])?>/day</span>
+                            </div>
+                            
+                            <div id="mobile_breakdown_discount_row" class="hidden flex justify-between">
+                                <span id="mobile_breakdown_discount_label" class="text-gray-600">Discount</span>
+                                <span id="mobile_breakdown_discount_total" class="font-semibold text-green-600">-<?= $currency_symbol?>0.00</span>
+                            </div>
+                            
+                            <div id="mobile_breakdown_deposit_row" class="hidden space-y-1">
+                                <div class="flex justify-between">
+                                    <span id="mobile_breakdown_deposit_label" class="text-gray-600">Security Deposit</span>
+                                    <span id="mobile_breakdown_deposit_total" class="font-semibold text-gray-900"><?= $currency_symbol?>0.00</span>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500">
+                                    <span id="mobile_breakdown_deposit_note">Payable</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between pt-3 border-t border-gray-200">
+                                <span class="font-bold text-gray-900">Total Price Due</span>
+                                <span id="mobile_breakdown_total_due" class="font-bold text-gray-900"><?= $currency_symbol?>0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="continueToCheckout('mobile')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-sm mt-6">
                         Continue Booking
                     </button>
                 </div>
@@ -929,7 +969,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         function initializeCalendar() {
             calendarInstance = flatpickr("#modalCalendar", {
                 inline: true,
-                showMonths: 2,
+                showMonths: window.innerWidth < 768 ? 1 : 2,
                 dateFormat: "Y-m-d",
                 minDate: "today",
                 locale: {
@@ -948,6 +988,66 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     }
                 }
             });
+        }
+
+        function continueToCheckout(type) {
+            let pickupLoc = '';
+            let returnLoc = '';
+            let pickupDt = '';
+            let returnDt = '';
+            
+            if (type === 'mobile') {
+                pickupLoc = document.querySelector('select[name="mobile_pickup_location"]')?.value || '';
+                returnLoc = document.querySelector('select[name="mobile_return_location"]')?.value || '';
+                pickupDt = document.getElementById('mobile_pickup_datetime')?.value || '';
+                returnDt = document.getElementById('mobile_return_datetime')?.value || '';
+            } else {
+                pickupLoc = document.querySelector('select[name="pickup_location"]')?.value || '';
+                returnLoc = document.querySelector('select[name="return_location"]')?.value || '';
+                pickupDt = document.getElementById('pickup_datetime')?.value || '';
+                returnDt = document.getElementById('return_datetime')?.value || '';
+            }
+            
+            if (!pickupDt || !returnDt) {
+                alert('Please select both pick-up and drop-off dates.');
+                return;
+            }
+            
+            let pDateStr = '';
+            let pTimeStr = '';
+            let rDateStr = '';
+            let rTimeStr = '';
+            
+            if (pickupDateObj) {
+                const yyyy = pickupDateObj.getFullYear();
+                const mm = String(pickupDateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(pickupDateObj.getDate()).padStart(2, '0');
+                pDateStr = `${yyyy}-${mm}-${dd}`;
+                
+                const hh = String(pickupDateObj.getHours()).padStart(2, '0');
+                const min = String(pickupDateObj.getMinutes()).padStart(2, '0');
+                pTimeStr = `${hh}:${min}`;
+            }
+            if (returnDateObj) {
+                const yyyy = returnDateObj.getFullYear();
+                const mm = String(returnDateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(returnDateObj.getDate()).padStart(2, '0');
+                rDateStr = `${yyyy}-${mm}-${dd}`;
+                
+                const hh = String(returnDateObj.getHours()).padStart(2, '0');
+                const min = String(returnDateObj.getMinutes()).padStart(2, '0');
+                rTimeStr = `${hh}:${min}`;
+            }
+            
+            const url = `/templates/checkout.php?vehicle_id=<?= $vehicle['id'] ?>` +
+                        `&pickup_location=` + encodeURIComponent(pickupLoc) +
+                        `&return_location=` + encodeURIComponent(returnLoc) +
+                        `&pickup_date=` + pDateStr +
+                        `&pickup_time=` + pTimeStr +
+                        `&return_date=` + rDateStr +
+                        `&return_time=` + rTimeStr;
+            
+            window.location.href = url;
         }
 
         function showCalendarFromTime() {
@@ -1102,31 +1202,64 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             
             const currency = priceConfig.currency_symbol;
             
-            // Update UI elements
-            document.getElementById('breakdown_duration').innerText = `${diffDays} day${diffDays > 1 ? 's' : ''}`;
-            document.getElementById('breakdown_base_rate').innerText = `${currency}${priceConfig.price_per_day.toFixed(2)}/day`;
-            document.getElementById('breakdown_base_total').innerText = `${currency}${totalBasePrice.toFixed(2)}`;
+            const setVal = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            };
+            const toggleClass = (id, cls, state) => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle(cls, state);
+            };
+
+            // Update UI elements - Desktop & Mobile
+            setVal('breakdown_duration', `${diffDays} day${diffDays > 1 ? 's' : ''}`);
+            setVal('mobile_breakdown_duration', `${diffDays} day${diffDays > 1 ? 's' : ''}`);
             
-            const discountRow = document.getElementById('breakdown_discount_row');
+            setVal('breakdown_base_rate', `${currency}${priceConfig.price_per_day.toFixed(2)}/day`);
+            setVal('mobile_breakdown_base_rate', `${currency}${priceConfig.price_per_day.toFixed(2)}/day`);
+            
+            setVal('breakdown_base_total', `${currency}${totalBasePrice.toFixed(2)}`);
+            setVal('mobile_breakdown_base_total', `${currency}${totalBasePrice.toFixed(2)}`);
+            
             if (discountAmount > 0 && appliedPackage) {
-                document.getElementById('breakdown_discount_label').innerText = `${appliedPackage.days}+ Day Discount (${appliedPackage.discount}%)`;
-                document.getElementById('breakdown_discount_total').innerText = `-${currency}${discountAmount.toFixed(2)}`;
-                discountRow.classList.remove('hidden');
+                const labelText = `${appliedPackage.days}+ Day Discount (${appliedPackage.discount}%)`;
+                const valText = `-${currency}${discountAmount.toFixed(2)}`;
+                
+                setVal('breakdown_discount_label', labelText);
+                setVal('mobile_breakdown_discount_label', labelText);
+                
+                setVal('breakdown_discount_total', valText);
+                setVal('mobile_breakdown_discount_total', valText);
+                
+                toggleClass('breakdown_discount_row', 'hidden', false);
+                toggleClass('mobile_breakdown_discount_row', 'hidden', false);
             } else {
-                discountRow.classList.add('hidden');
+                toggleClass('breakdown_discount_row', 'hidden', true);
+                toggleClass('mobile_breakdown_discount_row', 'hidden', true);
             }
             
-            const depositRow = document.getElementById('breakdown_deposit_row');
             if (depositAmount > 0) {
-                document.getElementById('breakdown_deposit_label').innerText = `Security Deposit (${priceConfig.deposit_type === 'booking' ? 'Pay now' : 'Pay at collection'})`;
-                document.getElementById('breakdown_deposit_total').innerText = `${currency}${depositAmount.toFixed(2)}`;
-                document.getElementById('breakdown_deposit_note').innerText = depositNote;
-                depositRow.classList.remove('hidden');
+                const labelText = `Security Deposit (${priceConfig.deposit_type === 'booking' ? 'Pay now' : 'Pay at collection'})`;
+                const valText = `${currency}${depositAmount.toFixed(2)}`;
+                
+                setVal('breakdown_deposit_label', labelText);
+                setVal('mobile_breakdown_deposit_label', labelText);
+                
+                setVal('breakdown_deposit_total', valText);
+                setVal('mobile_breakdown_deposit_total', valText);
+                
+                setVal('breakdown_deposit_note', depositNote);
+                setVal('mobile_breakdown_deposit_note', depositNote);
+                
+                toggleClass('breakdown_deposit_row', 'hidden', false);
+                toggleClass('mobile_breakdown_deposit_row', 'hidden', false);
             } else {
-                depositRow.classList.add('hidden');
+                toggleClass('breakdown_deposit_row', 'hidden', true);
+                toggleClass('mobile_breakdown_deposit_row', 'hidden', true);
             }
             
-            document.getElementById('breakdown_total_due').innerText = `${currency}${totalDue.toFixed(2)}`;
+            setVal('breakdown_total_due', `${currency}${totalDue.toFixed(2)}`);
+            setVal('mobile_breakdown_total_due', `${currency}${totalDue.toFixed(2)}`);
             
             // Update main book buttons
             const bookBtns = document.querySelectorAll('button[onclick="openBookingModal()"]');

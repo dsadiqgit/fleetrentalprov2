@@ -32,6 +32,11 @@ $booked_dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Session already started in config.php
 $current_step = $_SESSION['checkout_step'] ?? 1;
 $booking_data = $_SESSION['booking_data'] ?? [];
+
+$get_pickup_date = $_GET['pickup_date'] ?? ($booking_data['pickup_date'] ?? '');
+$get_pickup_time = $_GET['pickup_time'] ?? ($booking_data['pickup_time'] ?? '10:00');
+$get_return_date = $_GET['return_date'] ?? ($booking_data['return_date'] ?? '');
+$get_return_time = $_GET['return_time'] ?? ($booking_data['return_time'] ?? '10:00');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -115,19 +120,19 @@ $booking_data = $_SESSION['booking_data'] ?? [];
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Pickup Date *</label>
-                                <input type="date" id="pickupDate" name="pickup_date" required class="w-full px-4 py-3 border rounded-lg">
+                                <input type="date" id="pickupDate" name="pickup_date" value="<?= htmlspecialchars($get_pickup_date) ?>" required class="w-full px-4 py-3 border rounded-lg">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Pickup Time *</label>
-                                <input type="time" name="pickup_time" value="10:00" required class="w-full px-4 py-3 border rounded-lg">
+                                <input type="time" name="pickup_time" value="<?= htmlspecialchars($get_pickup_time) ?>" required class="w-full px-4 py-3 border rounded-lg">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Return Date *</label>
-                                <input type="date" id="returnDate" name="return_date" required class="w-full px-4 py-3 border rounded-lg">
+                                <input type="date" id="returnDate" name="return_date" value="<?= htmlspecialchars($get_return_date) ?>" required class="w-full px-4 py-3 border rounded-lg">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Return Time *</label>
-                                <input type="time" name="return_time" value="10:00" required class="w-full px-4 py-3 border rounded-lg">
+                                <input type="time" name="return_time" value="<?= htmlspecialchars($get_return_time) ?>" required class="w-full px-4 py-3 border rounded-lg">
                             </div>
                         </div>
                         <button id="step1SubmitBtn" type="submit" class="w-full px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
@@ -261,6 +266,7 @@ $booking_data = $_SESSION['booking_data'] ?? [];
             minDate: "today",
             disable: disableDates,
             dateFormat: "Y-m-d",
+            defaultDate: "<?= htmlspecialchars($get_return_date) ?>",
             onChange: function() {
                 calculatePrice();
             }
@@ -270,11 +276,15 @@ $booking_data = $_SESSION['booking_data'] ?? [];
             minDate: "today",
             disable: disableDates,
             dateFormat: "Y-m-d",
+            defaultDate: "<?= htmlspecialchars($get_pickup_date) ?>",
             onChange: function(selectedDates, dateStr) {
                 returnFlatpickr.set('minDate', dateStr);
                 calculatePrice();
             }
         });
+
+        // Run initial price calculation
+        calculatePrice();
         
         function goToStep(step) {
             document.querySelectorAll('[id^="step"]').forEach(el => {
