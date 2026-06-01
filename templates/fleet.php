@@ -22,7 +22,13 @@ if (!$content) {
 $search = $_GET['search'] ?? '';
 $type_filter = $_GET['type'] ?? '';
 $pickup = $_GET['pickup'] ?? '';
-$dropoff = $_GET['dropoff'] ?? '';
+$dropoff = $_GET['dropoff'] ?? $_GET['return'] ?? '';
+$location = $_GET['location'] ?? '';
+
+$query_append = '';
+if (!empty($pickup)) $query_append .= '&pickup=' . urlencode($pickup);
+if (!empty($dropoff)) $query_append .= '&return=' . urlencode($dropoff);
+if (!empty($location)) $query_append .= '&location=' . urlencode($location);
 
 // Convert display dates to Y-m-d if they are provided from flatpickr format (e.g. "Wed 25 Mar")
 // However, flatpickr usually sends them as they are in the input. 
@@ -531,7 +537,7 @@ else: ?>
                     <?php
         endif; ?>
 
-                    <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>"
+                    <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>"
                         class="block relative h-48 bg-[#f4f5f7] rounded-xl overflow-hidden mb-4 flex items-center justify-center group-hover:bg-[#edf0f5] transition-colors duration-300">
                         <?php
         $image_url = null;
@@ -558,7 +564,7 @@ else: ?>
         endif; ?>
                     </a>
 
-                    <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>" class="block">
+                    <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>" class="block">
                         <h3
                             class="text-base font-semibold text-gray-900 mb-4 line-clamp-1 hover:text-blue-600 transition-colors uppercase">
                             <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
@@ -618,7 +624,7 @@ else: ?>
                             </span>
                             <span class="text-gray-400 text-[13px] font-medium ml-0.5">/day</span>
                         </div>
-                        <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>"
+                        <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>"
                             class="text-[#3b82f5] hover:text-blue-700 text-[13px] font-semibold flex items-center transition-colors">
                             Rent Now
                             <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1303,6 +1303,49 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             }, 300);
         }
 
+        function parseUrlDateTime(str) {
+            if (!str) return null;
+            str = decodeURIComponent(str).trim();
+            
+            // Format 1: YYYY-MM-DD HH:MM
+            if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+                return new Date(str.replace(/-/g, '/'));
+            }
+            
+            // Format 2: "D MMM, h:mmam" or similar e.g. "12 Oct, 10:30am"
+            const parts = str.match(/^(\d+)\s+([A-Za-z]+),?\s+(\d+):(\d+)(am|pm)$/i);
+            if (parts) {
+                const day = parseInt(parts[1]);
+                const monthName = parts[2].substring(0, 3).toLowerCase();
+                const monthIdx = months.map(m => m.toLowerCase()).indexOf(monthName);
+                let hours = parseInt(parts[3]);
+                const minutes = parseInt(parts[4]);
+                const ampm = parts[5].toLowerCase();
+                
+                if (ampm === 'pm' && hours < 12) hours += 12;
+                if (ampm === 'am' && hours === 12) hours = 0;
+                
+                if (monthIdx !== -1) {
+                    const d = new Date();
+                    d.setDate(day);
+                    d.setMonth(monthIdx);
+                    d.setHours(hours, minutes, 0, 0);
+                    
+                    const now = new Date();
+                    if (d.getMonth() < now.getMonth() || (d.getMonth() === now.getMonth() && d.getDate() < now.getDate())) {
+                        d.setFullYear(now.getFullYear() + 1);
+                    } else {
+                        d.setFullYear(now.getFullYear());
+                    }
+                    return d;
+                }
+            }
+            
+            const parsed = new Date(str);
+            if (!isNaN(parsed.getTime())) return parsed;
+            return null;
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             if (window.flatpickr) {
                 flatpickr.l10ns.default.firstDayOfWeek = 1;
@@ -1317,27 +1360,58 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             fourDaysLater.setDate(fourDaysLater.getDate() + 4);
             fourDaysLater.setHours(12, 0, 0, 0);
             
-            pickupDateObj = tomorrow;
-            returnDateObj = fourDaysLater;
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlPickup = urlParams.get('pickup');
+            const urlReturn = urlParams.get('return');
+            const urlPickupLoc = urlParams.get('pickup_location') || urlParams.get('location');
+            const urlReturnLoc = urlParams.get('return_location') || urlParams.get('location');
+            
+            const parsedPickup = parseUrlDateTime(urlPickup);
+            const parsedReturn = parseUrlDateTime(urlReturn);
+            
+            pickupDateObj = parsedPickup || tomorrow;
+            returnDateObj = parsedReturn || fourDaysLater;
+
+            // Set locations in selects if passed
+            if (urlPickupLoc) {
+                const select = document.querySelector('select[name="pickup_location"]');
+                if (select) select.value = decodeURIComponent(urlPickupLoc);
+                const mobileSelect = document.querySelector('select[name="mobile_pickup_location"]');
+                if (mobileSelect) mobileSelect.value = decodeURIComponent(urlPickupLoc);
+            }
+            if (urlReturnLoc) {
+                const select = document.querySelector('select[name="return_location"]');
+                if (select) select.value = decodeURIComponent(urlReturnLoc);
+                const mobileSelect = document.querySelector('select[name="mobile_return_location"]');
+                if (mobileSelect) mobileSelect.value = decodeURIComponent(urlReturnLoc);
+            }
 
             const pickupDatetime = document.getElementById('pickup_datetime');
             const returnDatetime = document.getElementById('return_datetime');
             const mobilePickupDatetime = document.getElementById('mobile_pickup_datetime');
             const mobileReturnDatetime = document.getElementById('mobile_return_datetime');
             
-            const pickupFormatted = `${tomorrow.getDate()} ${months[tomorrow.getMonth()]}, 10:00am`;
-            const returnFormatted = `${fourDaysLater.getDate()} ${months[fourDaysLater.getMonth()]}, 12:00pm`;
+            const formatForInput = (dateObj) => {
+                const ampm = dateObj.getHours() >= 12 ? 'pm' : 'am';
+                let hours = dateObj.getHours() % 12;
+                if (hours === 0) hours = 12;
+                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                return `${dateObj.getDate()} ${months[dateObj.getMonth()]}, ${String(hours).padStart(2, '0')}:${minutes}${ampm}`;
+            };
+            
+            const pickupFormatted = formatForInput(pickupDateObj);
+            const returnFormatted = formatForInput(returnDateObj);
 
-            if (pickupDatetime && !pickupDatetime.value) {
+            if (pickupDatetime) {
                 pickupDatetime.value = pickupFormatted;
             }
-            if (returnDatetime && !returnDatetime.value) {
+            if (returnDatetime) {
                 returnDatetime.value = returnFormatted;
             }
-            if (mobilePickupDatetime && !mobilePickupDatetime.value) {
+            if (mobilePickupDatetime) {
                 mobilePickupDatetime.value = pickupFormatted;
             }
-            if (mobileReturnDatetime && !mobileReturnDatetime.value) {
+            if (mobileReturnDatetime) {
                 mobileReturnDatetime.value = returnFormatted;
             }
 
