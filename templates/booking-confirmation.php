@@ -87,15 +87,18 @@ if (!$content) {
                 <!-- Vehicle Info -->
                 <div class="flex items-start space-x-4 mb-6 pb-6 border-b border-gray-200">
                     <div class="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                        <?php if ($booking['images']): ?>
-                            <img src="<?= htmlspecialchars($booking['images']) ?>" alt="Vehicle" class="w-full h-full object-cover">
-                        <?php else: ?>
-                            <div class="w-full h-full flex items-center justify-center">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                </svg>
-                            </div>
-                        <?php endif; ?>
+                        <?php
+                        $image_url = null;
+                        if ($booking['images']) {
+                            $decoded = json_decode($booking['images'], true);
+                            $image_url = is_array($decoded) && !empty($decoded) ? $decoded[0] : $booking['images'];
+                        }
+                        // Use placeholder if no image
+                        if (empty($image_url)) {
+                            $image_url = '/assets/images/placeholder-img.webp';
+                        }
+?>
+                        <img src="<?= htmlspecialchars($image_url) ?>" alt="Vehicle" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars($booking['brand'] . ' ' . $booking['model']) ?></h3>

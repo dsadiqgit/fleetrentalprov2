@@ -68,6 +68,10 @@ if (!empty($vehicle['images'])) {
     $decoded = json_decode($vehicle['images'], true);
     $image_url = is_array($decoded) && !empty($decoded) ? $decoded[0] : $vehicle['images'];
 }
+// Use placeholder if no image
+if (empty($image_url)) {
+    $image_url = '/assets/images/placeholder-img.webp';
+}
 
 // Store vehicle_id in session for verification status checks
 $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
@@ -918,6 +922,41 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             document.getElementById('mainImage').src = imageSrc;
         }
 
+        // Custom error modal function
+        function showErrorModal(message) {
+            // Remove existing error modal if present
+            const existingModal = document.getElementById('customErrorModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'customErrorModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl animate-fade-in">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Error</h3>
+                    <p class="text-gray-600 text-center mb-6">${message}</p>
+                    <button onclick="document.getElementById('customErrorModal').remove()" class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Close modal on backdrop click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
         // Open/close booking modal
         function openBookingModal() {
             document.getElementById('bookingModal').classList.add('active');
@@ -943,8 +982,22 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             if (wrapper) wrapper.classList.remove('hidden');
             
             // Initialize calendar if not already done
-            if (!calendarInstance) {
+            if (!pickupCalendarInstance || !returnCalendarInstance) {
                 initializeCalendar();
+            }
+            
+            // Set minDate based on picker type
+            if (type === 'pickup') {
+                pickupCalendarInstance.set('minDate', 'today');
+                pickupCalendarInstance.redraw();
+            } else if (type === 'return' && pickupDateObj) {
+                // For return date, set minDate to pickup date
+                const pickupDateStr = pickupDateObj.toISOString().split('T')[0];
+                returnCalendarInstance.set('minDate', pickupDateStr);
+                returnCalendarInstance.redraw();
+            } else {
+                returnCalendarInstance.set('minDate', 'today');
+                returnCalendarInstance.redraw();
             }
             
             // Reset time selection
@@ -966,8 +1019,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             selectedTime = null;
         }
 
+        let pickupCalendarInstance = null;
+        let returnCalendarInstance = null;
+
         function initializeCalendar() {
-            calendarInstance = flatpickr("#modalCalendar", {
+            const commonConfig = {
                 inline: true,
                 showMonths: window.innerWidth < 768 ? 1 : 2,
                 dateFormat: "Y-m-d",
@@ -987,6 +1043,18 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         }
                     }
                 }
+            };
+
+            // Initialize pickup calendar
+            pickupCalendarInstance = flatpickr("#modalCalendar", {
+                ...commonConfig,
+                minDate: "today"
+            });
+
+            // Initialize return calendar (will be updated when pickup is selected)
+            returnCalendarInstance = flatpickr("#modalCalendar", {
+                ...commonConfig,
+                minDate: "today"
             });
         }
 
@@ -1009,8 +1077,29 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             }
             
             if (!pickupDt || !returnDt) {
-                alert('Please select both pick-up and drop-off dates.');
+                showErrorModal('Please select both pick-up and drop-off dates.');
                 return;
+            }
+            
+            // Validate that return date is not before pickup date
+            if (pickupDateObj && returnDateObj) {
+                if (returnDateObj < pickupDateObj) {
+                    showErrorModal('Return date cannot be before pickup date.');
+                    return;
+                }
+            }
+            
+            // Validate that pickup date is not in the past
+            if (pickupDateObj) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const pickupDay = new Date(pickupDateObj);
+                pickupDay.setHours(0, 0, 0, 0);
+                
+                if (pickupDay < today) {
+                    showErrorModal('Pickup date cannot be in the past.');
+                    return;
+                }
             }
             
             let pDateStr = '';

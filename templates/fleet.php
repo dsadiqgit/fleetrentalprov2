@@ -550,18 +550,13 @@ else: ?>
                 $image_url = $vehicle['images'];
             }
         }
-        if ($image_url):
+        // Use placeholder if no image
+        if (empty($image_url)) {
+            $image_url = '/assets/images/placeholder-img.webp';
+        }
 ?>
                         <img src="<?= htmlspecialchars($image_url)?>" alt="<?= htmlspecialchars($vehicle['name'])?>"
                             class="w-full h-full object-cover">
-                        <?php
-        else: ?>
-                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                        </svg>
-                        <?php
-        endif; ?>
                     </a>
 
                     <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>" class="block">
@@ -672,6 +667,39 @@ endif; ?>
             toggleMobileSearch();
         }
 
+        // Custom error modal function
+        function showErrorModal(message) {
+            const existingModal = document.getElementById('customErrorModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'customErrorModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Error</h3>
+                    <p class="text-gray-600 text-center mb-6">${message}</p>
+                    <button onclick="document.getElementById('customErrorModal').remove()" class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             // Set Global Flatpickr Locale to start on Monday
             if (window.flatpickr) {
@@ -689,12 +717,64 @@ endif; ?>
             };
 
             // Desktop Datepickers
-            flatpickr("#pickup_date", fpConfig);
-            flatpickr("#dropoff_date", fpConfig);
+            const pickupPicker = flatpickr("#pickup_date", {
+                ...fpConfig,
+                onChange: function(selectedDates) {
+                    if (selectedDates.length > 0) {
+                        const pickupDate = selectedDates[0];
+                        const pickupDateStr = pickupDate.toISOString().split('T')[0];
+                        // Update return date picker minDate to pickup date
+                        if (returnPicker) {
+                            returnPicker.set('minDate', pickupDateStr);
+                        }
+                        if (mobReturnPicker) {
+                            mobReturnPicker.set('minDate', pickupDateStr);
+                        }
+                    }
+                }
+            });
+
+            const returnPicker = flatpickr("#dropoff_date", fpConfig);
 
             // Mobile Datepickers
-            flatpickr("#mob_pickup_date", fpConfig);
-            flatpickr("#mob_dropoff_date", fpConfig);
+            const mobPickupPicker = flatpickr("#mob_pickup_date", {
+                ...fpConfig,
+                onChange: function(selectedDates) {
+                    if (selectedDates.length > 0) {
+                        const pickupDate = selectedDates[0];
+                        const pickupDateStr = pickupDate.toISOString().split('T')[0];
+                        // Update return date picker minDate to pickup date
+                        if (returnPicker) {
+                            returnPicker.set('minDate', pickupDateStr);
+                        }
+                        if (mobReturnPicker) {
+                            mobReturnPicker.set('minDate', pickupDateStr);
+                        }
+                    }
+                }
+            });
+
+            const mobReturnPicker = flatpickr("#mob_dropoff_date", fpConfig);
+
+            // Add form validation to prevent return date before pickup date
+            const searchForm = document.querySelector('form[action="vehicle-booking.php"]');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    const pickupVal = document.getElementById('pickup_date').value;
+                    const returnVal = document.getElementById('dropoff_date').value;
+                    
+                    if (pickupVal && returnVal) {
+                        const pickupDate = new Date(pickupVal);
+                        const returnDate = new Date(returnVal);
+                        
+                        if (returnDate < pickupDate) {
+                            e.preventDefault();
+                            showErrorModal('Return date cannot be before pickup date.');
+                            return false;
+                        }
+                    }
+                });
+            }
         });
     </script>
 </body>

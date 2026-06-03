@@ -70,15 +70,18 @@ $similar_vehicles = $stmt->fetchAll();
                 <!-- Vehicle Image -->
                 <div>
                     <div class="bg-white rounded-lg overflow-hidden shadow-sm">
-                        <?php if ($vehicle['images']): ?>
-                            <img src="<?= htmlspecialchars($vehicle['images']) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-full h-96 object-cover">
-                        <?php else: ?>
-                            <div class="w-full h-96 bg-gray-200 flex items-center justify-center">
-                                <svg class="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                </svg>
-                            </div>
-                        <?php endif; ?>
+                        <?php
+                        $image_url = null;
+                        if ($vehicle['images']) {
+                            $decoded = json_decode($vehicle['images'], true);
+                            $image_url = is_array($decoded) && !empty($decoded) ? $decoded[0] : $vehicle['images'];
+                        }
+                        // Use placeholder if no image
+                        if (empty($image_url)) {
+                            $image_url = '/assets/images/placeholder-img.webp';
+                        }
+?>
+                        <img src="<?= htmlspecialchars($image_url) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-full h-96 object-cover">
                     </div>
                 </div>
 
@@ -227,15 +230,18 @@ $similar_vehicles = $stmt->fetchAll();
                 <?php foreach ($similar_vehicles as $similar): ?>
                     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition">
                         <div class="h-48 bg-gray-200 overflow-hidden">
-                            <?php if ($similar['images']): ?>
-                                <img src="<?= htmlspecialchars($similar['images']) ?>" alt="<?= htmlspecialchars($similar['brand'] . ' ' . $similar['model']) ?>" class="w-full h-full object-cover">
-                            <?php else: ?>
-                                <div class="w-full h-full flex items-center justify-center">
-                                    <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                    </svg>
-                                </div>
-                            <?php endif; ?>
+                            <?php
+                            $similar_image = null;
+                            if ($similar['images']) {
+                                $decoded = json_decode($similar['images'], true);
+                                $similar_image = is_array($decoded) && !empty($decoded) ? $decoded[0] : $similar['images'];
+                            }
+                            // Use placeholder if no image
+                            if (empty($similar_image)) {
+                                $similar_image = '/assets/images/placeholder-img.webp';
+                            }
+?>
+                            <img src="<?= htmlspecialchars($similar_image) ?>" alt="<?= htmlspecialchars($similar['brand'] . ' ' . $similar['model']) ?>" class="w-full h-full object-cover">
                         </div>
                         <div class="p-6">
                             <h3 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars($similar['brand'] . ' ' . $similar['model']) ?></h3>

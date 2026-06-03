@@ -246,7 +246,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     // Store images as JSON array
-    $image = !empty($image_paths) ? json_encode($image_paths) : '';
+    // Use placeholder image if no images were uploaded
+    if (!empty($image_paths)) {
+        $image = json_encode($image_paths);
+    } else {
+        // Check if editing and existing images exist, otherwise use placeholder
+        if ($show_edit_form && !empty($edit_vehicle['images'])) {
+            $image = $edit_vehicle['images'];
+        } else {
+            $image = json_encode(['/assets/images/placeholder-img.webp']);
+        }
+    }
 
     // Handle daily pricing
     $daily_pricing = [];

@@ -47,7 +47,11 @@ if (!$vehicle) {
         <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-300 rounded"></div>
+                    <?php if (!empty($tenant['logo_url']) || !empty($tenant['logo'])): ?>
+                        <img src="<?= htmlspecialchars($tenant['logo_url'] ?: $tenant['logo']) ?>" alt="<?= htmlspecialchars($content['company_name']) ?>" class="h-8 w-auto">
+                    <?php else: ?>
+                        <div class="w-8 h-8 bg-gray-300 rounded"></div>
+                    <?php endif; ?>
                     <span class="text-lg font-semibold text-gray-900"><?= htmlspecialchars($content['company_name']) ?></span>
                 </div>
             </div>
@@ -150,15 +154,18 @@ if (!$vehicle) {
                         
                         <!-- Vehicle Image -->
                         <div class="mb-4 rounded-lg overflow-hidden">
-                            <?php if ($vehicle['images']): ?>
-                                <img src="<?= htmlspecialchars($vehicle['images']) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-full h-48 object-cover">
-                            <?php else: ?>
-                                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                    <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                    </svg>
-                                </div>
-                            <?php endif; ?>
+                            <?php
+                            $image_url = null;
+                            if ($vehicle['images']) {
+                                $decoded = json_decode($vehicle['images'], true);
+                                $image_url = is_array($decoded) && !empty($decoded) ? $decoded[0] : $vehicle['images'];
+                            }
+                            // Use placeholder if no image
+                            if (empty($image_url)) {
+                                $image_url = '/assets/images/placeholder-img.webp';
+                            }
+?>
+                            <img src="<?= htmlspecialchars($image_url) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-full h-48 object-cover">
                         </div>
 
                         <!-- Vehicle Details -->
@@ -229,6 +236,39 @@ if (!$vehicle) {
         const numDaysEl = document.getElementById('numDays');
         const totalPriceEl = document.getElementById('totalPrice');
 
+        // Custom error modal function
+        function showErrorModal(message) {
+            const existingModal = document.getElementById('customErrorModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'customErrorModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Error</h3>
+                    <p class="text-gray-600 text-center mb-6">${message}</p>
+                    <button onclick="document.getElementById('customErrorModal').remove()" class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
         // Set minimum dates to today
         const today = new Date().toISOString().split('T')[0];
         pickupDate.min = today;
@@ -257,10 +297,45 @@ if (!$vehicle) {
             calculateTotal();
         });
 
-        returnDate.addEventListener('change', calculateTotal);
+        returnDate.addEventListener('change', function() {
+            // Validate return date is not before pickup date
+            if (pickupDate.value && returnDate.value) {
+                const pickup = new Date(pickupDate.value);
+                const returnD = new Date(returnDate.value);
+                
+                if (returnD < pickup) {
+                    showErrorModal('Return date cannot be before pickup date.');
+                    returnDate.value = pickupDate.value;
+                    calculateTotal();
+                    return;
+                }
+            }
+            calculateTotal();
+        });
 
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Validate dates before submission
+            if (pickupDate.value && returnDate.value) {
+                const pickup = new Date(pickupDate.value);
+                const returnD = new Date(returnDate.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Check pickup date is not in the past
+                if (pickup < today) {
+                    showErrorModal('Pickup date cannot be in the past.');
+                    return;
+                }
+                
+                // Check return date is not before pickup date
+                if (returnD < pickup) {
+                    showErrorModal('Return date cannot be before pickup date.');
+                    return;
+                }
+            }
+            
             showSuccessModal();
         });
         

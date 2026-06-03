@@ -447,11 +447,13 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                         <?php
                 $images = json_decode($vehicle['images'], true);
                 $img = is_array($images) ? $images[0] : ($vehicle['images'] ?: '');
-                if ($img): ?>
+                // Use placeholder if no image
+                if (empty($img)) {
+                    $img = '/assets/images/placeholder-img.webp';
+                }
+?>
                         <img src="<?= htmlspecialchars($img)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>"
                             class="w-full h-full object-cover">
-                        <?php
-                endif; ?>
                     </div>
 
                     <!-- Content -->
@@ -681,6 +683,39 @@ endforeach; ?>
         let pickupDateInstance = null;
         let returnDateInstance = null;
 
+        // Custom error modal function
+        function showErrorModal(message) {
+            const existingModal = document.getElementById('customErrorModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'customErrorModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Error</h3>
+                    <p class="text-gray-600 text-center mb-6">${message}</p>
+                    <button onclick="document.getElementById('customErrorModal').remove()" class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             if (window.flatpickr) {
                 flatpickr.l10ns.default.firstDayOfWeek = 1;
@@ -703,6 +738,13 @@ endforeach; ?>
                         if (selectedDates.length > 0) {
                             selectedDate = selectedDates[0];
                             currentPickerType = 'pickup';
+                            
+                            // Update return date picker minDate to pickup date
+                            if (returnDateInstance) {
+                                const pickupDateStr = selectedDates[0].toISOString().split('T')[0];
+                                returnDateInstance.set('minDate', pickupDateStr);
+                            }
+                            
                             instance.close();
                             setTimeout(() => {
                                 showTimePicker('pickup');
@@ -726,6 +768,17 @@ endforeach; ?>
                         if (selectedDates.length > 0) {
                             selectedDate = selectedDates[0];
                             currentPickerType = 'return';
+                            
+                            // Validate return date is not before pickup date
+                            if (pickupDateInstance && pickupDateInstance.selectedDates.length > 0) {
+                                const pickupDate = pickupDateInstance.selectedDates[0];
+                                if (selectedDates[0] < pickupDate) {
+                                    showErrorModal('Return date cannot be before pickup date.');
+                                    instance.clear();
+                                    return;
+                                }
+                            }
+                            
                             instance.close();
                             setTimeout(() => {
                                 showTimePicker('return');

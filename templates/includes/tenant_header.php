@@ -81,8 +81,8 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
             <!-- Logo Section -->
             <a href="<?= $tenant_home ?>" class="flex items-center space-x-3 group">
                 <div class="relative">
-                    <?php if (!empty($tenant['logo_url'])): ?>
-                        <img src="<?= htmlspecialchars($tenant['logo_url']) ?>" alt="Logo" 
+                    <?php if (!empty($tenant['logo_url']) || !empty($tenant['logo'])): ?>
+                        <img src="<?= htmlspecialchars($tenant['logo_url'] ?: $tenant['logo']) ?>" alt="Logo" 
                              class="h-8 md:h-10 w-auto transition-transform group-hover:scale-105">
                     <?php else: ?>
                         <div class="w-8 h-8 md:w-10 md:h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black shadow-lg transition-transform group-hover:scale-105">
@@ -93,9 +93,6 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
                 <div class="flex flex-col text-left">
                     <span class="text-base md:text-lg font-black tracking-tight text-slate-900">
                         <?= htmlspecialchars($content['company_name'] ?? $tenant['name']) ?>
-                    </span>
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                        Premium Car Rental
                     </span>
                 </div>
             </a>

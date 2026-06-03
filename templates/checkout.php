@@ -18,6 +18,10 @@ if ($vehicle['images']) {
     $decoded = json_decode($vehicle['images'], true);
     $vehicle_image = is_array($decoded) && !empty($decoded) ? $decoded[0] : $vehicle['images'];
 }
+// Use placeholder if no image
+if (empty($vehicle_image)) {
+    $vehicle_image = '/assets/images/placeholder-img.webp';
+}
 
 $stmt = $pdo->prepare("SELECT require_license_verification, stripe_publishable_key FROM tenant_settings WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
@@ -78,8 +82,12 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
 </head>
 <body class="bg-gray-50">
     <header class="bg-white border-b">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-            <span class="text-lg font-semibold"><?= htmlspecialchars($tenant['name']) ?></span>
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center">
+            <?php if (!empty($tenant['logo_url']) || !empty($tenant['logo'])): ?>
+                <img src="<?= htmlspecialchars($tenant['logo_url'] ?: $tenant['logo']) ?>" alt="<?= htmlspecialchars($tenant['name']) ?>" class="h-10 w-auto">
+            <?php else: ?>
+                <span class="text-lg font-semibold"><?= htmlspecialchars($tenant['name']) ?></span>
+            <?php endif; ?>
         </div>
     </header>
 
@@ -423,7 +431,7 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
                 document.getElementById('diditIframe').src = url;
                 goToStep(2);
             } else {
-                alert('Error: ' + (result.message || 'Failed to create verification session'));
+                showErrorModal('Error: ' + (result.message || 'Failed to create verification session'));
                 console.error('Didit API Error:', result);
                 if(submitBtn) {
                     submitBtn.disabled = false;
@@ -538,7 +546,7 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
                         }
                     } else if (result.status === 'declined') {
                         clearInterval(verificationCheckInterval);
-                        alert('Verification was declined. Please try again or contact support.');
+                        showErrorModal('Verification was declined. Please try again or contact support.');
                         goToStep(1);
                     }
                 } catch (e) {
@@ -595,6 +603,39 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
             }
         };
 
+        // Custom error modal function
+        function showErrorModal(message) {
+            const existingModal = document.getElementById('customErrorModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'customErrorModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Error</h3>
+                    <p class="text-gray-600 text-center mb-6">${message}</p>
+                    <button onclick="document.getElementById('customErrorModal').remove()" class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
         // Form validation function
         function validateCheckoutForm(form) {
             const errors = [];
@@ -638,7 +679,7 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
             const validationErrors = validateCheckoutForm(form);
             
             if (validationErrors.length > 0) {
-                alert('Please fix the following errors:\n\n' + validationErrors.join('\n'));
+                showErrorModal(validationErrors.join('<br>'));
                 return;
             }
             
@@ -683,7 +724,7 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
                 
                 goToStep(4);
             } catch (error) {
-                alert('Error: ' + error.message);
+                showErrorModal('Error: ' + error.message);
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Complete Booking ✓';
