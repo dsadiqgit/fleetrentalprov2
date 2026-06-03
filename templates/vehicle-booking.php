@@ -261,10 +261,81 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             padding: 0 !important;
             width: 100% !important;
             height: 100% !important;
+            border: none !important;
+            position: relative !important;
+            z-index: 10 !important;
         }
         
-        /* Remove gaps in the days container */
+        /* Use negative grid gap to force days to overlap */
+        .flatpickr-days .dayContainer {
+            grid-gap: -5px !important;
+            gap: -5px !important;
+        }
+        
+        /* Also use negative margins on inRange days */
+        .flatpickr-day.inRange:not(.startRange):not(.endRange) {
+            margin-left: -5px !important;
+            margin-right: -5px !important;
+            margin-top: -5px !important;
+            margin-bottom: -5px !important;
+            z-index: 20 !important;
+        }
+        
+        .flatpickr-day.inRange.startRange {
+            margin-right: -5px !important;
+            margin-top: -5px !important;
+            margin-bottom: -5px !important;
+            z-index: 20 !important;
+        }
+        
+        .flatpickr-day.inRange.endRange {
+            margin-left: -5px !important;
+            margin-top: -5px !important;
+            margin-bottom: -5px !important;
+            z-index: 20 !important;
+        }
+        
+        /* Override flatpickr's default spacing completely */
+        .flatpickr-calendar {
+            padding: 10px !important;
+        }
+        
         .flatpickr-days {
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
+        }
+        
+        .flatpickr-days .dayContainer {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .flatpickr-day {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+        
+        /* Remove gaps in inner container - AGGRESSIVE */
+        .flatpickr-innerContainer {
+            gap: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .flatpickr-innerContainer .flatpickr-rContainer {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .flatpickr-innerContainer .flatpickr-rContainer .flatpickr-days {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Remove gaps in day row */
+        .flatpickr-dayContainer {
             gap: 0 !important;
             padding: 0 !important;
         }
