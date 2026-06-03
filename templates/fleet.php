@@ -306,19 +306,7 @@ endif; ?>
                 <input type="hidden" name="tenant_id" value="<?= $tenant_id?>">
                 <input type="hidden" name="tenant" value="<?= $tenant['subdomain']?>">
 
-                <!-- Brand Search -->
-                <div class="md:col-span-1 relative">
-                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    <input type="text" name="search" value="<?= htmlspecialchars($search)?>"
-                        placeholder="Search brand..."
-                        class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-                </div>
-
-                <!-- Date Range -->
+                <!-- Date Range - Moved to Top -->
                 <div class="md:col-span-1 relative">
                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
@@ -341,6 +329,18 @@ endif; ?>
                     <input type="text" id="dropoff_date" name="dropoff" value="<?= htmlspecialchars($dropoff)?>"
                         placeholder="Drop-off Date"
                         class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer">
+                </div>
+
+                <!-- Brand Search -->
+                <div class="md:col-span-1 relative">
+                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input type="text" name="search" value="<?= htmlspecialchars($search)?>"
+                        placeholder="Search brand..."
+                        class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
                 </div>
 
                 <!-- Category -->
@@ -383,23 +383,7 @@ endforeach; ?>
                     <input type="hidden" name="tenant_id" value="<?= $tenant_id?>">
                     <input type="hidden" name="tenant" value="<?= $tenant['subdomain']?>">
 
-                    <!-- Brand Search -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-bold text-gray-700 leading-none uppercase tracking-wider">Brand
-                            / Search</label>
-                        <div class="relative">
-                            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                            <input type="text" name="search" value="<?= htmlspecialchars($search)?>"
-                                placeholder="Search brand..."
-                                class="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-2xl outline-none text-base focus:ring-2 focus:ring-blue-500/20 transition-all">
-                        </div>
-                    </div>
-
-                    <!-- Date Range -->
+                    <!-- Date Range - Moved to Top -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <label
@@ -434,6 +418,22 @@ endforeach; ?>
                                     class="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-2xl outline-none text-base cursor-pointer"
                                     readonly>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Brand Search -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-gray-700 leading-none uppercase tracking-wider">Brand
+                            / Search</label>
+                        <div class="relative">
+                            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" name="search" value="<?= htmlspecialchars($search)?>"
+                                placeholder="Search brand..."
+                                class="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-2xl outline-none text-base focus:ring-2 focus:ring-blue-500/20 transition-all">
                         </div>
                     </div>
 

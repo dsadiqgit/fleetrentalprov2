@@ -192,19 +192,43 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         .flatpickr-day.selected,
         .flatpickr-day.startRange,
         .flatpickr-day.endRange {
-            background: #1f2937 !important;
+            background: #3b82f6 !important;
             color: white !important;
             border: none !important;
-            font-weight: 600 !important;
-            border-radius: 8px !important;
+            font-weight: 700 !important;
+            border-radius: 50% !important;
         }
 
         .flatpickr-day.inRange {
-            background: #f3f4f6 !important;
+            background: #dbeafe !important;
             border-color: transparent !important;
             box-shadow: none !important;
-            border-radius: 8px !important;
+            border-radius: 0 !important;
             color: #1f2937 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        /* Remove gaps in the days container */
+        .flatpickr-days {
+            gap: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Round the start and end of range */
+        .flatpickr-day.startRange {
+            border-radius: 50% 0 0 50% !important;
+        }
+        
+        .flatpickr-day.endRange {
+            border-radius: 0 50% 50% 0 !important;
+        }
+        
+        /* If start and end are the same day */
+        .flatpickr-day.startRange.endRange {
+            border-radius: 50% !important;
         }
 
         /* Custom time picker modal */
@@ -340,6 +364,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                 <div class="bg-white/45 backdrop-blur-lg rounded-2xl p-6 lg:p-8 shadow-2xl">
                     <h3 class="text-2xl font-semibold text-black mb-6">Search Available Vehicles</h3>
                     <form onsubmit="handleContactSubmit(event)" class="space-y-5">
+                        <!-- Date Fields First -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-black mb-2">Pick Up Date & Time*</label>
@@ -363,6 +388,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                             </div>
                         </div>
 
+                        <!-- Location Field After Dates -->
                         <div>
                             <label class="block text-sm font-medium text-black mb-2">Pick Up Location*</label>
                             <?php
@@ -724,10 +750,14 @@ endforeach; ?>
             // Initialize time slots
             initializeTimeSlots();
 
-            // Hero pickup datetime picker - 3 months view
+            // Hero pickup datetime picker - Range mode for both pickup and return
             const heroPickupDatetime = document.getElementById('hero_pickup_datetime');
-            if (heroPickupDatetime) {
+            const heroReturnDatetime = document.getElementById('hero_return_datetime');
+            
+            if (heroPickupDatetime && heroReturnDatetime) {
+                // Create range picker on pickup field
                 pickupDateInstance = flatpickr("#hero_pickup_datetime", {
+                    mode: "range",
                     showMonths: 3,
                     dateFormat: "d M, Y",
                     minDate: "today",
@@ -735,15 +765,16 @@ endforeach; ?>
                         firstDayOfWeek: 1
                     },
                     onChange: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length > 0) {
+                        // When both dates are selected
+                        if (selectedDates.length === 2) {
                             selectedDate = selectedDates[0];
-                            currentPickerType = 'pickup';
                             
-                            // Update return date picker minDate to pickup date
-                            if (returnDateInstance) {
-                                const pickupDateStr = selectedDates[0].toISOString().split('T')[0];
-                                returnDateInstance.set('minDate', pickupDateStr);
-                            }
+                            // Update both input fields to show the range
+                            const pickupFormatted = flatpickr.formatDate(selectedDates[0], "d M, Y");
+                            const returnFormatted = flatpickr.formatDate(selectedDates[1], "d M, Y");
+                            
+                            heroPickupDatetime.value = pickupFormatted;
+                            heroReturnDatetime.value = returnFormatted;
                             
                             instance.close();
                             setTimeout(() => {
@@ -752,38 +783,11 @@ endforeach; ?>
                         }
                     }
                 });
-            }
-
-            // Hero return datetime picker - 3 months view
-            const heroReturnDatetime = document.getElementById('hero_return_datetime');
-            if (heroReturnDatetime) {
-                returnDateInstance = flatpickr("#hero_return_datetime", {
-                    showMonths: 3,
-                    dateFormat: "d M, Y",
-                    minDate: "today",
-                    locale: {
-                        firstDayOfWeek: 1
-                    },
-                    onChange: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length > 0) {
-                            selectedDate = selectedDates[0];
-                            currentPickerType = 'return';
-                            
-                            // Validate return date is not before pickup date
-                            if (pickupDateInstance && pickupDateInstance.selectedDates.length > 0) {
-                                const pickupDate = pickupDateInstance.selectedDates[0];
-                                if (selectedDates[0] < pickupDate) {
-                                    showErrorModal('Return date cannot be before pickup date.');
-                                    instance.clear();
-                                    return;
-                                }
-                            }
-                            
-                            instance.close();
-                            setTimeout(() => {
-                                showTimePicker('return');
-                            }, 100);
-                        }
+                
+                // Make return field also open the same range picker
+                heroReturnDatetime.addEventListener('click', function() {
+                    if (pickupDateInstance) {
+                        pickupDateInstance.open();
                     }
                 });
             }
@@ -877,6 +881,7 @@ endforeach; ?>
             const title = document.getElementById('timePickerTitle');
             title.textContent = type === 'pickup' ? 'Select pickup time' : 'Select return time';
             modal.classList.add('active');
+            modal.dataset.currentType = type;
         }
 
         function closeTimePicker() {
@@ -888,22 +893,40 @@ endforeach; ?>
         }
 
         function selectTime(time) {
-            if (!selectedDate || !currentPickerType) return;
+            if (!pickupDateInstance) return;
 
-            // Format the date
+            const selectedDates = pickupDateInstance.selectedDates;
+            if (selectedDates.length !== 2) return;
+
+            const modal = document.getElementById('timePickerModal');
+            const currentType = modal.dataset.currentType || 'pickup';
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const day = selectedDate.getDate();
-            const month = months[selectedDate.getMonth()];
-            const formattedDateTime = `${day} ${month}, ${time}`;
-
-            // Update the input field
-            if (currentPickerType === 'pickup') {
-                document.getElementById('hero_pickup_datetime').value = formattedDateTime;
+            
+            if (currentType === 'pickup') {
+                // Apply time to pickup date
+                const pickupDate = selectedDates[0];
+                const pickupFormatted = `${pickupDate.getDate()} ${months[pickupDate.getMonth()]}, ${time}`;
+                document.getElementById('hero_pickup_datetime').value = pickupFormatted;
+                window.selectedPickupTime = time;
+                
+                // Close and open return time picker
+                closeTimePicker();
+                setTimeout(() => {
+                    showTimePicker('return');
+                }, 100);
             } else {
-                document.getElementById('hero_return_datetime').value = formattedDateTime;
+                // Apply time to return date
+                const returnDate = selectedDates[1];
+                const returnFormatted = `${returnDate.getDate()} ${months[returnDate.getMonth()]}, ${time}`;
+                document.getElementById('hero_return_datetime').value = returnFormatted;
+                window.selectedReturnTime = time;
+                
+                // Store dates for form submission
+                window.selectedPickupDate = selectedDates[0];
+                window.selectedReturnDate = selectedDates[1];
+                
+                closeTimePicker();
             }
-
-            closeTimePicker();
         }
 
         function performSearch() {

@@ -244,19 +244,43 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         .flatpickr-day.selected,
         .flatpickr-day.startRange,
         .flatpickr-day.endRange {
-            background: #1f2937 !important;
+            background: #3b82f6 !important;
             color: white !important;
             border: none !important;
-            font-weight: 600 !important;
-            border-radius: 8px !important;
+            font-weight: 700 !important;
+            border-radius: 50% !important;
         }
 
         .flatpickr-day.inRange {
-            background: #f3f4f6 !important;
+            background: #dbeafe !important;
             border-color: transparent !important;
             box-shadow: none !important;
-            border-radius: 8px !important;
+            border-radius: 0 !important;
             color: #1f2937 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        /* Remove gaps in the days container */
+        .flatpickr-days {
+            gap: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Round the start and end of range */
+        .flatpickr-day.startRange {
+            border-radius: 50% 0 0 50% !important;
+        }
+        
+        .flatpickr-day.endRange {
+            border-radius: 0 50% 50% 0 !important;
+        }
+        
+        /* If start and end are the same day */
+        .flatpickr-day.startRange.endRange {
+            border-radius: 50% !important;
         }
     </style>
 </head>
@@ -511,14 +535,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     <!-- Booking Form -->
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
-                            <select name="pickup_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
-                                <?php foreach ($locations as $loc): ?>
-                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Date</label>
                             <div class="relative">
                                 <input type="text" id="pickup_datetime" placeholder="Oct 12th, 2023, 10:30am" readonly onclick="openCalendarModal('pickup')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
@@ -528,14 +544,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
-                            <select name="return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
-                                <?php foreach ($locations as $loc): ?>
-                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
                             <div class="relative">
                                 <input type="text" id="return_datetime" placeholder="Oct 21st, 2023, 11:00pm" readonly onclick="openCalendarModal('return')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
@@ -543,6 +551,22 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
+                            <select name="pickup_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                                <?php foreach ($locations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
+                            <select name="return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                                <?php foreach ($locations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
 
@@ -630,14 +654,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 <!-- Booking Form -->
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
-                        <select name="mobile_pickup_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
-                            <?php foreach ($locations as $loc): ?>
-                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Date</label>
                         <div class="relative">
                             <input type="text" id="mobile_pickup_datetime" placeholder="Oct 12th, 2023, 10:30am" readonly onclick="openCalendarModal('pickup')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
@@ -647,14 +663,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
-                        <select name="mobile_return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
-                            <?php foreach ($locations as $loc): ?>
-                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
                         <div class="relative">
                             <input type="text" id="mobile_return_datetime" placeholder="Oct 21st, 2023, 11:00pm" readonly onclick="openCalendarModal('return')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
@@ -662,6 +670,22 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Location</label>
+                        <select name="mobile_pickup_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                            <?php foreach ($locations as $loc): ?>
+                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
+                        <select name="mobile_return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
+                            <?php foreach ($locations as $loc): ?>
+                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     
                     <!-- Mobile Pricing Breakdown -->
@@ -770,7 +794,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 <!-- Time Selection -->
                 <div id="timeSelection" class="hidden">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold text-gray-900">Choose a time</h3>
+                        <h3 class="text-lg font-bold text-gray-900" id="timeSelectionTitle">Choose Pick-up Time</h3>
                         <button type="button" onclick="showCalendarFromTime()" class="md:hidden text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
@@ -973,7 +997,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             const modal = document.getElementById('calendarModal');
             const modalTitle = document.getElementById('modalTitle');
             
-            modalTitle.textContent = type === 'pickup' ? 'Pick Up Date & Time' : 'Return Date & Time';
+            modalTitle.textContent = 'Select Pick-up & Return Dates';
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
@@ -982,27 +1006,16 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             if (wrapper) wrapper.classList.remove('hidden');
             
             // Initialize calendar if not already done
-            if (!pickupCalendarInstance || !returnCalendarInstance) {
+            if (!calendarInstance) {
                 initializeCalendar();
-            }
-            
-            // Set minDate based on picker type
-            if (type === 'pickup') {
-                pickupCalendarInstance.set('minDate', 'today');
-                pickupCalendarInstance.redraw();
-            } else if (type === 'return' && pickupDateObj) {
-                // For return date, set minDate to pickup date
-                const pickupDateStr = pickupDateObj.toISOString().split('T')[0];
-                returnCalendarInstance.set('minDate', pickupDateStr);
-                returnCalendarInstance.redraw();
-            } else {
-                returnCalendarInstance.set('minDate', 'today');
-                returnCalendarInstance.redraw();
             }
             
             // Reset time selection
             document.getElementById('timeSelection').classList.add('hidden');
             generateTimeSlots();
+            
+            // Reset time picker type to pickup
+            modal.dataset.currentTimeType = 'pickup';
         }
 
         function closeCalendarModal() {
@@ -1019,11 +1032,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             selectedTime = null;
         }
 
-        let pickupCalendarInstance = null;
-        let returnCalendarInstance = null;
+        let calendarInstance = null;
 
         function initializeCalendar() {
-            const commonConfig = {
+            calendarInstance = flatpickr("#modalCalendar", {
+                mode: "range",
                 inline: true,
                 showMonths: window.innerWidth < 768 ? 1 : 2,
                 dateFormat: "Y-m-d",
@@ -1032,29 +1045,22 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     firstDayOfWeek: 1
                 },
                 onChange: function(selectedDates) {
-                    if (selectedDates.length > 0) {
+                    // When both pickup and return dates are selected
+                    if (selectedDates.length === 2) {
                         selectedDate = selectedDates[0];
-                        document.getElementById('timeSelection').classList.remove('hidden');
                         
-                        // Hide calendar on mobile when date is selected
+                        // Show time selection for pickup first
+                        document.getElementById('timeSelection').classList.remove('hidden');
+                        document.getElementById('timeSelectionTitle').textContent = 'Choose Pick-up Time';
+                        document.getElementById('calendarModal').dataset.currentTimeType = 'pickup';
+                        
+                        // Hide calendar on mobile when both dates are selected
                         if (window.innerWidth < 768) {
                             const wrapper = document.getElementById('calendarWrapper');
                             if (wrapper) wrapper.classList.add('hidden');
                         }
                     }
                 }
-            };
-
-            // Initialize pickup calendar
-            pickupCalendarInstance = flatpickr("#modalCalendar", {
-                ...commonConfig,
-                minDate: "today"
-            });
-
-            // Initialize return calendar (will be updated when pickup is selected)
-            returnCalendarInstance = flatpickr("#modalCalendar", {
-                ...commonConfig,
-                minDate: "today"
             });
         }
 
@@ -1366,28 +1372,55 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             selectedTime = `${time}${period.toLowerCase()}`;
             
             setTimeout(() => {
-                if (selectedDate && selectedTime) {
-                    const inputId = currentPickerType === 'pickup' ? 'pickup_datetime' : 'return_datetime';
-                    const mobileInputId = currentPickerType === 'pickup' ? 'mobile_pickup_datetime' : 'mobile_return_datetime';
-                    const input = document.getElementById(inputId);
-                    const mobileInput = document.getElementById(mobileInputId);
+                if (calendarInstance && selectedTime) {
+                    const selectedDates = calendarInstance.selectedDates;
                     
-                    const formattedValue = `${selectedDate.getDate()} ${months[selectedDate.getMonth()]}, ${selectedTime}`;
-                    if (input) input.value = formattedValue;
-                    if (mobileInput) mobileInput.value = formattedValue;
-                    
-                    const parsedTime = parseTimeString(selectedTime);
-                    const dateWithTime = new Date(selectedDate);
-                    dateWithTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
-                    
-                    if (currentPickerType === 'pickup') {
-                        pickupDateObj = dateWithTime;
-                    } else {
-                        returnDateObj = dateWithTime;
+                    if (selectedDates.length === 2) {
+                        const modal = document.getElementById('calendarModal');
+                        const currentTimeType = modal.dataset.currentTimeType || 'pickup';
+                        const pickupDate = selectedDates[0];
+                        const returnDate = selectedDates[1];
+                        
+                        const parsedTime = parseTimeString(selectedTime);
+                        
+                        if (currentTimeType === 'pickup') {
+                            // Set pickup date with time
+                            const pickupWithTime = new Date(pickupDate);
+                            pickupWithTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+                            pickupDateObj = pickupWithTime;
+                            
+                            // Format and display pickup
+                            const pickupFormatted = `${pickupDate.getDate()} ${months[pickupDate.getMonth()]}, ${selectedTime}`;
+                            const pickupInput = document.getElementById('pickup_datetime');
+                            const mobilePickupInput = document.getElementById('mobile_pickup_datetime');
+                            if (pickupInput) pickupInput.value = pickupFormatted;
+                            if (mobilePickupInput) mobilePickupInput.value = pickupFormatted;
+                            
+                            // Switch to return time selection
+                            document.getElementById('timeSelectionTitle').textContent = 'Choose Return Time';
+                            modal.dataset.currentTimeType = 'return';
+                            
+                            // Reset time selection UI
+                            document.querySelectorAll('.time-slot').forEach(slot => {
+                                slot.classList.remove('selected');
+                            });
+                        } else {
+                            // Set return date with time
+                            const returnWithTime = new Date(returnDate);
+                            returnWithTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+                            returnDateObj = returnWithTime;
+                            
+                            // Format and display return
+                            const returnFormatted = `${returnDate.getDate()} ${months[returnDate.getMonth()]}, ${selectedTime}`;
+                            const returnInput = document.getElementById('return_datetime');
+                            const mobileReturnInput = document.getElementById('mobile_return_datetime');
+                            if (returnInput) returnInput.value = returnFormatted;
+                            if (mobileReturnInput) mobileReturnInput.value = returnFormatted;
+                            
+                            calculatePriceBreakdown();
+                            closeCalendarModal();
+                        }
                     }
-                    
-                    calculatePriceBreakdown();
-                    closeCalendarModal();
                 }
             }, 300);
         }

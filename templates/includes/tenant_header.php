@@ -90,11 +90,7 @@ $fleet_url = "/templates/fleet.php?tenant=" . urlencode($tenant['subdomain']);
                         </div>
                     <?php endif; ?>
                 </div>
-                <div class="flex flex-col text-left">
-                    <span class="text-base md:text-lg font-black tracking-tight text-slate-900">
-                        <?= htmlspecialchars($content['company_name'] ?? $tenant['name']) ?>
-                    </span>
-                </div>
+                
             </a>
 
             <!-- Desktop Navigation -->
