@@ -95,6 +95,18 @@ try {
 catch (PDOException $e) { /* Column might exist */
 }
 
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN opening_time VARCHAR(10) DEFAULT '08:00'");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN closing_time VARCHAR(10) DEFAULT '18:00'");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
 // Update schema for users to support team member signature
 try {
     @$pdo->exec("ALTER TABLE users ADD COLUMN signature_data LONGTEXT NULL");
@@ -131,12 +143,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $buffer_time = intval($_POST['buffer_time'] ?? 0);
                 $max_advance = intval($_POST['max_advance'] ?? 30);
                 
+                $pickup_locs = $_POST['pickup_locations'] ?? [];
+                $dropoff_locs = $_POST['dropoff_locations'] ?? [];
+                $opening_time = sanitize($_POST['opening_time'] ?? '08:00');
+                $closing_time = sanitize($_POST['closing_time'] ?? '18:00');
+
+                // Filter out empty locations and sanitize
+                $pickup_locs = array_filter(array_map('sanitize', $pickup_locs));
+                $dropoff_locs = array_filter(array_map('sanitize', $dropoff_locs));
+
+                // Join with '; '
+                $pickup_location = implode('; ', $pickup_locs);
+                $dropoff_location = implode('; ', $dropoff_locs);
+
                 try {
-                    $stmt = $pdo->prepare("UPDATE tenant_settings SET min_booking_notice = ?, booking_notice_unit = ?, buffer_time_hours = ?, max_booking_advance_days = ? WHERE tenant_id = ?");
-                    $stmt->execute([$min_notice, $notice_unit, $buffer_time, $max_advance, $_SESSION['tenant_id']]);
+                    $stmt = $pdo->prepare("UPDATE tenant_settings SET min_booking_notice = ?, booking_notice_unit = ?, buffer_time_hours = ?, max_booking_advance_days = ?, pickup_location = ?, dropoff_location = ?, opening_time = ?, closing_time = ? WHERE tenant_id = ?");
+                    $stmt->execute([$min_notice, $notice_unit, $buffer_time, $max_advance, $pickup_location, $dropoff_location, $opening_time, $closing_time, $_SESSION['tenant_id']]);
                     $success = 'Booking settings updated successfully!';
                 } catch (Exception $e) {
-                    $error = 'Failed to update booking settings.';
+                    $error = 'Failed to update booking settings: ' . $e->getMessage();
                 }
                 break;
                 
@@ -144,8 +169,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $company_name = sanitize($_POST['company_name'] ?? '');
                 $company_address = sanitize($_POST['company_address'] ?? '');
                 $phone = sanitize($_POST['phone'] ?? '');
-                $pickup_location = sanitize($_POST['pickup_location'] ?? '');
-                $dropoff_location = sanitize($_POST['dropoff_location'] ?? '');
 
                 try {
                     // Handle logo upload
@@ -195,15 +218,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     if (!$error) {
-                        // Validate and format location lists
-                        $pickup_location = implode('; ', array_filter(array_map('trim', preg_split('/[;\r\n]+/', $pickup_location))));
-                        $dropoff_location = implode('; ', array_filter(array_map('trim', preg_split('/[;\r\n]+/', $dropoff_location))));
-
                         $stmt = $pdo->prepare("UPDATE tenants SET name = ?, logo = ? WHERE id = ?");
                         $stmt->execute([$company_name, $logo_path, $_SESSION['tenant_id']]);
 
-                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ?, pickup_location = ?, dropoff_location = ? WHERE tenant_id = ?");
-                        $stmt->execute([$company_address, $phone, $pickup_location, $dropoff_location, $_SESSION['tenant_id']]);
+                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ? WHERE tenant_id = ?");
+                        $stmt->execute([$company_address, $phone, $_SESSION['tenant_id']]);
 
                         $success = 'Company information updated successfully!';
                         if ($logo_uploaded) {
@@ -593,80 +612,58 @@ $settings = $stmt->fetch();
             <div class="max-w-4xl">
 
                 <!-- Tabs -->
-                <div class="relative shrink-0 mb-6 sm:mb-8">
-                    <div class="flex h-9 w-fit max-w-full items-center rounded-full border border-[rgba(120,120,128,0.05)] bg-[rgba(120,120,128,0.05)] p-1 select-none overflow-x-auto no-scrollbar">
-                        <div class="flex items-center">
-                            <a href="?tab=general" class="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors text-sm <?= $active_tab === 'general' ? 'text-blue-600 bg-[rgba(120,120,128,0.08)]' : 'text-[#4b5058] hover:text-black'?>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                                    <path d="M21.4707 19V5C21.4707 3 20.4707 2 18.4707 2H14.4707C12.4707 2 11.4707 3 11.4707 5V19C11.4707 21 12.4707 22 14.4707 22H18.4707C20.4707 22 21.4707 21 21.4707 19Z"></path>
-                                    <path d="M11.4707 6H16.4707"></path>
-                                    <path d="M11.4707 18H15.4707"></path>
-                                    <path d="M11.4707 13.9502L16.4707 14.0002"></path>
-                                    <path d="M11.4707 10H14.4707"></path>
-                                    <path d="M5.4893 2C3.8593 2 2.5293 3.33 2.5293 4.95V17.91C2.5293 18.36 2.7193 19.04 2.9493 19.43L3.7693 20.79C4.7093 22.36 6.2593 22.36 7.1993 20.79L8.0193 19.43C8.2493 19.04 8.4393 18.36 8.4393 17.91V4.95C8.4393 3.33 7.1093 2 5.4893 2Z"></path>
-                                    <path d="M8.4393 7H2.5293"></path>
-                                </svg>
-                                General
-                            </a>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="mx-px h-5 w-px <?= $active_tab === 'general' || $active_tab === 'booking' ? 'opacity-0' : 'bg-[#e6e6e6]'?>"></div>
-                            <a href="?tab=booking" class="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors text-sm <?= $active_tab === 'booking' ? 'text-blue-600 bg-[rgba(120,120,128,0.08)]' : 'text-[#4b5058] hover:text-black'?>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Booking
-                            </a>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="mx-px h-5 w-px <?= $active_tab === 'booking' || $active_tab === 'main' ? 'opacity-0' : 'bg-[#e6e6e6]'?>"></div>
-                            <a href="?tab=main" class="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors text-sm <?= $active_tab === 'main' ? 'text-blue-600 bg-[rgba(120,120,128,0.08)]' : 'text-[#4b5058] hover:text-black'?>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                                </svg>
-                                Company
-                            </a>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="mx-px h-5 w-px <?= $active_tab === 'main' || $active_tab === 'team' ? 'opacity-0' : 'bg-[#e6e6e6]'?>"></div>
-                            <a href="?tab=team" class="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors text-sm <?= $active_tab === 'team' ? 'text-blue-600 bg-[rgba(120,120,128,0.08)]' : 'text-[#4b5058] hover:text-black'?>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                                    <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                Team
-                            </a>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="mx-px h-5 w-px <?= $active_tab === 'team' || $active_tab === 'payments' ? 'opacity-0' : 'bg-[#e6e6e6]'?>"></div>
-                            <a href="?tab=payments" class="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors text-sm <?= $active_tab === 'payments' ? 'text-blue-600 bg-[rgba(120,120,128,0.08)]' : 'text-[#4b5058] hover:text-black'?>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                                    <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                                    <line x1="2" x2="22" y1="10" y2="10"></line>
-                                </svg>
-                                Payments
-                            </a>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="mx-px h-5 w-px <?= $active_tab === 'payments' || $active_tab === 'domain' ? 'opacity-0' : 'bg-[#e6e6e6]'?>"></div>
-                            <a href="?tab=domain" class="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors text-sm <?= $active_tab === 'domain' ? 'text-blue-600 bg-[rgba(120,120,128,0.08)]' : 'text-[#4b5058] hover:text-black'?>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                </svg>
-                                Domain
-                            </a>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="mx-px h-5 w-px <?= $active_tab === 'domain' || $active_tab === 'danger' ? 'opacity-0' : 'bg-[#e6e6e6]'?>"></div>
-                            <a href="?tab=danger" class="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors text-sm <?= $active_tab === 'danger' ? 'text-blue-600 bg-[rgba(120,120,128,0.08)]' : 'text-[#4b5058] hover:text-black'?>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                </svg>
-                                Danger
-                            </a>
-                        </div>
-                    </div>
+                <div class="flex items-center gap-4 mb-6 sm:mb-8 border-b border-gray-200 overflow-x-auto no-scrollbar select-none">
+                    <a href="?tab=general" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <path d="M21.4707 19V5C21.4707 3 20.4707 2 18.4707 2H14.4707C12.4707 2 11.4707 3 11.4707 5V19C11.4707 21 12.4707 22 14.4707 22H18.4707C20.4707 22 21.4707 21 21.4707 19Z"></path>
+                            <path d="M11.4707 6H16.4707"></path>
+                            <path d="M11.4707 18H15.4707"></path>
+                            <path d="M11.4707 13.9502L16.4707 14.0002"></path>
+                            <path d="M11.4707 10H14.4707"></path>
+                            <path d="M5.4893 2C3.8593 2 2.5293 3.33 2.5293 4.95V17.91C2.5293 18.36 2.7193 19.04 2.9493 19.43L3.7693 20.79C4.7093 22.36 6.2593 22.36 7.1993 20.79L8.0193 19.43C8.2493 19.04 8.4393 18.36 8.4393 17.91V4.95C8.4393 3.33 7.1093 2 5.4893 2Z"></path>
+                            <path d="M8.4393 7H2.5293"></path>
+                        </svg>
+                        General
+                    </a>
+                    <a href="?tab=booking" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'booking' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Booking
+                    </a>
+                    <a href="?tab=main" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'main' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        Company
+                    </a>
+                    <a href="?tab=team" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'team' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        Team
+                    </a>
+                    <a href="?tab=payments" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'payments' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                            <line x1="2" x2="22" y1="10" y2="10"></line>
+                        </svg>
+                        Payments
+                    </a>
+                    <a href="?tab=domain" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'domain' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        Domain
+                    </a>
+                    <a href="?tab=danger" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'danger' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        Danger
+                    </a>
                 </div>
 
                 <?php if ($success): ?>
@@ -811,6 +808,85 @@ endif; ?>
                         <input type="number" name="max_advance" value="<?= htmlspecialchars($settings['max_booking_advance_days'] ?? '30') ?>" placeholder="e.g. 30" class="w-32 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
 
+                    <!-- Business Hours -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-base font-semibold text-gray-900 mb-2">Business Hours / Booking Times</h3>
+                        <p class="text-sm text-gray-600 mb-4">Set your opening and closing times. Bookings outside of these hours will be automatically disabled/restricted on checkout.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Opening Time</label>
+                                <input type="time" name="opening_time" value="<?= htmlspecialchars($settings['opening_time'] ?? '08:00') ?>" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Closing Time</label>
+                                <input type="time" name="closing_time" value="<?= htmlspecialchars($settings['closing_time'] ?? '18:00') ?>" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pickup & Drop-off Locations -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-200">
+                        <!-- Pickup Locations -->
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900 mb-2">Default Pickup Location(s)</h3>
+                            <p class="text-sm text-gray-600 mb-4">Manage your authorized pickup locations for rental bookings.</p>
+                            <div id="pickup-locations-container" class="space-y-3">
+                                <?php
+                                $pickup_arr = array_filter(array_map('trim', explode(';', $settings['pickup_location'] ?? '')));
+                                if (empty($pickup_arr)) {
+                                    $pickup_arr = [''];
+                                }
+                                foreach ($pickup_arr as $index => $loc):
+                                ?>
+                                <div class="flex items-center gap-2 location-row">
+                                    <input type="text" name="pickup_locations[]" value="<?= htmlspecialchars($loc) ?>" placeholder="e.g. Heathrow Airport Terminal 2" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <button type="button" onclick="removeLocationRow(this)" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <button type="button" onclick="addLocationRow('pickup-locations-container', 'pickup_locations[]')" class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Add pickup location
+                            </button>
+                        </div>
+
+                        <!-- Drop-off Locations -->
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900 mb-2">Default Drop-off Location(s)</h3>
+                            <p class="text-sm text-gray-600 mb-4">Manage your authorized drop-off locations for rental bookings.</p>
+                            <div id="dropoff-locations-container" class="space-y-3">
+                                <?php
+                                $dropoff_arr = array_filter(array_map('trim', explode(';', $settings['dropoff_location'] ?? '')));
+                                if (empty($dropoff_arr)) {
+                                    $dropoff_arr = [''];
+                                }
+                                foreach ($dropoff_arr as $index => $loc):
+                                ?>
+                                <div class="flex items-center gap-2 location-row">
+                                    <input type="text" name="dropoff_locations[]" value="<?= htmlspecialchars($loc) ?>" placeholder="e.g. Heathrow Airport Terminal 2" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <button type="button" onclick="removeLocationRow(this)" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <button type="button" onclick="addLocationRow('dropoff-locations-container', 'dropoff_locations[]')" class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Add drop-off location
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Save Button -->
                     <div class="pt-4">
                         <button type="submit" class="px-6 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 font-medium">
@@ -863,20 +939,6 @@ endif; ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">Company address</label>
                         <input type="text" name="company_address" value="<?= htmlspecialchars($settings['company_address'] ?? '')?>" placeholder="Start typing..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-
-                    <!-- Pickup & Drop-off Locations -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-900 mb-2">Default Pickup Location(s)</label>
-                            <input type="text" name="pickup_location" value="<?= htmlspecialchars($settings['pickup_location'] ?? '')?>" placeholder="e.g. Heathrow Terminal 2; Manchester Central Complex: Windmill St, Manchester, M2 3GX" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <p class="text-[10px] text-gray-400 mt-1">Separate multiple locations using a semicolon (;). Do not use commas to separate locations, as addresses may contain commas.</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-900 mb-2">Default Drop-off Location(s)</label>
-                            <input type="text" name="dropoff_location" value="<?= htmlspecialchars($settings['dropoff_location'] ?? '')?>" placeholder="e.g. Heathrow Terminal 2; Manchester Central Complex: Windmill St, Manchester, M2 3GX" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <p class="text-[10px] text-gray-400 mt-1">Separate multiple locations using a semicolon (;). Do not use commas to separate locations, as addresses may contain commas.</p>
-                        </div>
                     </div>
 
                     <!-- Website -->
@@ -1775,6 +1837,32 @@ endif; ?>
         // Notice unit toggle
         function setNoticeUnit(unit) {
             document.getElementById('notice_unit').value = unit;
+        }
+
+        // Dynamic location row logic
+        function addLocationRow(containerId, inputName) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 location-row';
+            div.innerHTML = `
+                <input type="text" name="${inputName}" placeholder="e.g. Heathrow Airport Terminal 2" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <button type="button" onclick="removeLocationRow(this)" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeLocationRow(button) {
+            const row = button.closest('.location-row');
+            const container = row.parentNode;
+            if (container.querySelectorAll('.location-row').length > 1) {
+                row.remove();
+            } else {
+                row.querySelector('input').value = '';
+            }
         }
     </script>
     

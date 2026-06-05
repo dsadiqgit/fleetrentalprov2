@@ -1225,6 +1225,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             }
         }
 
+        const businessHours = {
+            opening: <?= json_encode($settings['opening_time'] ?? '08:00') ?>,
+            closing: <?= json_encode($settings['closing_time'] ?? '18:00') ?>
+        };
+
         function generateTimeSlots() {
             const amContainer = document.getElementById('amTimes');
             const pmContainer = document.getElementById('pmTimes');
@@ -1232,19 +1237,32 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             amContainer.innerHTML = '';
             pmContainer.innerHTML = '';
             
-            // AM times: 10:00, 12:00, 02:00
-            const amTimes = ['10:00', '12:00', '02:00'];
-            amTimes.forEach(time => {
-                const slot = createTimeSlot(time, 'AM');
-                amContainer.appendChild(slot);
-            });
+            let [openHours, openMinutes] = businessHours.opening.split(':').map(Number);
+            let [closeHours, closeMinutes] = businessHours.closing.split(':').map(Number);
             
-            // PM times: 04:00, 06:00, 08:00, 10:00
-            const pmTimes = ['04:00', '06:00', '08:00', '10:00'];
-            pmTimes.forEach(time => {
-                const slot = createTimeSlot(time, 'PM');
-                pmContainer.appendChild(slot);
-            });
+            let currentHour = openHours;
+            let currentMinute = openMinutes;
+            
+            while (currentHour < closeHours || (currentHour === closeHours && currentMinute <= closeMinutes)) {
+                let hour12 = currentHour % 12;
+                if (hour12 === 0) hour12 = 12;
+                let minuteStr = currentMinute.toString().padStart(2, '0');
+                let period = currentHour >= 12 ? 'PM' : 'AM';
+                let timeStr = `${hour12.toString().padStart(2, '0')}:${minuteStr}`;
+                
+                const slot = createTimeSlot(timeStr, period);
+                if (period === 'AM') {
+                    amContainer.appendChild(slot);
+                } else {
+                    pmContainer.appendChild(slot);
+                }
+                
+                currentMinute += 30;
+                if (currentMinute >= 60) {
+                    currentMinute -= 60;
+                    currentHour += 1;
+                }
+            }
         }
 
         function createTimeSlot(time, period) {

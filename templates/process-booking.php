@@ -39,12 +39,58 @@ $booking_id = $_POST['booking_id'] ?? null;
 $payment_method = $_POST['payment_method'] ?? 'cash';
 $intent_only = ($_POST['intent_only'] ?? '0') === '1';
 
-// Get Stripe and Deposit settings for this tenant
-$stmt = $pdo->prepare("SELECT stripe_publishable_key, stripe_secret_key, stripe_test_mode, deposit_amount, deposit_payment_mode, currency FROM tenant_settings WHERE tenant_id = ?");
+// Get Stripe, Deposit, and Business hour settings for this tenant
+$stmt = $pdo->prepare("SELECT stripe_publishable_key, stripe_secret_key, stripe_test_mode, deposit_amount, deposit_payment_mode, currency, opening_time, closing_time FROM tenant_settings WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
 $stripe_settings = $stmt->fetch();
 
+function parseTimeToMinutes($time_str) {
+    if (empty($time_str)) return null;
+    $time_str = strtolower(trim($time_str));
+    
+    $is_pm = strpos($time_str, 'pm') !== false;
+    $is_am = strpos($time_str, 'am') !== false;
+    
+    $clean_time = preg_replace('/[^0-9:]/', '', $time_str);
+    $parts = explode(':', $clean_time);
+    if (count($parts) < 2) return null;
+    
+    $hours = intval($parts[0]);
+    $minutes = intval($parts[1]);
+    
+    if ($is_pm && $hours < 12) {
+        $hours += 12;
+    }
+    if ($is_am && $hours === 12) {
+        $hours = 0;
+    }
+    
+    return $hours * 60 + $minutes;
+}
+
 try {
+    // Validate business hours
+    $opening_time = $stripe_settings['opening_time'] ?? null;
+    $closing_time = $stripe_settings['closing_time'] ?? null;
+    
+    if (!empty($opening_time) && !empty($closing_time)) {
+        $open_min = parseTimeToMinutes($opening_time);
+        $close_min = parseTimeToMinutes($closing_time);
+        
+        $pickup_min = parseTimeToMinutes($booking_data['pickup_time']);
+        $return_min = parseTimeToMinutes($booking_data['return_time']);
+        
+        if ($pickup_min !== null && ($pickup_min < $open_min || $pickup_min > $close_min)) {
+            echo json_encode(['success' => false, 'message' => "Selected pickup time ({$booking_data['pickup_time']}) is outside of business hours (" . date('h:i A', strtotime($opening_time)) . " - " . date('h:i A', strtotime($closing_time)) . ")"]);
+            exit;
+        }
+        
+        if ($return_min !== null && ($return_min < $open_min || $return_min > $close_min)) {
+            echo json_encode(['success' => false, 'message' => "Selected return time ({$booking_data['return_time']}) is outside of business hours (" . date('h:i A', strtotime($opening_time)) . " - " . date('h:i A', strtotime($closing_time)) . ")"]);
+            exit;
+        }
+    }
+
     // Validate dates
     $pickupDate = new DateTime($booking_data['pickup_date']);
     $returnDate = new DateTime($booking_data['return_date']);

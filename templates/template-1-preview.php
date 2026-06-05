@@ -921,30 +921,47 @@ endforeach; ?>
             });
         });
 
-        function initializeTimeSlots() {
-            const morningTimes = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'];
-            const eveningTimes = ['17:00', '17:30', '18:00'];
+        const businessHours = {
+            opening: <?= json_encode($settings['opening_time'] ?? '08:00') ?>,
+            closing: <?= json_encode($settings['closing_time'] ?? '18:00') ?>
+        };
 
+        function initializeTimeSlots() {
             const morningContainer = document.getElementById('morningTimes');
             const eveningContainer = document.getElementById('eveningTimes');
 
-            morningTimes.forEach(time => {
-                const btn = document.createElement('button');
-                btn.className = 'time-slot';
-                btn.textContent = time;
-                btn.type = 'button';
-                btn.onclick = () => selectTime(time);
-                morningContainer.appendChild(btn);
-            });
+            morningContainer.innerHTML = '';
+            eveningContainer.innerHTML = '';
 
-            eveningTimes.forEach(time => {
+            let [openHours, openMinutes] = businessHours.opening.split(':').map(Number);
+            let [closeHours, closeMinutes] = businessHours.closing.split(':').map(Number);
+
+            let currentHour = openHours;
+            let currentMinute = openMinutes;
+
+            while (currentHour < closeHours || (currentHour === closeHours && currentMinute <= closeMinutes)) {
+                let hourStr = currentHour.toString().padStart(2, '0');
+                let minuteStr = currentMinute.toString().padStart(2, '0');
+                let timeStr = `${hourStr}:${minuteStr}`;
+
                 const btn = document.createElement('button');
                 btn.className = 'time-slot';
-                btn.textContent = time;
+                btn.textContent = timeStr;
                 btn.type = 'button';
-                btn.onclick = () => selectTime(time);
-                eveningContainer.appendChild(btn);
-            });
+                btn.onclick = () => selectTime(timeStr);
+
+                if (currentHour < 17) {
+                    morningContainer.appendChild(btn);
+                } else {
+                    eveningContainer.appendChild(btn);
+                }
+
+                currentMinute += 30;
+                if (currentMinute >= 60) {
+                    currentMinute -= 60;
+                    currentHour += 1;
+                }
+            }
         }
 
         function showTimePicker(type) {
