@@ -50,6 +50,18 @@ $stmt = $pdo->prepare("SELECT pickup_date, return_date FROM bookings WHERE vehic
 $stmt->execute([$vehicle_id]);
 $booked_dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Convert booked dates to flatpickr disable format
+$disabled_dates = [];
+foreach ($booked_dates as $booking) {
+    $start = new DateTime($booking['pickup_date']);
+    $end = new DateTime($booking['return_date']);
+    $interval = new DateInterval('P1D');
+    $period = new DatePeriod($start, $interval, $end->modify('+1 day'));
+    foreach ($period as $day) {
+        $disabled_dates[] = $day->format('Y-m-d');
+    }
+}
+
 if (!$content) {
     $content = ['company_name' => $tenant['name'], 'contact_phone' => '', 'contact_email' => ''];
 }
@@ -254,90 +266,21 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         .flatpickr-day.inRange {
             background: #dbeafe !important;
             border-color: transparent !important;
-            box-shadow: none !important;
             border-radius: 0 !important;
             color: #1f2937 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            border: none !important;
-            position: relative !important;
-            z-index: 10 !important;
         }
         
-        /* Use negative grid gap to force days to overlap */
-        .flatpickr-days .dayContainer {
-            grid-gap: -5px !important;
-            gap: -5px !important;
-        }
-        
-        /* Also use negative margins on inRange days */
+        /* Use box-shadow to bridge horizontal gaps between inRange days without breaking grid layout */
         .flatpickr-day.inRange:not(.startRange):not(.endRange) {
-            margin-left: -5px !important;
-            margin-right: -5px !important;
-            margin-top: -5px !important;
-            margin-bottom: -5px !important;
-            z-index: 20 !important;
+            box-shadow: -5px 0 0 #dbeafe, 5px 0 0 #dbeafe !important;
         }
         
         .flatpickr-day.inRange.startRange {
-            margin-right: -5px !important;
-            margin-top: -5px !important;
-            margin-bottom: -5px !important;
-            z-index: 20 !important;
+            box-shadow: 5px 0 0 #dbeafe !important;
         }
         
         .flatpickr-day.inRange.endRange {
-            margin-left: -5px !important;
-            margin-top: -5px !important;
-            margin-bottom: -5px !important;
-            z-index: 20 !important;
-        }
-        
-        /* Override flatpickr's default spacing completely */
-        .flatpickr-calendar {
-            padding: 10px !important;
-        }
-        
-        .flatpickr-days {
-            padding: 0 !important;
-            margin: 0 !important;
-            gap: 0 !important;
-        }
-        
-        .flatpickr-days .dayContainer {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .flatpickr-day {
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-        }
-        
-        /* Remove gaps in inner container - AGGRESSIVE */
-        .flatpickr-innerContainer {
-            gap: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .flatpickr-innerContainer .flatpickr-rContainer {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .flatpickr-innerContainer .flatpickr-rContainer .flatpickr-days {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        /* Remove gaps in day row */
-        .flatpickr-dayContainer {
-            gap: 0 !important;
-            padding: 0 !important;
+            box-shadow: -5px 0 0 #dbeafe !important;
         }
         
         /* Round the start and end of range */
@@ -352,6 +295,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
         /* If start and end are the same day */
         .flatpickr-day.startRange.endRange {
             border-radius: 50% !important;
+            box-shadow: none !important;
         }
     </style>
 </head>
@@ -1112,6 +1056,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 showMonths: window.innerWidth < 768 ? 1 : 2,
                 dateFormat: "Y-m-d",
                 minDate: "today",
+                disable: <?= json_encode($disabled_dates) ?>,
                 locale: {
                     firstDayOfWeek: 1
                 },

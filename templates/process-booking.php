@@ -123,7 +123,37 @@ try {
         echo json_encode(['success' => false, 'message' => "This vehicle requires a minimum booking of $min_days " . ($min_days == 1 ? 'day' : 'days') . "."]);
         exit;
     }
-    
+
+    // Check for overlapping bookings on the same vehicle
+    $stmt = $pdo->prepare("
+        SELECT id, pickup_date, return_date 
+        FROM bookings 
+        WHERE vehicle_id = ? 
+        AND tenant_id = ? 
+        AND status NOT IN ('cancelled', 'completed')
+        AND (
+            (pickup_date <= ? AND return_date >= ?) OR
+            (pickup_date <= ? AND return_date >= ?) OR
+            (pickup_date >= ? AND return_date <= ?)
+        )
+    ");
+    $stmt->execute([
+        $booking_data['vehicle_id'],
+        $tenant_id,
+        $booking_data['pickup_date'],
+        $booking_data['pickup_date'],
+        $booking_data['return_date'],
+        $booking_data['return_date'],
+        $booking_data['pickup_date'],
+        $booking_data['return_date']
+    ]);
+    $existing_booking = $stmt->fetch();
+
+    if ($existing_booking) {
+        echo json_encode(['success' => false, 'message' => 'This vehicle is already booked for the selected dates. Please choose different dates.']);
+        exit;
+    }
+
     // Calculate total price using packages / daily pricing / fallback
     $total_days = $booking_data['total_days'];
     $matched_package_name = null;

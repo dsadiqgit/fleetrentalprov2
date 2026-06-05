@@ -202,90 +202,21 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         .flatpickr-day.inRange {
             background: #dbeafe !important;
             border-color: transparent !important;
-            box-shadow: none !important;
             border-radius: 0 !important;
             color: #1f2937 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            border: none !important;
-            position: relative !important;
-            z-index: 10 !important;
         }
         
-        /* Use negative grid gap to force days to overlap */
-        .flatpickr-days .dayContainer {
-            grid-gap: -5px !important;
-            gap: -5px !important;
-        }
-        
-        /* Also use negative margins on inRange days */
+        /* Use box-shadow to bridge horizontal gaps between inRange days without breaking grid layout */
         .flatpickr-day.inRange:not(.startRange):not(.endRange) {
-            margin-left: -5px !important;
-            margin-right: -5px !important;
-            margin-top: -5px !important;
-            margin-bottom: -5px !important;
-            z-index: 20 !important;
+            box-shadow: -5px 0 0 #dbeafe, 5px 0 0 #dbeafe !important;
         }
         
         .flatpickr-day.inRange.startRange {
-            margin-right: -5px !important;
-            margin-top: -5px !important;
-            margin-bottom: -5px !important;
-            z-index: 20 !important;
+            box-shadow: 5px 0 0 #dbeafe !important;
         }
         
         .flatpickr-day.inRange.endRange {
-            margin-left: -5px !important;
-            margin-top: -5px !important;
-            margin-bottom: -5px !important;
-            z-index: 20 !important;
-        }
-        
-        /* Override flatpickr's default spacing completely */
-        .flatpickr-calendar {
-            padding: 10px !important;
-        }
-        
-        .flatpickr-days {
-            padding: 0 !important;
-            margin: 0 !important;
-            gap: 0 !important;
-        }
-        
-        .flatpickr-days .dayContainer {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .flatpickr-day {
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-        }
-        
-        /* Remove gaps in inner container - AGGRESSIVE */
-        .flatpickr-innerContainer {
-            gap: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .flatpickr-innerContainer .flatpickr-rContainer {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .flatpickr-innerContainer .flatpickr-rContainer .flatpickr-days {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        /* Remove gaps in day row */
-        .flatpickr-dayContainer {
-            gap: 0 !important;
-            padding: 0 !important;
+            box-shadow: -5px 0 0 #dbeafe !important;
         }
         
         /* Round the start and end of range */
@@ -300,6 +231,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         /* If start and end are the same day */
         .flatpickr-day.startRange.endRange {
             border-radius: 50% !important;
+            box-shadow: none !important;
         }
 
         /* Custom time picker modal */
