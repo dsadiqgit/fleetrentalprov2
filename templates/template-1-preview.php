@@ -429,7 +429,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span>Opening Times: 08:00 - 18:00</span>
+                    <span>Opening Times: <?= htmlspecialchars($settings['opening_time'] ?? '08:00') ?> - <?= htmlspecialchars($settings['closing_time'] ?? '18:00') ?></span>
                 </div>
                 
                 <div class="time-section-title">Morning - afternoon</div>
@@ -830,8 +830,35 @@ endforeach; ?>
                 });
             }
 
-            // Times populator (for other pages)
-            const times = ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM"];
+            // Generate time slots dynamically based on business hours
+            const openingTime = <?= json_encode($settings['opening_time'] ?? '08:00') ?>;
+            const closingTime = <?= json_encode($settings['closing_time'] ?? '18:00') ?>;
+            
+            function generateTimeSlots() {
+                const times = [];
+                let [openHours, openMinutes] = openingTime.split(':').map(Number);
+                let [closeHours, closeMinutes] = closingTime.split(':').map(Number);
+                
+                let currentHour = openHours;
+                let currentMinute = openMinutes;
+                
+                while (currentHour < closeHours || (currentHour === closeHours && currentMinute <= closeMinutes)) {
+                    let hourStr = currentHour.toString().padStart(2, '0');
+                    let minuteStr = currentMinute.toString().padStart(2, '0');
+                    let displayHour = currentHour > 12 ? currentHour - 12 : (currentHour === 0 ? 12 : currentHour);
+                    let ampm = currentHour >= 12 ? 'PM' : 'AM';
+                    times.push(`${displayHour}:${minuteStr} ${ampm}`);
+                    
+                    currentMinute += 30;
+                    if (currentMinute >= 60) {
+                        currentMinute -= 60;
+                        currentHour += 1;
+                    }
+                }
+                return times;
+            }
+            
+            const times = generateTimeSlots();
             document.querySelectorAll('.time-dropdown-container').forEach(container => {
                 const list = container.querySelector('.time-options-list');
                 const display = container.querySelector('#pickup_time_display');
