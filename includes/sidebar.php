@@ -93,15 +93,31 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
             </div>
         </div>
 
-        <a href="/dashboard/customers.php"
-            class="sidebar-item <?= is_active('customers.php', $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                </path>
-            </svg>
-            <span class="font-medium text-sm">Customers</span>
-        </a>
+        <div class="relative group customers-menu-item">
+            <a href="/dashboard/customers.php"
+                class="sidebar-item <?= is_active('customers.php', $current_page) ?> flex items-center justify-between space-x-3 px-4 py-2 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                    <span class="font-medium text-sm">Customers</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </a>
+            <!-- Submenu -->
+            <div class="absolute left-full top-0 ml-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
+                <a href="/dashboard/customers.php" onclick="openAddCustomerModal(); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+                    Add Customer
+                </a>
+                <a href="/dashboard/customers.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
+                    View All Customers
+                </a>
+            </div>
+        </div>
 
         <a href="/dashboard/bookings.php"
             class="sidebar-item <?= is_active('bookings.php', $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
@@ -123,30 +139,34 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
             <span class="font-medium text-sm">Media Library</span>
         </a>
 
-        <a href="/dashboard/website.php"
-            class="sidebar-item <?= is_active(['website.php', 'website-builder.php', 'website-editor.php'], $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 9h16M9 20V9"></path>
-            </svg>
-            <span class="font-medium text-sm">Website</span>
-        </a>
-
-        <?php
-        $tenant_url = (ROOT_DOMAIN === 'localhost')
-            ? "http://{$tenant['subdomain']}." . ROOT_DOMAIN . ":" . PORT
-            : "http://{$tenant['subdomain']}." . ROOT_DOMAIN;
-        ?>
-        <div class="px-4 mt-2 mb-2">
-            <a href="<?= htmlspecialchars($tenant_url) ?>" target="_blank"
-                class="flex items-center justify-center space-x-2 w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-colors shadow-sm font-medium text-sm group">
-                <svg class="w-4 h-4 text-blue-200 group-hover:text-white transition-colors" fill="none"
-                    stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+        <div class="relative group website-menu-item">
+            <a href="/dashboard/website.php"
+                class="sidebar-item <?= is_active(['website.php', 'website-builder.php', 'website-editor.php'], $current_page) ?> flex items-center justify-between space-x-3 px-4 py-2 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 9h16M9 20V9"></path>
+                    </svg>
+                    <span class="font-medium text-sm">Website</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
-                <span>View Live Website</span>
             </a>
+            <!-- Submenu -->
+            <div class="absolute left-full top-0 ml-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
+                <?php
+                $tenant_url = (ROOT_DOMAIN === 'localhost')
+                    ? "http://{$tenant['subdomain']}." . ROOT_DOMAIN . ":" . PORT
+                    : "http://{$tenant['subdomain']}." . ROOT_DOMAIN;
+                ?>
+                <a href="<?= htmlspecialchars($tenant_url) ?>" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+                    Preview Website
+                </a>
+                <a href="/dashboard/website.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
+                    Edit Website
+                </a>
+            </div>
         </div>
 
         <div class="pt-4 mt-4">

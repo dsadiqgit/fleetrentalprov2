@@ -170,6 +170,121 @@ function field_value($name, $default = '') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    // Handle save draft action (AJAX)
+    if ($_POST['action'] === 'save_draft') {
+        header('Content-Type: application/json');
+        
+        $brand = sanitize($_POST['make'] ?? '');
+        $model = sanitize($_POST['model'] ?? '');
+        $year = intval($_POST['year'] ?? date('Y'));
+        $category = sanitize($_POST['type'] ?? 'sedan');
+        $transmission = sanitize($_POST['transmission'] ?? 'automatic');
+        $fuel_type = sanitize($_POST['fuel_type'] ?? 'petrol');
+        $seats = intval($_POST['seats'] ?? 5);
+        $price_per_day = floatval($_POST['price_per_day'] ?? 0);
+        $deposit = floatval($_POST['deposit'] ?? 0);
+        $require_deposit = isset($_POST['require_deposit']) ? 1 : 0;
+        $deposit_type = sanitize($_POST['deposit_type'] ?? 'collection');
+        $featured = isset($_POST['featured']) ? 1 : 0;
+        $contract_template_id = !empty($_POST['contract_template_id']) ? intval($_POST['contract_template_id']) : null;
+        $doors = intval($_POST['doors'] ?? 5);
+        $bags = intval($_POST['bags'] ?? 1);
+        $exterior_color = sanitize($_POST['exterior_color'] ?? '');
+        $interior_color = sanitize($_POST['interior_color'] ?? '');
+        $engine_capacity = sanitize($_POST['engine_capacity'] ?? '');
+        $air_conditioning = isset($_POST['air_conditioning']) ? 1 : 0;
+        $gps = isset($_POST['gps']) ? 1 : 0;
+        $description = $_POST['description'] ?? '';
+        $license_plate = sanitize($_POST['license_plate'] ?? '');
+        $vehicle_features = $_POST['vehicle_features'] ?? '[]';
+        $min_days = intval($_POST['min_days'] ?? 1);
+        $min_age = intval($_POST['min_age'] ?? 25);
+        $min_license_years = intval($_POST['min_license_years'] ?? 1);
+        $mileage_limit = intval($_POST['mileage_limit'] ?? 300);
+        $unlimited_mileage = isset($_POST['unlimited_mileage']) ? 1 : 0;
+
+        // Handle images
+        $image_paths = [];
+        if (isset($_POST['existing_images']) && is_array($_POST['existing_images'])) {
+            $image_paths = array_filter($_POST['existing_images'], function ($img) {
+                return !empty($img);
+            });
+        }
+
+        if (isset($_FILES['vehicle_image']) && !empty($_FILES['vehicle_image']['name'][0])) {
+            $upload_dir = __DIR__ . '/../uploads/vehicles/';
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
+            $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            $file_count = count($_FILES['vehicle_image']['name']);
+            for ($i = 0; $i < $file_count; $i++) {
+                if ($_FILES['vehicle_image']['error'][$i] === UPLOAD_ERR_OK) {
+                    $file_type = $_FILES['vehicle_image']['type'][$i];
+                    $file_size = $_FILES['vehicle_image']['size'][$i];
+                    $file_name = $_FILES['vehicle_image']['name'][$i];
+                    $tmp_name = $_FILES['vehicle_image']['tmp_name'][$i];
+                    if (in_array($file_type, $allowed_types) && $file_size <= 5 * 1024 * 1024) {
+                        $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                        $filename = uniqid() . '_' . time() . '_' . $i . '.' . $extension;
+                        $filepath = $upload_dir . $filename;
+                        if (move_uploaded_file($tmp_name, $filepath)) {
+                            $image_paths[] = '/uploads/vehicles/' . $filename;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($image_paths)) {
+            $image = json_encode($image_paths);
+        } else {
+            $image = json_encode(['/assets/images/placeholder-img.webp']);
+        }
+
+        // Handle daily pricing
+        $daily_pricing = [];
+        $days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        foreach ($days as $day) {
+            if (!empty($_POST['price_' . $day])) {
+                $daily_pricing[$day] = floatval($_POST['price_' . $day]);
+            }
+        }
+        $daily_pricing_json = !empty($daily_pricing) ? json_encode($daily_pricing) : null;
+        if ($daily_pricing_json && strpos($daily_pricing_json, '&quot;') !== false) {
+            $daily_pricing_json = htmlspecialchars_decode($daily_pricing_json, ENT_QUOTES | ENT_HTML5);
+        }
+
+        $unavailable_dates = isset($_POST['unavailable_dates']) ? $_POST['unavailable_dates'] : null;
+        $pricing_packages_json = $_POST['pricing_packages_json'] ?? '[]';
+        $pricing_packages_json = htmlspecialchars_decode($pricing_packages_json, ENT_QUOTES | ENT_HTML5);
+        if (empty($pricing_packages_json))
+            $pricing_packages_json = '[]';
+
+        $vehicle_name = $brand . ' ' . $model;
+
+        try {
+            // Check if editing existing vehicle
+            $vehicle_id = isset($_POST['vehicle_id']) ? intval($_POST['vehicle_id']) : null;
+            
+            if ($vehicle_id) {
+                // Update existing vehicle
+                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ? WHERE id = ? AND tenant_id = ?");
+                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $vehicle_id, $_SESSION['tenant_id']]);
+            } else {
+                // Insert new vehicle
+                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type]);
+                $vehicle_id = $pdo->lastInsertId();
+            }
+
+            echo json_encode(['success' => true, 'vehicle_id' => $vehicle_id, 'message' => 'Draft saved successfully']);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Failed to save draft: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
     $brand = sanitize($_POST['make'] ?? '');
     $model = sanitize($_POST['model'] ?? '');
     $year = intval($_POST['year'] ?? date('Y'));
@@ -707,7 +822,7 @@ endif; ?>
                 <!-- Schedule Board -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div class="flex border-b border-gray-100 bg-gray-50 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        <div class="w-60">Vehicles (<?= $filteredVehicleCount?>)</div>
+                        <div class="w-72">Vehicles (<?= $filteredVehicleCount?>)</div>
                         <?php if ($schedule_view === 'week'): ?>
                         <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                             <?php foreach ($week_days as $day): ?>
@@ -746,46 +861,40 @@ endif; ?>
                             $vehicleBookings = $assignmentsByVehicle[$vehicle['id']] ?? [];
                         ?>
                         <div class="flex">
-                            <div class="w-60 px-4 py-4 flex items-center justify-between gap-2 border-r border-gray-100">
-                                <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="flex items-center gap-3 group flex-1 min-w-0">
-                                    <?php if ($vehicleImage): ?>
-                                    <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>" class="w-10 h-10 rounded-xl object-cover border border-gray-200 group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-                                    <?php else: ?>
-                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-semibold <?= $palette ?> group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-                                        <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1))?>
-                                    </div>
-                                    <?php endif; ?>
-                                    <div class="min-w-0 flex-1 overflow-hidden">
-                                        <p class="text-xs font-semibold text-gray-900 leading-tight group-hover:text-blue-600 group-hover:underline transition-colors truncate" title="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>">
+                            <div class="w-72 px-4 py-3.5 flex items-center gap-3 border-r border-gray-100 hover:bg-gray-50 transition-colors">
+                                <?php if ($vehicleImage): ?>
+                                <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>" class="w-12 h-12 rounded-xl object-cover border border-gray-200 shadow-sm flex-shrink-0">
+                                <?php else: ?>
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold <?= $palette ?> shadow-sm flex-shrink-0">
+                                    <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1))?>
+                                </div>
+                                <?php endif; ?>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate" title="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>">
                                             <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
-                                        </p>
-                                        <p class="text-[10px] text-gray-500 truncate flex items-center gap-1">
-                                            <?= htmlspecialchars($vehicle['category'] ?? 'Car')?> · <?= htmlspecialchars($vehicle['license_plate'] ?? 'No plate')?>
-                                            <svg class="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        </a>
+                                        <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="p-1.5 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0 group/edit" title="Edit vehicle">
+                                            <svg class="w-4 h-4 text-gray-400 group-hover/edit:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                                             </svg>
-                                        </p>
+                                        </a>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs text-gray-500 truncate">
+                                            <?= htmlspecialchars($vehicle['license_plate'] ?? 'No plate')?>
+                                        </span>
                                         <?php if (($vehicle['availability'] ?? 1) == 1): ?>
-                                        <p class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
-                                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
                                             Active
-                                        </p>
+                                        </span>
                                         <?php else: ?>
-                                        <p class="text-[10px] text-gray-400 font-semibold flex items-center gap-1 mt-1">
-                                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                                            Disabled
-                                        </p>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                                            Inactive
+                                        </span>
                                         <?php endif; ?>
                                     </div>
-                                </a>
-                                
-                                <!-- Availability Toggle Switch -->
-                                <button type="button" 
-                                        onclick="window.location.href='/dashboard/vehicles.php?toggle=<?= $vehicle['id'] ?>'" 
-                                        class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none <?= (($vehicle['availability'] ?? 1) == 1) ? 'bg-blue-600' : 'bg-gray-200' ?>"
-                                        title="<?= (($vehicle['availability'] ?? 1) == 1) ? 'Deactivate Vehicle' : 'Activate Vehicle' ?>">
-                                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out <?= (($vehicle['availability'] ?? 1) == 1) ? 'translate-x-4' : 'translate-x-0' ?>"></span>
-                                </button>
+                                </div>
                             </div>
                             <div class="flex-1 relative border-l border-gray-100">
                                 <?php if ($schedule_view === 'week'): ?>
@@ -999,8 +1108,8 @@ endif; ?>
                     <?php
                         $stepNavigation = [
                             ['label' => 'Vehicle Information', 'tab' => 'basic'],
-                            ['label' => 'Service & Repairing', 'tab' => 'images'],
-                            ['label' => 'Owner Information', 'tab' => 'settings'],
+                            ['label' => 'Vehicle Images', 'tab' => 'images'],
+                            ['label' => 'Rental Policy & Documents', 'tab' => 'settings'],
                             ['label' => 'Rental Setting', 'tab' => 'pricing'],
                         ];
                         $activeCircleClasses = 'bg-white text-blue-600 shadow-lg border-2 border-blue-500';
@@ -1012,13 +1121,14 @@ endif; ?>
                                 <h1 class="text-3xl font-bold leading-tight tracking-tight"><?= $show_edit_form ? 'Edit Your Car' : 'Add Your Car for Rental' ?></h1>
                                 <p class="text-sm text-blue-700/80"><?= $show_edit_form ? 'Update your vehicle details below.' : 'Please fill in all the details to get approval for rental permission.' ?></p>
                             </div>
-                            <div class="flex flex-wrap items-center gap-3 justify-end">
+                            <div class="flex flex-wrap items-center gap-3 justify-end" x-cloak>
                                 <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-white bg-white/80 text-sm font-semibold text-blue-800 shadow-sm hover:shadow-md transition">Cancel</a>
+                                <button type="button" onclick="saveDraft()" class="px-4 py-2 rounded-full border-2 border-white/50 bg-white/60 text-sm font-semibold text-blue-700 shadow-sm hover:bg-white/80 transition">Save Draft</button>
                                 <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : 'pricing'), $data)" x-show="vehicleTab !== 'pricing'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
-                                <button form="vehicleForm" type="submit" x-show="vehicleTab === 'pricing'" class="px-5 py-2.5 rounded-full bg-green-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Submit</button>
+                                <button form="vehicleForm" type="submit" x-show="vehicleTab === 'pricing'" class="px-5 py-2.5 rounded-full bg-green-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Save</button>
                             </div>
                         </div>
-                        <div class="mt-8">
+                        <div class="mt-8" x-cloak>
                             <div class="relative">
                                 <div class="hidden md:block absolute inset-x-6 top-1/2 -translate-y-1/2">
                                     <div class="h-[2px] bg-blue-200"></div>
@@ -1493,15 +1603,6 @@ endif; ?>
                     <?php
     endif; ?>
 
-                    <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row justify-end gap-3 sm:space-x-4 pt-6 border-t border-gray-200">
-                        <a href="/dashboard/vehicles.php" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center">
-                            Cancel
-                        </a>
-                        <button type="submit" class="px-6 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800">
-                            <?= $show_edit_form ? 'Update Vehicle' : 'Create Vehicle'?>
-                        </button>
-                    </div>
                 </form>
                 </div>
             <?php
@@ -1521,6 +1622,36 @@ endif; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+        function saveDraft() {
+            const form = document.getElementById('vehicleForm');
+            if (!form) {
+                showNotification('Form not found', 'error');
+                return;
+            }
+
+            // Create a FormData object from the form
+            const formData = new FormData(form);
+            formData.append('action', 'save_draft');
+
+            // Send the data via AJAX
+            fetch('/dashboard/vehicles.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Draft saved successfully!', 'success');
+                } else {
+                    showNotification(data.message || 'Failed to save draft', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred while saving draft', 'error');
+            });
+        }
+
         function navigateToTab(targetTab, alpineData) {
             const currentTab = alpineData.vehicleTab;
             const steps = ['basic', 'images', 'settings', 'pricing', 'calendar'];

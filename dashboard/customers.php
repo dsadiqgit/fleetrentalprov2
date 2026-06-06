@@ -331,13 +331,6 @@ $customers = $stmt->fetchAll();
             <h1 class="text-lg font-semibold text-gray-900">Dashboard</h1>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="openAddCustomerModal()"
-                class="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Add Customer
-            </button>
             <button class="p-1 hover:bg-gray-100 rounded-lg transition-colors relative">
                 <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -377,13 +370,6 @@ $customers = $stmt->fetchAll();
                     <h1 class="text-2xl font-bold text-gray-900">Customers</h1>
                     <p class="text-sm text-gray-600 mt-1">Manage your customer database</p>
                 </div>
-                <button onclick="openAddCustomerModal()"
-                    class="px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    <span>Add Customer</span>
-                </button>
             </div>
         </header>
 
