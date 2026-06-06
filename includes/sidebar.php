@@ -209,7 +209,7 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
                     <a href="/dashboard/settings.php?tab=domain" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                         Domain
                     </a>
-                    <a href="/dashboard/settings.php?tab=danger" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
+                    <a href="/dashboard/settings.php?tab=billing" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
                         Billing
                     </a>
                 </div>

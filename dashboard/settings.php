@@ -644,7 +644,7 @@ $settings = $stmt->fetch();
 
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
-            <div class="max-w-4xl">
+            <div class="max-w-6xl">
 
                 <?php if ($success): ?>
                 <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
@@ -1343,17 +1343,24 @@ elseif ($active_tab === 'team'): ?>
                 <?php
 elseif ($active_tab === 'payments'): ?>
                 <!-- Payments Tab -->
-                <div class="space-y-6">
+                <div class="space-y-8">
+                    <!-- Stripe Integration Card -->
                     <div class="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
+                        <div class="flex items-start justify-between mb-8">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center">
+                                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-gray-900">Stripe Integration</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Accept payments securely with Stripe</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900">Stripe Connect</h3>
-                                <p class="text-sm text-gray-500">Connect your Stripe account to accept payments directly.</p>
+                            <div id="stripe-status-badge" class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold <?= (!empty($settings['stripe_publishable_key']) && !empty($settings['stripe_secret_key'])) ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-500'?>">
+                                <span class="w-2 h-2 rounded-full <?= (!empty($settings['stripe_publishable_key']) && !empty($settings['stripe_secret_key'])) ? 'bg-blue-600' : 'bg-gray-400'?>"></span>
+                                <?= (!empty($settings['stripe_publishable_key']) && !empty($settings['stripe_secret_key'])) ? 'Connected' : 'Not Connected'?>
                             </div>
                         </div>
 
@@ -1378,113 +1385,189 @@ elseif ($active_tab === 'payments'): ?>
                         <form method="POST" class="space-y-6" id="stripe-form">
                             <input type="hidden" name="action" value="update_stripe_keys">
                             
-                            <!-- Test Mode Toggle -->
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                <div>
-                                    <h4 class="text-sm font-bold text-gray-900">Test Mode</h4>
-                                    <p class="text-xs text-gray-500">Use this to test payments with fake cards</p>
+                            <!-- Mode Selection -->
+                            <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                                <label class="block text-sm font-bold text-gray-900 mb-4">Environment Mode</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="stripe_test_mode" value="1" class="sr-only peer" <?= $is_test ? 'checked' : ''?> onchange="toggleStripeMode(true)">
+                                        <div class="p-4 rounded-xl border-2 transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50 border-gray-200 hover:border-gray-300">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold text-gray-900">Test Mode</div>
+                                                    <div class="text-xs text-gray-500">For testing only</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="stripe_test_mode" value="0" class="sr-only peer" <?= !$is_test ? 'checked' : ''?> onchange="toggleStripeMode(false)">
+                                        <div class="p-4 rounded-xl border-2 transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50 border-gray-200 hover:border-gray-300">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold text-gray-900">Live Mode</div>
+                                                    <div class="text-xs text-gray-500">Real transactions</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
                                 </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" name="stripe_test_mode" id="stripe_test_mode_toggle" class="sr-only peer" <?= $is_test ? 'checked' : ''?> onchange="toggleStripeMode(this)">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
                             </div>
 
-                            <!-- Mode indicator badge -->
-                            <div id="stripe-mode-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold <?= $is_test ? 'bg-amber-50 border border-amber-200 text-amber-700' : 'bg-green-50 border border-green-200 text-green-700'?>">
-                                <span id="stripe-mode-dot" class="w-2 h-2 rounded-full <?= $is_test ? 'bg-amber-500' : 'bg-green-500'?>"></span>
-                                <span id="stripe-mode-label"><?= $is_test ? 'Test Mode — Using test keys (no real charges)' : 'Live Mode — Using live keys (real charges)'?></span>
-                            </div>
-
-                            <!-- Test Keys (shown when test mode is ON) -->
+                            <!-- Test Keys Section -->
                             <div id="stripe-test-fields" class="space-y-4" style="<?= $is_test ? '' : 'display:none'?>">
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Test Publishable Key</label>
-                                    <input type="text" name="stripe_test_publishable_key" 
-                                        value="<?= htmlspecialchars($test_pub)?>" 
-                                        placeholder="pk_test_..." 
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
-                                    <p class="mt-1.5 text-[10px] text-gray-400">Starts with <span class="text-amber-600 font-semibold">pk_test_</span></p>
+                                <div class="flex items-center gap-2 mb-4">
+                                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                                    <h4 class="text-sm font-bold text-gray-900">Test API Keys</h4>
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">Testing Environment</span>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Test Secret Key</label>
-                                    <input type="password" name="stripe_test_secret_key" 
-                                        value="<?= htmlspecialchars($test_sec)?>" 
-                                        placeholder="sk_test_..." 
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
-                                    <p class="mt-1.5 text-[10px] text-gray-400">Starts with <span class="text-amber-600 font-semibold">sk_test_</span></p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Publishable Key</label>
+                                        <div class="relative">
+                                            <input type="text" name="stripe_test_publishable_key" 
+                                                value="<?= htmlspecialchars($test_pub)?>" 
+                                                placeholder="pk_test_..." 
+                                                class="stripe-key-input w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
+                                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">pk_test_</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Secret Key</label>
+                                        <div class="relative">
+                                            <input type="password" name="stripe_test_secret_key" 
+                                                value="<?= htmlspecialchars($test_sec)?>" 
+                                                placeholder="sk_test_..." 
+                                                class="stripe-key-input w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
+                                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">sk_test_</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Live Keys (shown when test mode is OFF) -->
+                            <!-- Live Keys Section -->
                             <div id="stripe-live-fields" class="space-y-4" style="<?= $is_test ? 'display:none' : ''?>">
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Live Publishable Key</label>
-                                    <input type="text" name="stripe_live_publishable_key" 
-                                        value="<?= htmlspecialchars($live_pub)?>" 
-                                        placeholder="pk_live_..." 
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
-                                    <p class="mt-1.5 text-[10px] text-gray-400">Starts with <span class="text-green-600 font-semibold">pk_live_</span></p>
+                                <div class="flex items-center gap-2 mb-4">
+                                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                                    <h4 class="text-sm font-bold text-gray-900">Live API Keys</h4>
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">Production Environment</span>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Live Secret Key</label>
-                                    <input type="password" name="stripe_live_secret_key" 
-                                        value="<?= htmlspecialchars($live_sec)?>" 
-                                        placeholder="sk_live_..." 
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
-                                    <p class="mt-1.5 text-[10px] text-gray-400">Starts with <span class="text-green-600 font-semibold">sk_live_</span></p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Publishable Key</label>
+                                        <div class="relative">
+                                            <input type="text" name="stripe_live_publishable_key" 
+                                                value="<?= htmlspecialchars($live_pub)?>" 
+                                                placeholder="pk_live_..." 
+                                                class="stripe-key-input w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
+                                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">pk_live_</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Secret Key</label>
+                                        <div class="relative">
+                                            <input type="password" name="stripe_live_secret_key" 
+                                                value="<?= htmlspecialchars($live_sec)?>" 
+                                                placeholder="sk_live_..." 
+                                                class="stripe-key-input w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-sm font-mono">
+                                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">sk_live_</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="pt-4 flex items-center justify-between gap-4">
-                                <button type="submit" class="px-8 py-3 bg-black text-white rounded-xl hover:bg-gray-800 font-bold transition-all shadow-lg hover:shadow-xl">
-                                    <?=(!empty($settings['stripe_publishable_key']) && !empty($settings['stripe_secret_key'])) ? 'Update Configuration' : 'Set up Stripe Connect'?>
-                                </button>
-                                
-                                <?php if (!empty($settings['stripe_publishable_key']) || !empty($settings['stripe_secret_key']) || !empty($live_pub) || !empty($live_sec)): ?>
-                                <button type="button" onclick="showConfirmation('Remove Stripe?', 'Are you sure you want to remove your Stripe integration? This will prevent you from accepting card payments online.', () => { const f = document.createElement('form'); f.method='POST'; const a=document.createElement('input'); a.type='hidden'; a.name='action'; a.value='remove_stripe'; f.appendChild(a); document.body.appendChild(f); f.submit(); }, 'Remove Integration', 'bg-red-600')" class="px-6 py-3 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-bold transition-all">
-                                    Remove Connection
-                                </button>
-                                <?php
+                            <!-- Action Buttons -->
+                            <div class="pt-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition-all flex items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <?=(!empty($settings['stripe_publishable_key']) && !empty($settings['stripe_secret_key'])) ? 'Update Configuration' : 'Connect Stripe'?>
+                                    </button>
+                                    
+                                    <?php if (!empty($settings['stripe_publishable_key']) || !empty($settings['stripe_secret_key']) || !empty($live_pub) || !empty($live_sec)): ?>
+                                    <button type="button" onclick="showConfirmation('Remove Stripe?', 'Are you sure you want to remove your Stripe integration? This will prevent you from accepting card payments online.', () => { const f = document.createElement('form'); f.method='POST'; const a=document.createElement('input'); a.type='hidden'; a.name='action'; a.value='remove_stripe'; f.appendChild(a); document.body.appendChild(f); f.submit(); }, 'Remove Integration', 'bg-red-600')" class="px-4 py-3 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 font-semibold transition-all flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                        Disconnect
+                                    </button>
+                                    <?php
     endif; ?>
+                                </div>
 
-                                <a href="https://dashboard.stripe.com/apikeys" target="_blank" class="text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
-                                    Get your API keys
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                <a href="https://dashboard.stripe.com/apikeys" target="_blank" class="text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1.5 group">
+                                    Get API keys from Stripe
+                                    <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                    </svg>
                                 </a>
                             </div>
                         </form>
 
                         <script>
-                        function toggleStripeMode(checkbox) {
-                            const isTest = checkbox.checked;
+                        function toggleStripeMode(isTest) {
                             const testFields = document.getElementById('stripe-test-fields');
                             const liveFields = document.getElementById('stripe-live-fields');
-                            const badge = document.getElementById('stripe-mode-badge');
-                            const dot = document.getElementById('stripe-mode-dot');
-                            const label = document.getElementById('stripe-mode-label');
+                            const statusBadge = document.getElementById('stripe-status-badge');
 
                             if (isTest) {
                                 testFields.style.display = '';
                                 liveFields.style.display = 'none';
-                                badge.className = 'flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold bg-amber-50 border border-amber-200 text-amber-700';
-                                dot.className = 'w-2 h-2 rounded-full bg-amber-500';
-                                label.textContent = 'Test Mode — Using test keys (no real charges)';
                             } else {
                                 testFields.style.display = 'none';
                                 liveFields.style.display = '';
-                                badge.className = 'flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold bg-green-50 border border-green-200 text-green-700';
-                                dot.className = 'w-2 h-2 rounded-full bg-green-500';
-                                label.textContent = 'Live Mode — Using live keys (real charges)';
                             }
                         }
+
+                        // Hide placeholder indicators when user types
+                        document.querySelectorAll('.stripe-key-input').forEach(input => {
+                            const placeholder = input.nextElementSibling;
+                            
+                            function updatePlaceholder() {
+                                if (input.value.length > 0) {
+                                    placeholder.style.display = 'none';
+                                } else {
+                                    placeholder.style.display = 'block';
+                                }
+                            }
+                            
+                            input.addEventListener('input', updatePlaceholder);
+                            input.addEventListener('focus', updatePlaceholder);
+                            input.addEventListener('blur', updatePlaceholder);
+                            
+                            // Initial check
+                            updatePlaceholder();
+                        });
                         </script>
                     </div>
 
-                    <div class="bg-blue-50/50 rounded-2xl p-6 border border-blue-100 italic">
-                        <p class="text-sm text-gray-600">
-                            <strong>Testing Pro-tip:</strong> When Test Mode is ON, you can use Stripe's test card numbers (like 4242 4242 4242 4242) to simulate successful or failed bookings without real money.
-                        </p>
+                    <!-- Info Card -->
+                    <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 mb-1">Testing with Stripe</h4>
+                                <p class="text-sm text-gray-600 leading-relaxed">
+                                    When in <span class="font-semibold text-blue-600">Test Mode</span>, use Stripe's test card number <code class="px-2 py-0.5 bg-white rounded text-xs font-mono text-blue-700">4242 4242 4242 4242</code> to simulate successful payments without real money. This allows you to test your booking flow before going live.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1658,7 +1741,7 @@ elseif ($active_tab === 'domain'): ?>
                 </script>
 
                 <?php
-elseif ($active_tab === 'danger'): ?>
+elseif ($active_tab === 'billing'): ?>
                 <!-- Billing & Invoice Tab -->
                 <div class="space-y-8">
                     <!-- Cards Grid -->
@@ -1667,9 +1750,9 @@ elseif ($active_tab === 'danger'): ?>
                         <div class="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                             <div class="flex items-center justify-between mb-6">
                                 <h3 class="text-base font-bold text-gray-900">Current Plan Summary</h3>
-                                <button type="button" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
+                                <a href="/pricing.php#pricingCard" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all inline-block text-center">
                                     Upgrade
-                                </button>
+                                </a>
                             </div>
                             
                             <div class="grid grid-cols-3 gap-4 mb-6">
@@ -1807,12 +1890,29 @@ elseif ($active_tab === 'danger'): ?>
                                                     Paid
                                                 </span>
                                             </td>
-                                            <td class="py-4.5 px-6 text-right">
-                                                <button class="text-gray-400 hover:text-gray-600 transition">
-                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                    </svg>
-                                                </button>
+                                            <td class="py-4.5 px-6 text-right relative">
+                                                <div class="relative inline-block">
+                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
+                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                            </svg>
+                                                            View Invoice
+                                                        </a>
+                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                            </svg>
+                                                            Download Invoice
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                         <!-- Row 2 -->
@@ -1826,12 +1926,29 @@ elseif ($active_tab === 'danger'): ?>
                                                     Paid
                                                 </span>
                                             </td>
-                                            <td class="py-4.5 px-6 text-right">
-                                                <button class="text-gray-400 hover:text-gray-600 transition">
-                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                    </svg>
-                                                </button>
+                                            <td class="py-4.5 px-6 text-right relative">
+                                                <div class="relative inline-block">
+                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
+                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                            </svg>
+                                                            View Invoice
+                                                        </a>
+                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                            </svg>
+                                                            Download Invoice
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                         <!-- Row 3 -->
@@ -1845,12 +1962,29 @@ elseif ($active_tab === 'danger'): ?>
                                                     Paid
                                                 </span>
                                             </td>
-                                            <td class="py-4.5 px-6 text-right">
-                                                <button class="text-gray-400 hover:text-gray-600 transition">
-                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                    </svg>
-                                                </button>
+                                            <td class="py-4.5 px-6 text-right relative">
+                                                <div class="relative inline-block">
+                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
+                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                            </svg>
+                                                            View Invoice
+                                                        </a>
+                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                            </svg>
+                                                            Download Invoice
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                         <!-- Row 4 -->
@@ -1864,12 +1998,29 @@ elseif ($active_tab === 'danger'): ?>
                                                     Paid
                                                 </span>
                                             </td>
-                                            <td class="py-4.5 px-6 text-right">
-                                                <button class="text-gray-400 hover:text-gray-600 transition">
-                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                    </svg>
-                                                </button>
+                                            <td class="py-4.5 px-6 text-right relative">
+                                                <div class="relative inline-block">
+                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
+                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                            </svg>
+                                                            View Invoice
+                                                        </a>
+                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                            </svg>
+                                                            Download Invoice
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                         <!-- Row 5 -->
@@ -1883,12 +2034,29 @@ elseif ($active_tab === 'danger'): ?>
                                                     Paid
                                                 </span>
                                             </td>
-                                            <td class="py-4.5 px-6 text-right">
-                                                <button class="text-gray-400 hover:text-gray-600 transition">
-                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                    </svg>
-                                                </button>
+                                            <td class="py-4.5 px-6 text-right relative">
+                                                <div class="relative inline-block">
+                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
+                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                            </svg>
+                                                            View Invoice
+                                                        </a>
+                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                            </svg>
+                                                            Download Invoice
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -2082,6 +2250,106 @@ endif; ?>
                 row.querySelector('input').value = '';
             }
         }
+
+        // Invoice dropdown menu toggle
+        function toggleInvoiceMenu(button) {
+            const menu = button.nextElementSibling;
+            const allMenus = document.querySelectorAll('.invoice-dropdown-menu');
+            
+            // Close all other menus
+            allMenus.forEach(m => {
+                if (m !== menu) {
+                    m.classList.add('hidden');
+                }
+            });
+            
+            // Toggle current menu
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.relative.inline-block')) {
+                document.querySelectorAll('.invoice-dropdown-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            }
+        });
+
+        // View invoice function
+        function viewInvoice(element) {
+            const row = element.closest('tr');
+            const invoiceId = row.querySelector('td').textContent;
+            alert('Viewing invoice: ' + invoiceId);
+            // TODO: Implement actual invoice viewing logic
+        }
+
+        // Download invoice function
+        function downloadInvoice(element) {
+            const row = element.closest('tr');
+            const invoiceId = row.querySelector('td').textContent;
+            alert('Downloading invoice: ' + invoiceId);
+            // TODO: Implement actual invoice download logic
+        }
+
+        // Invoice table sorting
+        let invoiceSortDirection = {};
+        
+        function sortInvoiceTable(columnIndex) {
+            const table = document.querySelector('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Toggle sort direction
+            invoiceSortDirection[columnIndex] = !invoiceSortDirection[columnIndex];
+            const direction = invoiceSortDirection[columnIndex] ? 1 : -1;
+            
+            rows.sort((a, b) => {
+                const aText = a.cells[columnIndex].textContent.trim();
+                const bText = b.cells[columnIndex].textContent.trim();
+                
+                // Handle numeric sorting for amount
+                if (columnIndex === 3) {
+                    const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+                    const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+                    return (aNum - bNum) * direction;
+                }
+                
+                // Handle date sorting
+                if (columnIndex === 1) {
+                    const aDate = new Date(aText);
+                    const bDate = new Date(bText);
+                    return (aDate - bDate) * direction;
+                }
+                
+                // Default text sorting
+                return aText.localeCompare(bText) * direction;
+            });
+            
+            // Re-append rows in sorted order
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update sort icons
+            const headers = table.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                const icon = header.querySelector('svg');
+                if (icon && index === columnIndex) {
+                    icon.style.transform = invoiceSortDirection[columnIndex] ? 'rotate(180deg)' : 'rotate(0deg)';
+                    icon.style.transition = 'transform 0.2s';
+                }
+            });
+        }
+
+        // Add click handlers to sortable headers
+        document.addEventListener('DOMContentLoaded', function() {
+            const sortableHeaders = document.querySelectorAll('th');
+            sortableHeaders.forEach((header, index) => {
+                if (index < 5) { // First 5 columns are sortable
+                    header.style.cursor = 'pointer';
+                    header.addEventListener('click', () => sortInvoiceTable(index));
+                }
+            });
+        });
     </script>
     
     <?php include __DIR__ . '/../includes/onboarding-widget.php'; ?>
