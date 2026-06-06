@@ -1065,6 +1065,22 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     if (selectedDates.length === 2) {
                         selectedDate = selectedDates[0];
                         
+                        // Format and display pickup date
+                        const pickupDate = selectedDates[0];
+                        const pickupFormatted = `${pickupDate.getDate()} ${months[pickupDate.getMonth()]}, ${pickupDate.getFullYear()}`;
+                        const pickupInput = document.getElementById('pickup_datetime');
+                        const mobilePickupInput = document.getElementById('mobile_pickup_datetime');
+                        if (pickupInput) pickupInput.value = pickupFormatted;
+                        if (mobilePickupInput) mobilePickupInput.value = pickupFormatted;
+                        
+                        // Format and display return date
+                        const returnDate = selectedDates[1];
+                        const returnFormatted = `${returnDate.getDate()} ${months[returnDate.getMonth()]}, ${returnDate.getFullYear()}`;
+                        const returnInput = document.getElementById('return_datetime');
+                        const mobileReturnInput = document.getElementById('mobile_return_datetime');
+                        if (returnInput) returnInput.value = returnFormatted;
+                        if (mobileReturnInput) mobileReturnInput.value = returnFormatted;
+                        
                         // Show time selection for pickup first
                         document.getElementById('timeSelection').classList.remove('hidden');
                         document.getElementById('timeSelectionTitle').textContent = 'Choose Pick-up Time';

@@ -590,12 +590,6 @@ if ($show_edit_form) {
             <h1 class="text-lg font-semibold text-gray-900">Dashboard</h1>
         </div>
         <div class="flex items-center gap-3">
-            <a href="/dashboard/vehicles.php?action=add" class="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Add Vehicle
-            </a>
             <button class="p-1 hover:bg-gray-100 rounded-lg transition-colors relative">
                 <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -611,7 +605,7 @@ if ($show_edit_form) {
     <div id="sidebar-overlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-30 hidden transition-all duration-300"></div>
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="fixed lg:static top-14 lg:top-0 bottom-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-40 lg:flex">
+    <aside id="sidebar" class="fixed lg:static top-14 lg:top-0 bottom-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-[100] lg:flex">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     </aside>
 
@@ -657,15 +651,6 @@ else: ?>
 endif; ?>
                     </p>
                 </div>
-                <?php if (!$show_add_form && !$show_edit_form): ?>
-                <a href="/dashboard/vehicles.php?action=add" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add Vehicle
-                </a>
-                <?php
-endif; ?>
             </div>
         </header>
 
@@ -716,7 +701,6 @@ endif; ?>
                             <a href="/dashboard/vehicles.php?schedule_view=month&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
                                class="px-3 py-1 rounded-md <?= $schedule_view === 'month' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Month</a>
                         </div>
-                        <button class="px-4 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-500">Add Assignment</button>
                     </div>
                 </div>
 
@@ -765,16 +749,21 @@ endif; ?>
                             <div class="w-60 px-4 py-4 flex items-center justify-between gap-2 border-r border-gray-100">
                                 <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="flex items-center gap-3 group flex-1 min-w-0">
                                     <?php if ($vehicleImage): ?>
-                                    <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>" class="w-10 h-10 rounded-xl object-cover border border-gray-200 group-hover:scale-105 transition-transform duration-200">
+                                    <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>" class="w-10 h-10 rounded-xl object-cover border border-gray-200 group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
                                     <?php else: ?>
-                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-semibold <?= $palette ?> group-hover:scale-105 transition-transform duration-200">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-semibold <?= $palette ?> group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
                                         <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1))?>
                                     </div>
                                     <?php endif; ?>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-xs font-semibold text-gray-900 leading-tight group-hover:text-blue-600 group-hover:underline transition-colors truncate"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?></p>
-                                        <p class="text-[10px] text-gray-500 truncate">
+                                    <div class="min-w-0 flex-1 overflow-hidden">
+                                        <p class="text-xs font-semibold text-gray-900 leading-tight group-hover:text-blue-600 group-hover:underline transition-colors truncate" title="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>">
+                                            <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
+                                        </p>
+                                        <p class="text-[10px] text-gray-500 truncate flex items-center gap-1">
                                             <?= htmlspecialchars($vehicle['category'] ?? 'Car')?> · <?= htmlspecialchars($vehicle['license_plate'] ?? 'No plate')?>
+                                            <svg class="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                            </svg>
                                         </p>
                                         <?php if (($vehicle['availability'] ?? 1) == 1): ?>
                                         <p class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
@@ -1020,8 +1009,8 @@ endif; ?>
                     <div class="bg-gradient-to-br from-blue-100/90 via-blue-100 to-blue-50 border border-blue-200 rounded-[32px] shadow-lg p-6 md:p-8 text-gray-900 overflow-hidden">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="space-y-1">
-                                <h1 class="text-3xl font-bold leading-tight tracking-tight">Add Your Car for Rental</h1>
-                                <p class="text-sm text-blue-700/80">Please fill in all the details to get approval for rental permission.</p>
+                                <h1 class="text-3xl font-bold leading-tight tracking-tight"><?= $show_edit_form ? 'Edit Your Car' : 'Add Your Car for Rental' ?></h1>
+                                <p class="text-sm text-blue-700/80"><?= $show_edit_form ? 'Update your vehicle details below.' : 'Please fill in all the details to get approval for rental permission.' ?></p>
                             </div>
                             <div class="flex flex-wrap items-center gap-3 justify-end">
                                 <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-white bg-white/80 text-sm font-semibold text-blue-800 shadow-sm hover:shadow-md transition">Cancel</a>

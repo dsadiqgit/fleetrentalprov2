@@ -38,7 +38,7 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
 // Sidebar is ready and uses $tenant['logo'] for branding
 ?>
 
-<div class="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+<div class="w-64 bg-white border-r border-gray-200 flex flex-col h-full relative z-50">
     <!-- Logo -->
     <div class="p-6 border-b border-gray-200">
         <div class="flex items-center space-x-3">
@@ -57,7 +57,7 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+    <nav class="flex-1 p-4 space-y-1 overflow-visible relative z-50">
         <a href="/dashboard/"
             class="sidebar-item <?= is_active('index.php', $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,15 +67,31 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
             <span class="font-medium text-sm">Calendar</span>
         </a>
 
-        <a href="/dashboard/vehicles.php"
-            class="sidebar-item <?= is_active('vehicles.php', $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M8 17h.01M16 17h.01M3 11l1.5-5.25A2 2 0 016.43 4h11.14a2 2 0 011.93 1.75L21 11M3 11v5a2 2 0 002 2h1a2 2 0 002-2v-1h8v1a2 2 0 002 2h1a2 2 0 002-2v-5M3 11h18">
-                </path>
-            </svg>
-            <span class="font-medium text-sm">Vehicles</span>
-        </a>
+        <div class="relative group vehicles-menu-item">
+            <a href="/dashboard/vehicles.php"
+                class="sidebar-item <?= is_active('vehicles.php', $current_page) ?> flex items-center justify-between space-x-3 px-4 py-2 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 17h.01M16 17h.01M3 11l1.5-5.25A2 2 0 016.43 4h11.14a2 2 0 011.93 1.75L21 11M3 11v5a2 2 0 002 2h1a2 2 0 002-2v-1h8v1a2 2 0 002 2h1a2 2 0 002-2v-5M3 11h18">
+                        </path>
+                    </svg>
+                    <span class="font-medium text-sm">Vehicles</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </a>
+            <!-- Submenu -->
+            <div class="absolute left-full top-0 ml-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
+                <a href="/dashboard/vehicles.php?action=add" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+                    Add Vehicle
+                </a>
+                <a href="/dashboard/vehicles.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
+                    View All Vehicles
+                </a>
+            </div>
+        </div>
 
         <a href="/dashboard/customers.php"
             class="sidebar-item <?= is_active('customers.php', $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
@@ -248,6 +264,18 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
                 sidebar.classList.add('-translate-x-full');
                 sidebarOverlay.classList.add('hidden');
                 body.style.overflow = '';
+            });
+        }
+
+        // Vehicles submenu positioning
+        const vehiclesMenuItem = document.querySelector('.vehicles-menu-item');
+        const vehiclesSubmenu = document.querySelector('.vehicles-submenu');
+
+        if (vehiclesMenuItem && vehiclesSubmenu) {
+            vehiclesMenuItem.addEventListener('mouseenter', function() {
+                const rect = vehiclesMenuItem.getBoundingClientRect();
+                vehiclesSubmenu.style.top = rect.top + 'px';
+                vehiclesSubmenu.style.left = (rect.right + 8) + 'px';
             });
         }
     })();
