@@ -30,6 +30,15 @@ if ($edit_mode) {
     if (!$template) {
         redirect('/dashboard/e-signing.php');
     }
+} else {
+    // Enforce max 2 contract templates when creating new
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM contract_templates WHERE tenant_id = ?");
+    $countStmt->execute([$_SESSION['tenant_id']]);
+    $templateCount = (int) $countStmt->fetchColumn();
+
+    if ($templateCount >= 2) {
+        redirect('/dashboard/e-signing.php');
+    }
 }
 
 // Get tenant information

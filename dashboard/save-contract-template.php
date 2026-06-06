@@ -33,6 +33,16 @@ try {
         $stmt = $pdo->prepare("UPDATE contract_templates SET name = ?, content = ? WHERE id = ? AND tenant_id = ?");
         $stmt->execute([$data['name'], $templateData, $data['template_id'], $_SESSION['tenant_id']]);
     } else {
+        // Enforce max 2 contract templates per tenant
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM contract_templates WHERE tenant_id = ?");
+        $countStmt->execute([$_SESSION['tenant_id']]);
+        $templateCount = (int) $countStmt->fetchColumn();
+
+        if ($templateCount >= 2) {
+            echo json_encode(['success' => false, 'message' => 'Contract limit reached. Maximum of 2 contract templates allowed.']);
+            exit;
+        }
+
         // Insert new template
         $stmt = $pdo->prepare("INSERT INTO contract_templates (tenant_id, name, content, status) VALUES (?, ?, ?, 'published')");
         $stmt->execute([$_SESSION['tenant_id'], $data['name'], $templateData]);

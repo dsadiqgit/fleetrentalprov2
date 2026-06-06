@@ -319,6 +319,7 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                     <div
                         class="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Default contract template</h2>
+                        <?php if (count($templates) < 2): ?>
                         <div
                             class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                             <a href="/dashboard/contract-designer.php"
@@ -332,6 +333,7 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                                 <span>Create a Contract Template</span>
                             </a>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="p-6">
@@ -340,10 +342,12 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                             <div class="text-6xl mb-4">📄</div>
                             <h3 class="text-xl font-semibold text-gray-900 mb-2">No contract templates yet</h3>
                             <p class="text-gray-600 mb-6">Create your first contract template to get started</p>
+                            <?php if (count($templates) < 2): ?>
                             <a href="/dashboard/contract-designer.php"
                                 class="inline-block px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                                 Create Contract Template
                             </a>
+                            <?php endif; ?>
                         </div>
                         <?php
 else: ?>
