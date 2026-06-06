@@ -1115,37 +1115,25 @@ endif; ?>
                         $activeCircleClasses = 'bg-white text-blue-600 shadow-lg border-2 border-blue-500';
                         $inactiveCircleClasses = 'bg-white/70 text-blue-200 border border-blue-100';
                     ?>
-                    <div class="bg-gradient-to-br from-blue-100/90 via-blue-100 to-blue-50 border border-blue-200 rounded-[32px] shadow-lg p-6 md:p-8 text-gray-900 overflow-hidden">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div class="space-y-1">
-                                <h1 class="text-3xl font-bold leading-tight tracking-tight"><?= $show_edit_form ? 'Edit Your Car' : 'Add Your Car for Rental' ?></h1>
-                                <p class="text-sm text-blue-700/80"><?= $show_edit_form ? 'Update your vehicle details below.' : 'Please fill in all the details to get approval for rental permission.' ?></p>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-3 justify-end" x-cloak>
-                                <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-white bg-white/80 text-sm font-semibold text-blue-800 shadow-sm hover:shadow-md transition">Cancel</a>
-                                <button type="button" onclick="saveDraft()" class="px-4 py-2 rounded-full border-2 border-white/50 bg-white/60 text-sm font-semibold text-blue-700 shadow-sm hover:bg-white/80 transition">Save Draft</button>
-                                <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : 'pricing'), $data)" x-show="vehicleTab !== 'pricing'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
-                                <button form="vehicleForm" type="submit" x-show="vehicleTab === 'pricing'" class="px-5 py-2.5 rounded-full bg-green-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Save</button>
-                            </div>
+                    <div class="mb-8" x-cloak>
+                        <div class="relative flex items-center justify-between">
+                            <div class="hidden md:block absolute top-1/2 -translate-y-1/2 h-px bg-gray-200 z-0" style="left: 50%; transform: translateX(-50%); width: calc(100% - 80px);"></div>
+                            <?php foreach ($stepNavigation as $stepIdx => $step): ?>
+                            <button type="button" id="step-btn-<?= $step['tab']?>" @click="navigateToTab('<?= $step['tab']?>', $data)" class="relative z-10 flex flex-col items-center text-center gap-2 focus:outline-none px-2 md:px-4">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all" :class="vehicleTab === '<?= $step['tab']?>' ? 'bg-blue-600 text-white border-2 border-blue-600' : 'bg-white text-gray-500 border border-gray-300'">
+                                    <?= str_pad($stepIdx + 1, 2, '0', STR_PAD_LEFT)?>
+                                </div>
+                                <span class="text-[10px] font-medium uppercase tracking-[0.3em] leading-tight" :class="vehicleTab === '<?= $step['tab']?>' ? 'text-blue-600' : 'text-gray-400'">
+                                    <?= $step['label']?>
+                                </span>
+                            </button>
+                            <?php endforeach; ?>
                         </div>
-                        <div class="mt-8" x-cloak>
-                            <div class="relative">
-                                <div class="hidden md:block absolute inset-x-6 top-1/2 -translate-y-1/2">
-                                    <div class="h-[2px] bg-blue-200"></div>
-                                </div>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 relative z-10">
-                                    <?php foreach ($stepNavigation as $stepIdx => $step): ?>
-                                    <button type="button" id="step-btn-<?= $step['tab']?>" @click="navigateToTab('<?= $step['tab']?>', $data)" class="flex flex-col items-center text-center gap-2 md:gap-1 focus:outline-none">
-                                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm transition-all" :class="vehicleTab === '<?= $step['tab']?>' ? '<?= $activeCircleClasses?>' : '<?= $inactiveCircleClasses?>'">
-                                            <?= str_pad($stepIdx + 1, 2, '0', STR_PAD_LEFT)?>
-                                        </div>
-                                        <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-[0.4em] text-blue-500/70">
-                                            <?= $step['label']?>
-                                        </span>
-                                    </button>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
+                        <div class="flex flex-wrap items-center justify-end gap-3 mt-6">
+                            <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-gray-300 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:shadow-md transition">Cancel</a>
+                            <button type="button" onclick="saveDraft()" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save Draft</button>
+                            <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : 'pricing'), $data)" x-show="vehicleTab !== 'pricing'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
+                            <button form="vehicleForm" type="submit" x-show="vehicleTab === 'pricing'" class="px-5 py-2.5 rounded-full bg-green-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Save</button>
                         </div>
                     </div>
 
