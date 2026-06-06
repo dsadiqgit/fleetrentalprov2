@@ -162,18 +162,6 @@ $tenant = $stmt->fetch();
         <!-- Main Content -->
         <main class="flex-1 overflow-auto p-6">
             <div class="max-w-7xl mx-auto">
-                <!-- Page Toggle -->
-                <div class="flex p-1 bg-gray-100 rounded-xl w-fit mb-6 ml-auto">
-                    <a href="/dashboard/contracts.php"
-                        class="px-5 py-2.5 text-sm font-normal rounded-lg transition-all <?= $current_page === 'contracts.php' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'?>">
-                        Agreements
-                    </a>
-                    <a href="/dashboard/e-signing.php"
-                        class="px-5 py-2.5 text-sm font-normal rounded-lg transition-all <?= $current_page === 'e-signing.php' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'?>">
-                        Templates
-                    </a>
-                </div>
-
                 <!-- Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">

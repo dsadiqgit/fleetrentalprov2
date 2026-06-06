@@ -280,18 +280,6 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
         <div class="flex-1 overflow-auto bg-gray-50">
             <div class="px-4 sm:px-6 lg:px-8 py-8">
 
-                <!-- Page Toggle -->
-                <div class="flex p-1 bg-gray-100 rounded-xl w-fit mb-6 ml-auto">
-                    <a href="/dashboard/contracts.php"
-                        class="px-5 py-2.5 text-sm font-normal rounded-lg transition-all <?= $current_page === 'contracts.php' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'?>">
-                        Agreements
-                    </a>
-                    <a href="/dashboard/e-signing.php"
-                        class="px-5 py-2.5 text-sm font-normal rounded-lg transition-all <?= $current_page === 'e-signing.php' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'?>">
-                        Templates
-                    </a>
-                </div>
-
                 <!-- E-Sign Feature Toggle -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                     <form method="POST" class="flex items-start justify-between">
