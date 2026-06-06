@@ -163,7 +163,7 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
                 <a href="<?= htmlspecialchars($tenant_url) ?>" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
                     Preview Website
                 </a>
-                <a href="/dashboard/website.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
+                <a href="/dashboard/website-builder.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
                     Edit Website
                 </a>
             </div>
