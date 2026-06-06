@@ -745,6 +745,17 @@ endforeach; ?>
             });
         }
 
+        const businessHours = {
+            opening: <?= json_encode($settings['opening_time'] ?? '08:00') ?>,
+            closing: <?= json_encode($settings['closing_time'] ?? '18:00') ?>
+        };
+
+        // Generate time slots dynamically based on business hours
+        const openingTime = <?= json_encode($settings['opening_time'] ?? '08:00') ?>;
+        const closingTime = <?= json_encode($settings['closing_time'] ?? '18:00') ?>;
+        const minBookingNotice = <?= isset($settings['min_booking_notice']) ? (int)$settings['min_booking_notice'] : 48 ?>;
+        const noticeUnit = <?= json_encode($settings['booking_notice_unit'] ?? 'hours') ?>;
+
         document.addEventListener('DOMContentLoaded', function () {
             if (window.flatpickr) {
                 flatpickr.l10ns.default.firstDayOfWeek = 1;
@@ -830,14 +841,26 @@ endforeach; ?>
                 });
             }
 
-            // Generate time slots dynamically based on business hours
+        // Generate time slots dynamically based on business hours
             const openingTime = <?= json_encode($settings['opening_time'] ?? '08:00') ?>;
             const closingTime = <?= json_encode($settings['closing_time'] ?? '18:00') ?>;
+            const minBookingNotice = <?= isset($settings['min_booking_notice']) ? (int)$settings['min_booking_notice'] : 48 ?>;
+            const noticeUnit = <?= json_encode($settings['booking_notice_unit'] ?? 'hours') ?>;
             
             function generateTimeSlots() {
                 const times = [];
                 let [openHours, openMinutes] = openingTime.split(':').map(Number);
                 let [closeHours, closeMinutes] = closingTime.split(':').map(Number);
+                
+                // Calculate minimum booking time (current time + notice period)
+                const now = new Date();
+                let minBookingTime = new Date(now);
+                
+                if (noticeUnit === 'hours') {
+                    minBookingTime.setHours(minBookingTime.getHours() + minBookingNotice);
+                } else {
+                    minBookingTime.setDate(minBookingTime.getDate() + minBookingNotice);
+                }
                 
                 let currentHour = openHours;
                 let currentMinute = openMinutes;
@@ -847,7 +870,25 @@ endforeach; ?>
                     let minuteStr = currentMinute.toString().padStart(2, '0');
                     let displayHour = currentHour > 12 ? currentHour - 12 : (currentHour === 0 ? 12 : currentHour);
                     let ampm = currentHour >= 12 ? 'PM' : 'AM';
-                    times.push(`${displayHour}:${minuteStr} ${ampm}`);
+                    
+                    // Check if this time slot is available
+                    let isAvailable = true;
+                    
+                    const pickupDate = pickupInstance ? pickupInstance.selectedDates[0] : null;
+                    if (pickupDate) {
+                        // Create the full datetime for this slot
+                        const slotTime = new Date(pickupDate);
+                        slotTime.setHours(currentHour, currentMinute, 0, 0);
+                        
+                        // Check if slot time is before minimum booking time
+                        if (slotTime < minBookingTime) {
+                            isAvailable = false;
+                        }
+                    }
+                    
+                    if (isAvailable) {
+                        times.push(`${displayHour}:${minuteStr} ${ampm}`);
+                    }
                     
                     currentMinute += 30;
                     if (currentMinute >= 60) {
@@ -881,11 +922,6 @@ endforeach; ?>
             });
         });
 
-        const businessHours = {
-            opening: <?= json_encode($settings['opening_time'] ?? '08:00') ?>,
-            closing: <?= json_encode($settings['closing_time'] ?? '18:00') ?>
-        };
-
         function initializeTimeSlots() {
             const morningContainer = document.getElementById('morningTimes');
             const eveningContainer = document.getElementById('eveningTimes');
@@ -896,6 +932,16 @@ endforeach; ?>
             let [openHours, openMinutes] = businessHours.opening.split(':').map(Number);
             let [closeHours, closeMinutes] = businessHours.closing.split(':').map(Number);
 
+            // Calculate minimum booking time (current time + notice period)
+            const now = new Date();
+            let minBookingTime = new Date(now);
+            
+            if (noticeUnit === 'hours') {
+                minBookingTime.setHours(minBookingTime.getHours() + minBookingNotice);
+            } else {
+                minBookingTime.setDate(minBookingTime.getDate() + minBookingNotice);
+            }
+
             let currentHour = openHours;
             let currentMinute = openMinutes;
 
@@ -904,11 +950,31 @@ endforeach; ?>
                 let minuteStr = currentMinute.toString().padStart(2, '0');
                 let timeStr = `${hourStr}:${minuteStr}`;
 
+                // Check if this time slot is available
+                let isAvailable = true;
+                
+                if (pickupDateInstance && pickupDateInstance.selectedDates.length > 0) {
+                    const selectedDate = pickupDateInstance.selectedDates[0];
+                    const slotTime = new Date(selectedDate);
+                    slotTime.setHours(currentHour, currentMinute, 0, 0);
+                    
+                    if (slotTime < minBookingTime) {
+                        isAvailable = false;
+                    }
+                }
+
                 const btn = document.createElement('button');
-                btn.className = 'time-slot';
+                btn.className = 'time-slot' + (isAvailable ? '' : ' disabled');
                 btn.textContent = timeStr;
                 btn.type = 'button';
-                btn.onclick = () => selectTime(timeStr);
+                
+                if (isAvailable) {
+                    btn.onclick = () => selectTime(timeStr);
+                } else {
+                    btn.style.opacity = '0.4';
+                    btn.style.cursor = 'not-allowed';
+                    btn.title = 'This time is not available due to minimum booking notice';
+                }
 
                 if (currentHour < 17) {
                     morningContainer.appendChild(btn);
@@ -930,6 +996,9 @@ endforeach; ?>
             title.textContent = type === 'pickup' ? 'Select pickup time' : 'Select return time';
             modal.classList.add('active');
             modal.dataset.currentType = type;
+            
+            // Regenerate time slots with minimum booking notice check
+            initializeTimeSlots();
         }
 
         function closeTimePicker() {

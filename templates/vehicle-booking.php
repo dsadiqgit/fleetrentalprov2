@@ -1029,7 +1029,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Error</h3>
                     <p class="text-gray-600 text-center mb-6">${message}</p>
                     <button onclick="document.getElementById('customErrorModal').remove()" class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors">
                         OK
@@ -1106,8 +1105,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             document.getElementById('maxBookingModal').classList.remove('active');
             document.body.style.overflow = '';
         }
-
-        let calendarInstance = null;
 
         function initializeCalendar() {
             calendarInstance = flatpickr("#modalCalendar", {
@@ -1201,6 +1198,16 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     showErrorModal('Return date cannot be before pickup date.');
                     return;
                 }
+                
+                // Validate minimum rental period
+                const minDays = priceConfig.min_days || 1;
+                const diffTime = returnDateObj - pickupDateObj;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays < minDays) {
+                    showErrorModal(`Minimum rental period is ${minDays} days. Please select a longer rental period.`);
+                    return;
+                }
             }
             
             // Validate that pickup date is not in the past
@@ -1280,6 +1287,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             closing: <?= json_encode($settings['closing_time'] ?? '18:00') ?>
         };
 
+        const bookingNotice = {
+            minNotice: <?= isset($settings['min_booking_notice']) ? (int)$settings['min_booking_notice'] : 48 ?>,
+            noticeUnit: <?= json_encode($settings['booking_notice_unit'] ?? 'hours') ?>
+        };
+
         function generateTimeSlots() {
             const amContainer = document.getElementById('amTimes');
             const pmContainer = document.getElementById('pmTimes');
@@ -1289,6 +1301,16 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             
             let [openHours, openMinutes] = businessHours.opening.split(':').map(Number);
             let [closeHours, closeMinutes] = businessHours.closing.split(':').map(Number);
+            
+            // Calculate minimum booking time (current time + notice period)
+            const now = new Date();
+            let minBookingTime = new Date(now);
+            
+            if (bookingNotice.noticeUnit === 'hours') {
+                minBookingTime.setHours(minBookingTime.getHours() + bookingNotice.minNotice);
+            } else {
+                minBookingTime.setDate(minBookingTime.getDate() + bookingNotice.minNotice);
+            }
             
             let currentHour = openHours;
             let currentMinute = openMinutes;
@@ -1300,7 +1322,21 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 let period = currentHour >= 12 ? 'PM' : 'AM';
                 let timeStr = `${hour12.toString().padStart(2, '0')}:${minuteStr}`;
                 
-                const slot = createTimeSlot(timeStr, period);
+                // Check if this time slot is available
+                let isAvailable = true;
+                
+                if (selectedDate) {
+                    // Create the full datetime for this slot
+                    const slotTime = new Date(selectedDate);
+                    slotTime.setHours(currentHour, currentMinute, 0, 0);
+                    
+                    // Check if slot time is before minimum booking time
+                    if (slotTime < minBookingTime) {
+                        isAvailable = false;
+                    }
+                }
+                
+                const slot = createTimeSlot(timeStr, period, isAvailable);
                 if (period === 'AM') {
                     amContainer.appendChild(slot);
                 } else {
@@ -1315,13 +1351,21 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             }
         }
 
-        function createTimeSlot(time, period) {
+        function createTimeSlot(time, period, isAvailable = true) {
             const div = document.createElement('div');
-            div.className = 'time-slot';
+            div.className = 'time-slot' + (isAvailable ? '' : ' disabled');
             div.textContent = time;
-            div.onclick = function() {
-                selectTime(time, period, div);
-            };
+            
+            if (isAvailable) {
+                div.onclick = function() {
+                    selectTime(time, period, div);
+                };
+            } else {
+                div.style.opacity = '0.4';
+                div.style.cursor = 'not-allowed';
+                div.title = 'This time is not available due to minimum booking notice';
+            }
+            
             return div;
         }
 
@@ -1538,6 +1582,12 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             // Switch to return time selection
                             document.getElementById('timeSelectionTitle').textContent = 'Choose Return Time';
                             modal.dataset.currentTimeType = 'return';
+                            
+                            // Update selectedDate to return date for time slot generation
+                            selectedDate = returnDate;
+                            
+                            // Regenerate time slots for return date
+                            generateTimeSlots();
                             
                             // Reset time selection UI
                             document.querySelectorAll('.time-slot').forEach(slot => {

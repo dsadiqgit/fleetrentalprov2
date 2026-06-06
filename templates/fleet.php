@@ -40,15 +40,34 @@ function resolveDate($dateStr)
     // Try to parse standard Y-m-d
     if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr))
         return $dateStr;
-    // Try to parse "Wed 25 Mar" or similar
+    // Try to parse "7 Jun, 10:00" or "Wed 25 Mar" or similar
     $timestamp = strtotime($dateStr);
     if ($timestamp)
         return date('Y-m-d', $timestamp);
     return null;
 }
 
+// Parse datetime string to extract date for Flatpickr
+function parseDateTimeForFlatpickr($dateStr)
+{
+    if (!$dateStr)
+        return '';
+    // Try to parse standard Y-m-d
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr))
+        return $dateStr;
+    // Try to parse "7 Jun, 10:00" or similar datetime formats
+    $timestamp = strtotime($dateStr);
+    if ($timestamp)
+        return date('Y-m-d', $timestamp);
+    return '';
+}
+
 $pickup_date = resolveDate($pickup);
 $dropoff_date = resolveDate($dropoff);
+
+// For Flatpickr defaultDate, use the parsed date in Y-m-d format
+$pickup_flatpickr = parseDateTimeForFlatpickr($pickup);
+$dropoff_flatpickr = parseDateTimeForFlatpickr($dropoff);
 
 // Build query
 $query = "SELECT v.* FROM vehicles v WHERE v.tenant_id = ? AND v.availability = 1";
@@ -808,6 +827,7 @@ endif; ?>
             // Desktop Datepickers
             const pickupPicker = flatpickr("#pickup_date", {
                 ...fpConfig,
+                defaultDate: "<?= htmlspecialchars($pickup_flatpickr) ?>",
                 onChange: function(selectedDates, dateStr, instance) {
                     if (!validateSelectedDate(selectedDates, instance)) return;
                     if (selectedDates.length > 0) {
@@ -826,6 +846,7 @@ endif; ?>
 
             const returnPicker = flatpickr("#dropoff_date", {
                 ...fpConfig,
+                defaultDate: "<?= htmlspecialchars($dropoff_flatpickr) ?>",
                 onChange: function(selectedDates, dateStr, instance) {
                     validateSelectedDate(selectedDates, instance);
                 }
@@ -834,6 +855,7 @@ endif; ?>
             // Mobile Datepickers
             const mobPickupPicker = flatpickr("#mob_pickup_date", {
                 ...fpConfig,
+                defaultDate: "<?= htmlspecialchars($pickup_flatpickr) ?>",
                 onChange: function(selectedDates, dateStr, instance) {
                     if (!validateSelectedDate(selectedDates, instance)) return;
                     if (selectedDates.length > 0) {
@@ -852,6 +874,7 @@ endif; ?>
 
             const mobReturnPicker = flatpickr("#mob_dropoff_date", {
                 ...fpConfig,
+                defaultDate: "<?= htmlspecialchars($dropoff_flatpickr) ?>",
                 onChange: function(selectedDates, dateStr, instance) {
                     validateSelectedDate(selectedDates, instance);
                 }
