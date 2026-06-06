@@ -165,7 +165,7 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
                                             <span class="block text-xs text-gray-500 font-medium"><?= htmlspecialchars($pickup_time_display) ?></span>
                                         </div>
                                         <div class="border-l-4 border-blue-500 pl-3">
-                                            <span class="block text-xs font-semibold text-gray-400 uppercase">Drop-off</span>
+                                            <span class="block text-xs font-semibold text-gray-400 uppercase">Return</span>
                                             <span class="block text-sm font-bold text-gray-800"><?= htmlspecialchars($return_date_display) ?></span>
                                             <span class="block text-xs text-gray-500 font-medium"><?= htmlspecialchars($return_time_display) ?></span>
                                         </div>

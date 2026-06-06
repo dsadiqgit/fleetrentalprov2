@@ -118,6 +118,10 @@ $error = '';
 $success = '';
 $active_tab = $_GET['tab'] ?? 'general';
 
+// Preserve submitted values on error
+$submitted_pickup_locations = null;
+$submitted_dropoff_locations = null;
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -152,16 +156,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pickup_locs = array_filter(array_map('sanitize', $pickup_locs));
                 $dropoff_locs = array_filter(array_map('sanitize', $dropoff_locs));
 
-                // Join with '; '
-                $pickup_location = implode('; ', $pickup_locs);
-                $dropoff_location = implode('; ', $dropoff_locs);
+                // Validate that at least one pickup and return location is provided
+                if (empty($pickup_locs)) {
+                    $error = 'Please add at least one Default Pickup Location.';
+                    $submitted_pickup_locations = $_POST['pickup_locations'] ?? [];
+                    $submitted_dropoff_locations = $_POST['dropoff_locations'] ?? [];
+                } elseif (empty($dropoff_locs)) {
+                    $error = 'Please add at least one Default Return Location.';
+                    $submitted_pickup_locations = $_POST['pickup_locations'] ?? [];
+                    $submitted_dropoff_locations = $_POST['dropoff_locations'] ?? [];
+                } else {
+                    // Join with '; '
+                    $pickup_location = implode('; ', $pickup_locs);
+                    $dropoff_location = implode('; ', $dropoff_locs);
 
-                try {
-                    $stmt = $pdo->prepare("UPDATE tenant_settings SET min_booking_notice = ?, booking_notice_unit = ?, buffer_time_hours = ?, max_booking_advance_days = ?, pickup_location = ?, dropoff_location = ?, opening_time = ?, closing_time = ? WHERE tenant_id = ?");
-                    $stmt->execute([$min_notice, $notice_unit, $buffer_time, $max_advance, $pickup_location, $dropoff_location, $opening_time, $closing_time, $_SESSION['tenant_id']]);
-                    $success = 'Booking settings updated successfully!';
-                } catch (Exception $e) {
-                    $error = 'Failed to update booking settings: ' . $e->getMessage();
+                    try {
+                        $stmt = $pdo->prepare("UPDATE tenant_settings SET min_booking_notice = ?, booking_notice_unit = ?, buffer_time_hours = ?, max_booking_advance_days = ?, pickup_location = ?, dropoff_location = ?, opening_time = ?, closing_time = ? WHERE tenant_id = ?");
+                        $stmt->execute([$min_notice, $notice_unit, $buffer_time, $max_advance, $pickup_location, $dropoff_location, $opening_time, $closing_time, $_SESSION['tenant_id']]);
+                        $success = 'Booking settings updated successfully!';
+                    } catch (Exception $e) {
+                        $error = 'Failed to update booking settings: ' . $e->getMessage();
+                    }
                 }
                 break;
                 
@@ -622,6 +637,11 @@ endif; ?>
                 <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
                     <?= htmlspecialchars($error)?>
                 </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        showErrorModal('<?= htmlspecialchars($error)?>');
+                    });
+                </script>
                 <?php
 endif; ?>
 
@@ -777,7 +797,11 @@ endif; ?>
                             <p class="text-sm text-gray-600 mb-4">Manage your authorized pickup locations for rental bookings.</p>
                             <div id="pickup-locations-container" class="space-y-3">
                                 <?php
-                                $pickup_arr = array_filter(array_map('trim', explode(';', $settings['pickup_location'] ?? '')));
+                                if ($submitted_pickup_locations !== null) {
+                                    $pickup_arr = $submitted_pickup_locations;
+                                } else {
+                                    $pickup_arr = array_filter(array_map('trim', explode(';', $settings['pickup_location'] ?? '')));
+                                }
                                 if (empty($pickup_arr)) {
                                     $pickup_arr = [''];
                                 }
@@ -803,11 +827,15 @@ endif; ?>
 
                         <!-- Drop-off Locations -->
                         <div>
-                            <h3 class="text-base font-semibold text-gray-900 mb-2">Default Drop-off Location(s)</h3>
-                            <p class="text-sm text-gray-600 mb-4">Manage your authorized drop-off locations for rental bookings.</p>
+                            <h3 class="text-base font-semibold text-gray-900 mb-2">Default Return Location(s)</h3>
+                            <p class="text-sm text-gray-600 mb-4">Manage your authorized return locations for rental bookings.</p>
                             <div id="dropoff-locations-container" class="space-y-3">
                                 <?php
-                                $dropoff_arr = array_filter(array_map('trim', explode(';', $settings['dropoff_location'] ?? '')));
+                                if ($submitted_dropoff_locations !== null) {
+                                    $dropoff_arr = $submitted_dropoff_locations;
+                                } else {
+                                    $dropoff_arr = array_filter(array_map('trim', explode(';', $settings['dropoff_location'] ?? '')));
+                                }
                                 if (empty($dropoff_arr)) {
                                     $dropoff_arr = [''];
                                 }
@@ -827,7 +855,7 @@ endif; ?>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                 </svg>
-                                Add drop-off location
+                                Add return location
                             </button>
                         </div>
                     </div>
@@ -1875,6 +1903,20 @@ endif; ?>
             </form>
         </div>
     </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-8 shadow-2xl scale-in-center overflow-hidden relative">
+            <div class="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-extrabold text-gray-900 tracking-tight text-center mb-2">Error</h3>
+            <p id="error-modal-message" class="text-gray-500 text-center text-sm mb-8"></p>
+            <button type="button" onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-bold shadow-lg transition-all">OK</button>
+        </div>
+    </div>
     
     <!-- Support Chat Button -->
     <button class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition z-30">
@@ -1893,6 +1935,12 @@ endif; ?>
                 e.target.classList.add('hidden');
             }
         });
+
+        // Error Modal Function
+        function showErrorModal(message) {
+            document.getElementById('error-modal-message').textContent = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
 
         // Update filename display when logo is selected
         function updateFileName(input) {

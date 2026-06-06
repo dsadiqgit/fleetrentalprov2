@@ -559,7 +559,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Return Date</label>
                             <div class="relative">
                                 <input type="text" id="return_datetime" placeholder="Oct 21st, 2023, 11:00pm" readonly onclick="openCalendarModal('return')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
                                 <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -576,7 +576,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Return Location</label>
                             <select name="return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
                                 <?php foreach ($locations as $loc): ?>
                                     <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
@@ -626,7 +626,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                                 <span id="breakdown_total_due" class="font-bold text-gray-900"><?= $currency_symbol?>0.00</span>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-4">* Your total rent amount is calculated dynamically depending on your selected pick-up and drop-off dates.</p>
+                        <p class="text-xs text-gray-500 mt-4">* Your total rent amount is calculated dynamically depending on your selected pick-up and return dates.</p>
                     </div>
                     
                     <button onclick="continueToCheckout('desktop')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-sm mt-6">
@@ -678,7 +678,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Date</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Return Date</label>
                         <div class="relative">
                             <input type="text" id="mobile_return_datetime" placeholder="Oct 21st, 2023, 11:00pm" readonly onclick="openCalendarModal('return')" class="w-full px-4 py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer">
                             <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -695,7 +695,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Drop-off Location</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Return Location</label>
                         <select name="mobile_return_location" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 16px center; background-size: 10px;">
                             <?php foreach ($locations as $loc): ?>
                                 <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
@@ -1191,7 +1191,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             }
             
             if (!pickupDt || !returnDt) {
-                showErrorModal('Please select both pick-up and drop-off dates.');
+                showErrorModal('Please select both pick-up and return dates.');
                 return;
             }
             

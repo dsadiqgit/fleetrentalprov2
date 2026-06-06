@@ -169,7 +169,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                                 </div>
                                 <div class="w-px h-8 bg-gray-200 mx-4"></div>
                                 <div class="flex-1">
-                                    <label class="block text-[10px] uppercase font-bold text-gray-400">Drop-off</label>
+                                    <label class="block text-[10px] uppercase font-bold text-gray-400">Return</label>
                                     <span id="dropoff_display" class="font-bold text-gray-900 text-sm">Select
                                         dates</span>
                                 </div>
