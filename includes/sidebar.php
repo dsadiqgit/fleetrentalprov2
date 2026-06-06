@@ -129,6 +129,32 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
             <span class="font-medium text-sm">Bookings</span>
         </a>
 
+        <div class="relative group contracts-menu-item">
+            <a href="/dashboard/contracts.php"
+                class="sidebar-item <?= is_active(['contracts.php', 'e-signing.php', 'contract-designer.php'], $current_page) ?> flex items-center justify-between space-x-3 px-4 py-2 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                    <span class="font-medium text-sm">Contracts</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </a>
+            <!-- Submenu -->
+            <div class="absolute left-full top-0 ml-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
+                <a href="/dashboard/contracts.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+                    Agreements
+                </a>
+                <a href="/dashboard/e-signing.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
+                    Templates
+                </a>
+            </div>
+        </div>
+
         <a href="/dashboard/media-library.php"
             class="sidebar-item <?= is_active('media-library.php', $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
