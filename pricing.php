@@ -123,7 +123,7 @@ require_once __DIR__ . '/config/config.php';
 
     <!-- Pricing Cards -->
     <div class="py-20 bg-white">
-        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div id="pricingCard" class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-gray-900 mb-4">Choose the plan that fits your current stage.</h2>
                 <p class="text-lg text-gray-600">It's easy to switch between plans as you grow. No hidden fees or long-term contracts.</p>
