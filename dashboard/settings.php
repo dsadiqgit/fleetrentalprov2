@@ -184,6 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $company_name = sanitize($_POST['company_name'] ?? '');
                 $company_address = sanitize($_POST['company_address'] ?? '');
                 $phone = sanitize($_POST['phone'] ?? '');
+                $company_email = sanitize($_POST['company_email'] ?? '');
 
                 try {
                     // Handle logo upload
@@ -236,8 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt = $pdo->prepare("UPDATE tenants SET name = ?, logo = ? WHERE id = ?");
                         $stmt->execute([$company_name, $logo_path, $_SESSION['tenant_id']]);
 
-                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ? WHERE tenant_id = ?");
-                        $stmt->execute([$company_address, $phone, $_SESSION['tenant_id']]);
+                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ?, company_email = ? WHERE tenant_id = ?");
+                        $stmt->execute([$company_address, $phone, $company_email, $_SESSION['tenant_id']]);
 
                         $success = 'Company information updated successfully!';
                         if ($logo_uploaded) {
@@ -391,11 +392,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'update_team_member':
                 $member_id = (int)($_POST['member_id'] ?? 0);
                 $new_role = sanitize($_POST['edit_role'] ?? 'staff');
+                $new_email = sanitize($_POST['edit_email'] ?? '');
                 $new_password = $_POST['edit_password'] ?? '';
 
                 try {
                     // Start transaction
                     $pdo->beginTransaction();
+
+                    // Update email if provided and different
+                    if (!empty($new_email)) {
+                        // Validate email format
+                        if (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+                            throw new Exception('Invalid email address');
+                        }
+                        
+                        // Check if email is already taken by another user
+                        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ? AND tenant_id = ?");
+                        $stmt->execute([$new_email, $member_id, $_SESSION['tenant_id']]);
+                        if ($stmt->fetch()) {
+                            throw new Exception('Email address is already in use by another team member');
+                        }
+                        
+                        $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ? AND tenant_id = ?");
+                        $stmt->execute([$new_email, $member_id, $_SESSION['tenant_id']]);
+                    }
 
                     // Update role
                     $stmt = $pdo->prepare("UPDATE users SET role = ? WHERE id = ? AND tenant_id = ?");
@@ -935,20 +955,16 @@ endif; ?>
                         </div>
                     </div>
 
-                    <!-- Phone Number -->
+                    <!-- Company Number -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Phone number</label>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Company number</label>
                         <input type="tel" name="phone" value="<?= htmlspecialchars($settings['company_phone'] ?? '')?>" maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter up to 12 digits">
                     </div>
 
-                    <!-- Main Email -->
+                    <!-- Company Email -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Main email</label>
-                        <p class="text-sm text-gray-600 mb-2">Current email : <?= htmlspecialchars($settings['company_email'] ?? $_SESSION['user_email'] ?? '')?></p>
-                        <p class="text-xs text-gray-500 mb-4">Email notifications regarding business activities will be sent to this email address</p>
-                        <button type="button" onclick="document.getElementById('email-modal').classList.remove('hidden')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
-                            Update email address
-                        </button>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Company email</label>
+                        <input type="email" name="company_email" value="<?= htmlspecialchars($settings['company_email'] ?? '')?>" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter company email">
                     </div>
 
                     <!-- Save Button -->
@@ -1254,6 +1270,11 @@ elseif ($active_tab === 'team'): ?>
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
                                 <input type="text" id="editUserName" disabled class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed text-sm">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
+                                <input type="email" name="edit_email" id="editUserEmail" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
                             </div>
                             
                             <div>
@@ -1999,6 +2020,7 @@ endif; ?>
         function showEditUserModal(user) {
             document.getElementById('editUserId').value = user.id;
             document.getElementById('editUserName').value = user.full_name || user.email;
+            document.getElementById('editUserEmail').value = user.email;
             document.getElementById('editUserRole').value = user.role;
             document.getElementById('edit-user-modal').classList.remove('hidden');
         }
