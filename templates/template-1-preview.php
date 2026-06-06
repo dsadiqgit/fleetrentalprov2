@@ -764,6 +764,7 @@ endforeach; ?>
                     showMonths: 2,
                     dateFormat: "d M, Y",
                     minDate: "today",
+                    maxDate: new Date(Date.now() + (<?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?> * 24 * 60 * 60 * 1000)),
                     locale: {
                         firstDayOfWeek: 1
                     },

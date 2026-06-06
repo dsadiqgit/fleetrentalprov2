@@ -124,8 +124,8 @@ $stmt = $pdo->prepare("SELECT DISTINCT category FROM vehicles WHERE tenant_id = 
 $stmt->execute([$tenant_id]);
 $vehicle_types = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Get currency setting
-$stmt = $pdo->prepare("SELECT currency FROM tenant_settings WHERE tenant_id = ?");
+// Get tenant settings
+$stmt = $pdo->prepare("SELECT * FROM tenant_settings WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
 $settings = $stmt->fetch();
 $currency_code = $settings['currency'] ?? 'GBP';
@@ -700,6 +700,78 @@ endif; ?>
             });
         }
 
+        function showMaxBookingModal() {
+            const existingModal = document.getElementById('maxBookingModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const maxDays = <?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?>;
+            const phone = "<?= htmlspecialchars($settings['company_phone'] ?? '') ?>";
+            
+            const modal = document.createElement('div');
+            modal.id = 'maxBookingModal';
+            modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+            
+            let phoneHTML = '';
+            let callBtnHTML = '';
+            if (phone) {
+                phoneHTML = `
+                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 mb-6">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Contact Number</span>
+                        <a href="tel:${phone}" class="text-lg font-bold text-blue-600 hover:text-blue-800 transition-colors">${phone}</a>
+                    </div>
+                `;
+                callBtnHTML = `
+                    <a href="tel:${phone}" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                        Call Us Now
+                    </a>
+                `;
+            }
+
+            modal.innerHTML = `
+                <div class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl relative overflow-hidden text-center space-y-6">
+                    <button onclick="document.getElementById('maxBookingModal').remove()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-colors">
+                        <svg class="w-5 h-5 stroke-[2.5] text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Warning / Calendar Icon in blue (brand color) -->
+                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-md">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-bold text-gray-900">Custom Booking Required</h3>
+                        <p class="text-sm text-gray-600">The selected date exceeds our maximum online booking window of <span class="font-bold text-gray-900">${maxDays}</span> days in advance.</p>
+                        <p class="text-sm text-gray-500">Please contact our team directly to book this vehicle.</p>
+                    </div>
+
+                    \${phoneHTML}
+
+                    <div class="flex flex-col gap-3">
+                        \${callBtnHTML}
+                        <button type="button" onclick="document.getElementById('maxBookingModal').remove()" class="w-full py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors">
+                            Cancel & Modify Dates
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             // Set Global Flatpickr Locale to start on Monday
             if (window.flatpickr) {
@@ -711,15 +783,33 @@ endif; ?>
                 altInput: true,
                 altFormat: "j M Y",
                 minDate: "today",
+                maxDate: new Date(Date.now() + (<?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?> * 24 * 60 * 60 * 1000)),
                 locale: {
                     firstDayOfWeek: 1
                 }
             };
 
+            function validateSelectedDate(selectedDates, instance) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const maxAdvanceDays = <?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?>;
+                const maxDate = new Date(today.getTime() + maxAdvanceDays * 24 * 60 * 60 * 1000);
+                if (selectedDates.length > 0) {
+                    const targetDate = selectedDates[selectedDates.length - 1];
+                    if (targetDate > maxDate) {
+                        instance.clear();
+                        showMaxBookingModal();
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             // Desktop Datepickers
             const pickupPicker = flatpickr("#pickup_date", {
                 ...fpConfig,
-                onChange: function(selectedDates) {
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (!validateSelectedDate(selectedDates, instance)) return;
                     if (selectedDates.length > 0) {
                         const pickupDate = selectedDates[0];
                         const pickupDateStr = pickupDate.toISOString().split('T')[0];
@@ -734,12 +824,18 @@ endif; ?>
                 }
             });
 
-            const returnPicker = flatpickr("#dropoff_date", fpConfig);
+            const returnPicker = flatpickr("#dropoff_date", {
+                ...fpConfig,
+                onChange: function(selectedDates, dateStr, instance) {
+                    validateSelectedDate(selectedDates, instance);
+                }
+            });
 
             // Mobile Datepickers
             const mobPickupPicker = flatpickr("#mob_pickup_date", {
                 ...fpConfig,
-                onChange: function(selectedDates) {
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (!validateSelectedDate(selectedDates, instance)) return;
                     if (selectedDates.length > 0) {
                         const pickupDate = selectedDates[0];
                         const pickupDateStr = pickupDate.toISOString().split('T')[0];
@@ -754,7 +850,12 @@ endif; ?>
                 }
             });
 
-            const mobReturnPicker = flatpickr("#mob_dropoff_date", fpConfig);
+            const mobReturnPicker = flatpickr("#mob_dropoff_date", {
+                ...fpConfig,
+                onChange: function(selectedDates, dateStr, instance) {
+                    validateSelectedDate(selectedDates, instance);
+                }
+            });
 
             // Add form validation to prevent return date before pickup date
             const searchForm = document.querySelector('form[action="vehicle-booking.php"]');
@@ -763,6 +864,28 @@ endif; ?>
                     const pickupVal = document.getElementById('pickup_date').value;
                     const returnVal = document.getElementById('dropoff_date').value;
                     
+                    const maxAdvanceDays = <?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?>;
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const maxDate = new Date(today.getTime() + maxAdvanceDays * 24 * 60 * 60 * 1000);
+
+                    if (pickupVal) {
+                        const pDate = new Date(pickupVal);
+                        if (pDate > maxDate) {
+                            e.preventDefault();
+                            showMaxBookingModal();
+                            return false;
+                        }
+                    }
+                    if (returnVal) {
+                        const rDate = new Date(returnVal);
+                        if (rDate > maxDate) {
+                            e.preventDefault();
+                            showMaxBookingModal();
+                            return false;
+                        }
+                    }
+
                     if (pickupVal && returnVal) {
                         const pickupDate = new Date(pickupVal);
                         const returnDate = new Date(returnVal);

@@ -788,6 +788,56 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
 
     </main>
 
+    <!-- Maximum Booking Window Modal -->
+    <div id="maxBookingModal" class="calendar-modal" style="z-index: 10000;">
+        <div class="calendar-modal-content max-w-md w-full relative overflow-hidden p-8 shadow-2xl">
+            <!-- Close Button -->
+            <button onclick="closeMaxBookingModal()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-colors">
+                <svg class="w-5 h-5 stroke-[2.5] text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <div class="text-center space-y-6">
+                <!-- Warning / Calendar Icon in blue (brand color) -->
+                <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-md">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-xl font-bold text-gray-900">Custom Booking Required</h3>
+                    <p class="text-sm text-gray-600">The selected date exceeds our maximum online booking window of <span class="font-bold text-gray-900"><?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?></span> days in advance.</p>
+                    <p class="text-sm text-gray-500">Please contact our team directly to book this vehicle.</p>
+                </div>
+
+                <!-- Call Box / Details -->
+                <?php if (!empty($settings['company_phone'])): ?>
+                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Contact Number</span>
+                    <a href="tel:<?= htmlspecialchars($settings['company_phone']) ?>" class="text-lg font-bold text-blue-600 hover:text-blue-800 transition-colors"><?= htmlspecialchars($settings['company_phone']) ?></a>
+                </div>
+                <?php endif; ?>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col gap-3">
+                    <?php if (!empty($settings['company_phone'])): ?>
+                    <a href="tel:<?= htmlspecialchars($settings['company_phone']) ?>" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                        Call Us Now
+                    </a>
+                    <?php endif; ?>
+                    <button type="button" onclick="closeMaxBookingModal()" class="w-full py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors">
+                        Cancel & Modify Dates
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Calendar Modal -->
     <div id="calendarModal" class="calendar-modal">
         <div class="calendar-modal-content">
@@ -1047,6 +1097,16 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             selectedTime = null;
         }
 
+        function openMaxBookingModal() {
+            document.getElementById('maxBookingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMaxBookingModal() {
+            document.getElementById('maxBookingModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
         let calendarInstance = null;
 
         function initializeCalendar() {
@@ -1056,11 +1116,27 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 showMonths: window.innerWidth < 768 ? 1 : 2,
                 dateFormat: "Y-m-d",
                 minDate: "today",
+                maxDate: new Date(Date.now() + (<?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?> * 24 * 60 * 60 * 1000)),
                 disable: <?= json_encode($disabled_dates) ?>,
                 locale: {
                     firstDayOfWeek: 1
                 },
                 onChange: function(selectedDates) {
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const maxAdvanceDays = <?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?>;
+                    const maxDate = new Date(today.getTime() + maxAdvanceDays * 24 * 60 * 60 * 1000);
+                    
+                    if (selectedDates.length > 0) {
+                        const targetDate = selectedDates[selectedDates.length - 1];
+                        if (targetDate > maxDate) {
+                            calendarInstance.clear();
+                            closeCalendarModal();
+                            openMaxBookingModal();
+                            return;
+                        }
+                    }
+
                     // When both pickup and return dates are selected
                     if (selectedDates.length === 2) {
                         selectedDate = selectedDates[0];
@@ -1136,6 +1212,19 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 
                 if (pickupDay < today) {
                     showErrorModal('Pickup date cannot be in the past.');
+                    return;
+                }
+            }
+
+            // Validate that dates do not exceed maximum advance days
+            if (pickupDateObj || returnDateObj) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const maxAdvanceDays = <?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?>;
+                const maxDate = new Date(today.getTime() + maxAdvanceDays * 24 * 60 * 60 * 1000);
+                
+                if ((pickupDateObj && pickupDateObj > maxDate) || (returnDateObj && returnDateObj > maxDate)) {
+                    openMaxBookingModal();
                     return;
                 }
             }
