@@ -1131,9 +1131,8 @@ endif; ?>
                         </div>
                         <div class="flex flex-wrap items-center justify-end gap-3 mt-6">
                             <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-gray-300 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:shadow-md transition">Cancel</a>
-                            <button type="button" onclick="saveDraft()" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save Draft</button>
+                            <button form="vehicleForm" type="submit" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save</button>
                             <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : 'pricing'), $data)" x-show="vehicleTab !== 'pricing'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
-                            <button form="vehicleForm" type="submit" x-show="vehicleTab === 'pricing'" class="px-5 py-2.5 rounded-full bg-green-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Save</button>
                         </div>
                     </div>
 
@@ -1292,8 +1291,15 @@ endif; ?>
     }
 ?>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Features</label>
-                                <p class="text-xs text-gray-500 mb-2">Type a feature and press <kbd class="px-1 py-0.5 bg-gray-100 rounded text-xs">Enter</kbd> or <kbd class="px-1 py-0.5 bg-gray-100 rounded text-xs">,</kbd> to add it.</p>
-                                <div id="featuresContainer" class="flex flex-wrap gap-2 p-3 border border-gray-300 rounded-lg min-h-[48px] bg-white focus-within:ring-2 focus-within:ring-blue-500 cursor-text" onclick="document.getElementById('featureInput').focus()">
+                                <div class="flex gap-2">
+                                    <input type="text" id="featureInput" placeholder="Add feature (e.g. Air Con, GPS, Bluetooth)..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm text-gray-700">
+                                    <button type="button" onclick="addFeature()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="featuresContainer" class="flex flex-wrap gap-2 mt-3">
                                     <?php foreach ($saved_features as $feat): ?>
                                     <span class="feature-tag inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
                                         <?= htmlspecialchars($feat)?>
@@ -1301,7 +1307,6 @@ endif; ?>
                                     </span>
                                     <?php
     endforeach; ?>
-                                    <input type="text" id="featureInput" placeholder="Add feature (e.g. Air Con, GPS, Bluetooth)..." class="flex-1 min-w-[180px] outline-none border-none bg-transparent text-sm text-gray-700 py-0.5">
                                 </div>
                                 <input type="hidden" name="vehicle_features" id="vehicle_features_input" value="<?= htmlspecialchars(json_encode($saved_features))?>">
                             </div>
@@ -3278,24 +3283,24 @@ endif; ?>
                 const tag = document.createElement('span');
                 tag.className = 'feature-tag inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium';
                 tag.innerHTML = val + '<button type="button" onclick="removeFeatureTag(this)" class="ml-1 text-blue-500 hover:text-blue-800 font-bold leading-none">&times;</button>';
-                if (featureInput) featuresContainer.insertBefore(tag, featureInput);
+                featuresContainer.appendChild(tag);
                 syncFeatureTags();
             }
 
+            window.addFeature = function() {
+                if (featureInput && featureInput.value.trim()) {
+                    addFeatureTag(featureInput.value);
+                    featureInput.value = '';
+                    featureInput.focus();
+                }
+            };
+
             if (featureInput) {
                 featureInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' || e.key === ',') {
+                    if (e.key === 'Enter') {
                         e.preventDefault();
-                        addFeatureTag(this.value);
-                        this.value = '';
+                        window.addFeature();
                     }
-                    if (e.key === 'Backspace' && this.value === '') {
-                        const tags = document.querySelectorAll('#featuresContainer .feature-tag');
-                        if (tags.length) { tags[tags.length - 1].remove(); syncFeatureTags(); }
-                    }
-                });
-                featureInput.addEventListener('blur', function() {
-                    if (this.value.trim()) { addFeatureTag(this.value); this.value = ''; }
                 });
             }
     </script>

@@ -315,6 +315,46 @@ try {
         $booking_id = $pdo->lastInsertId();
     }
 
+    // Send booking confirmation email
+    try {
+        require_once __DIR__ . '/../includes/email.php';
+        
+        // Get tenant info
+        $tenantStmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
+        $tenantStmt->execute([$tenant_id]);
+        $tenantInfo = $tenantStmt->fetch();
+        
+        // Get vehicle info
+        $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles WHERE id = ? AND tenant_id = ?");
+        $vehicleStmt->execute([$booking_data['vehicle_id'], $tenant_id]);
+        $vehicleInfo = $vehicleStmt->fetch();
+        
+        if ($tenantInfo && $vehicleInfo && !empty($booking_data['customer_email'])) {
+            // Build booking data array for email
+            $emailBookingData = [
+                'id' => $booking_id,
+                'customer_name' => $booking_data['customer_name'],
+                'pickup_date' => $booking_data['pickup_date'],
+                'pickup_time' => $booking_data['pickup_time'] ?? '10:00',
+                'return_date' => $booking_data['return_date'],
+                'return_time' => $booking_data['return_time'] ?? '10:00',
+                'total_price' => $total_price,
+                'security_deposit' => $security_deposit,
+                'currency' => $stripe_settings['currency'] ?? 'gbp'
+            ];
+            
+            $emailSent = sendBookingConfirmationEmail(
+                $booking_data['customer_email'],
+                $emailBookingData,
+                $tenantInfo,
+                $vehicleInfo
+            );
+            error_log("Booking confirmation email to {$booking_data['customer_email']}: " . ($emailSent ? 'SUCCESS' : 'FAILED'));
+        }
+    } catch (Exception $emailError) {
+        error_log("Booking confirmation email error (non-fatal): " . $emailError->getMessage());
+    }
+
     // If only intent requested, return now (but with booking_id)
     if ($intent_only) {
         echo json_encode([

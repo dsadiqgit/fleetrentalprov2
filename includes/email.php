@@ -399,6 +399,125 @@ function sendContractSignedNotification($adminEmail, $customerName, $bookingRef,
 }
 
 /**
+ * Send booking confirmation email to customer
+ */
+function sendBookingConfirmationEmail($to, $bookingData, $tenant, $vehicle) {
+    $tenantName = htmlspecialchars($tenant['name'] ?? 'Fleet Rental');
+    $primaryColor = $tenant['primary_color'] ?? '#000000';
+    $bookingRef = str_pad($bookingData['id'], 5, '0', STR_PAD_LEFT);
+    $customerName = htmlspecialchars($bookingData['customer_name']);
+    $pickupDate = date('D, M j, Y', strtotime($bookingData['pickup_date']));
+    $returnDate = date('D, M j, Y', strtotime($bookingData['return_date']));
+    $pickupTime = date('g:i A', strtotime($bookingData['pickup_time']));
+    $returnTime = date('g:i A', strtotime($bookingData['return_time']));
+    $rentalAmount = number_format($bookingData['total_price'], 2);
+    $depositAmount = number_format($bookingData['security_deposit'] ?? 0, 2);
+    $currency = strtoupper($bookingData['currency'] ?? 'GBP');
+    $currencySymbol = $currency === 'GBP' ? '£' : ($currency === 'USD' ? '$' : ($currency === 'EUR' ? '€' : $currency));
+    
+    $vehicleName = htmlspecialchars(($vehicle['brand'] ?? '') . ' ' . ($vehicle['model'] ?? ''));
+    $vehicleImage = !empty($vehicle['image']) ? htmlspecialchars($vehicle['image']) : '';
+    
+    // Build tenant logo HTML
+    $logoHtml = '';
+    if (!empty($tenant['logo'])) {
+        $logoUrl = (strpos($tenant['logo'], 'http') === 0) ? $tenant['logo'] : SITE_URL . $tenant['logo'];
+        $logoHtml = '<img src="' . $logoUrl . '" alt="' . $tenantName . '" style="height: 32px; max-width: 120px; object-fit: contain;">';
+    } else {
+        $logoHtml = '<div style="font-size: 24px; font-weight: 800; color: #000; letter-spacing: -1px;">' . $tenantName . '</div>';
+    }
+    
+    // Build login URL
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $loginUrl = $protocol . $host . '/auth/login.php';
+    
+    $subject = "Your Booking is Confirmed - #{$bookingRef} - {$tenantName}";
+    $message = "
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset=\"UTF-8\">
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+        <style>
+            body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; color: #333; }
+            .email-wrapper { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+            .email-header { padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; }
+            .booking-ref { font-size: 13px; color: #666; }
+            .booking-ref strong { color: #000; }
+            .content-card { margin: 0 16px 16px; border: 1px solid #e5e5e5; border-radius: 16px; padding: 32px; background: #fff; }
+            .greeting { font-size: 14px; color: #333; margin: 0 0 8px; }
+            .heading { font-size: 24px; font-weight: 700; color: #1a1a1a; margin: 0 0 24px; }
+            .hero-image { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 24px; display: block; background-color: #f0f0f0; }
+            .section-title { font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px; }
+            .section-text { font-size: 14px; color: #555; line-height: 1.5; margin: 0 0 20px; }
+            .btn { display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #ffffff !important; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 14px; }
+            .divider { border: none; border-top: 1px solid #e5e5e5; margin: 24px 0; }
+            .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+            .price-label { font-size: 14px; color: #555; }
+            .price-value { font-size: 14px; color: #1a1a1a; font-weight: 500; }
+            .info-text { font-size: 13px; color: #666; line-height: 1.5; margin: 16px 0; }
+            .see-more { font-size: 14px; color: #1a1a1a; text-decoration: underline; font-weight: 600; }
+            .footer-logo { font-size: 20px; font-weight: 800; color: #000; margin-bottom: 12px; }
+            .footer-text { font-size: 14px; color: #333; margin: 0 0 4px; }
+            .footer-team { font-size: 14px; color: #555; margin: 0; }
+            .alert-box { background-color: #fffbeb; border: 1px solid #fbbf24; border-radius: 8px; padding: 16px; margin: 20px 0; }
+            .alert-title { font-size: 14px; font-weight: 700; color: #92400e; margin: 0 0 8px; }
+            .alert-text { font-size: 13px; color: #92400e; margin: 0; line-height: 1.5; }
+        </style>
+    </head>
+    <body>
+        <div class=\"email-wrapper\">
+            <div class=\"email-header\">
+                <div class=\"logo\">{$logoHtml}</div>
+                <div class=\"booking-ref\">Booking: <strong>#{$bookingRef}</strong></div>
+            </div>
+            
+            <div class=\"content-card\">
+                <p class=\"greeting\">Hello {$customerName},</p>
+                <h1 class=\"heading\">Your booking is confirmed!</h1>
+                
+                " . ($vehicleImage ? "<img src=\"{$vehicleImage}\" alt=\"{$vehicleName}\" class=\"hero-image\">" : "") . "
+                
+                <h2 class=\"section-title\">We are almost there</h2>
+                <p class=\"section-text\">Thank you for your booking with {$tenantName}. Before you collect your vehicle, you need to complete the required documents and provide your signature.</p>
+                
+                <div class=\"alert-box\">
+                    <p class=\"alert-title\">Action Required</p>
+                    <p class=\"alert-text\">Please log in to your account to review and sign your rental agreement. This must be completed before your pickup date.</p>
+                </div>
+                
+                <a href=\"{$loginUrl}\" class=\"btn\">Login</a>
+                
+                <hr class=\"divider\">
+                
+                <h2 class=\"section-title\">Booking Summary</h2>
+                <div class=\"price-row\">
+                    <span class=\"price-label\">Rental amount: </span>
+                    <span class=\"price-value\">{$currencySymbol}{$rentalAmount}</span>
+                </div>
+                <div class=\"price-row\">
+                    <span class=\"price-label\">Deposit: </span>
+                    <span class=\"price-value\">{$currencySymbol}{$depositAmount}</span>
+                </div>
+                <p class=\"info-text\">Your deposit will be refunded a few days after the vehicle is returned in good condition.</p>
+                <a href=\"{$loginUrl}\" class=\"see-more\">See more</a>
+                
+                <hr class=\"divider\">
+                
+                <div class=\"footer-logo\">{$tenantName}</div>
+                <p class=\"footer-text\"><strong>We look forward to seeing you,</strong></p>
+                <p class=\"footer-team\">Your {$tenantName} team</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    return sendEmail($to, $subject, $message, $tenantName);
+}
+
+/**
  * Send team invitation email
  */
 function sendTeamInvitationEmail($email, $tenant, $invitedByName, $token) {
