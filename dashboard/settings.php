@@ -611,61 +611,6 @@ $settings = $stmt->fetch();
         <main class="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
             <div class="max-w-4xl">
 
-                <!-- Tabs -->
-                <div class="flex items-center gap-4 mb-6 sm:mb-8 border-b border-gray-200 overflow-x-auto no-scrollbar select-none">
-                    <a href="?tab=general" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                            <path d="M21.4707 19V5C21.4707 3 20.4707 2 18.4707 2H14.4707C12.4707 2 11.4707 3 11.4707 5V19C11.4707 21 12.4707 22 14.4707 22H18.4707C20.4707 22 21.4707 21 21.4707 19Z"></path>
-                            <path d="M11.4707 6H16.4707"></path>
-                            <path d="M11.4707 18H15.4707"></path>
-                            <path d="M11.4707 13.9502L16.4707 14.0002"></path>
-                            <path d="M11.4707 10H14.4707"></path>
-                            <path d="M5.4893 2C3.8593 2 2.5293 3.33 2.5293 4.95V17.91C2.5293 18.36 2.7193 19.04 2.9493 19.43L3.7693 20.79C4.7093 22.36 6.2593 22.36 7.1993 20.79L8.0193 19.43C8.2493 19.04 8.4393 18.36 8.4393 17.91V4.95C8.4393 3.33 7.1093 2 5.4893 2Z"></path>
-                            <path d="M8.4393 7H2.5293"></path>
-                        </svg>
-                        General
-                    </a>
-                    <a href="?tab=booking" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'booking' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Booking
-                    </a>
-                    <a href="?tab=main" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'main' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                        Company
-                    </a>
-                    <a href="?tab=team" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'team' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                            <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        Team
-                    </a>
-                    <a href="?tab=payments" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'payments' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                            <line x1="2" x2="22" y1="10" y2="10"></line>
-                        </svg>
-                        Payments
-                    </a>
-                    <a href="?tab=domain" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'domain' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="2" y1="12" x2="22" y2="12"></line>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                        </svg>
-                        Domain
-                    </a>
-                    <a href="?tab=danger" class="flex cursor-pointer items-center gap-1.5 px-4 py-2 font-medium whitespace-nowrap border-b-2 transition-colors text-sm <?= $active_tab === 'danger' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                        Danger
-                    </a>
-                </div>
-
                 <?php if ($success): ?>
                 <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
                     <?= htmlspecialchars($success)?>
@@ -1665,39 +1610,242 @@ elseif ($active_tab === 'domain'): ?>
 
                 <?php
 elseif ($active_tab === 'danger'): ?>
-                <!-- Danger Zone Tab -->
-                <div class="bg-white border border-red-200 rounded-lg p-6">
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div class="flex items-start space-x-3">
-                            <svg class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
+                <!-- Billing & Invoice Tab -->
+                <div class="space-y-8">
+                    <!-- Cards Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Current Plan Summary Card -->
+                        <div class="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-base font-bold text-gray-900">Current Plan Summary</h3>
+                                <button type="button" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
+                                    Upgrade
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-3 gap-4 mb-6">
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Plan Name</p>
+                                    <p class="text-base font-bold text-gray-900">Growth Plan</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Billing Cycle</p>
+                                    <p class="text-base font-bold text-gray-900">Monthly</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Plan Cost</p>
+                                    <p class="text-base font-bold text-gray-900">$5698</p>
+                                </div>
+                            </div>
+
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Delete Account</h3>
-                                <p class="text-sm text-gray-600 mt-1">Once you delete your account, there is no going back. Please be certain.</p>
+                                <div class="flex justify-between items-center mb-2">
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Usage</p>
+                                    <p class="text-xs font-semibold text-gray-700">4,850 out of 5k monthly active users</p>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: 97%;"></div>
+                                </div>
                             </div>
                         </div>
-                        <button onclick="document.getElementById('delete-account-modal').classList.remove('hidden')" class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium whitespace-nowrap transition-all">
-                            Delete account
-                        </button>
-                    </div>
-                </div>
 
-                <!-- Delete Account Modal -->
-                <div id="delete-account-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
-                    <div class="bg-white rounded-2xl max-w-sm w-full p-8 shadow-2xl scale-in-center overflow-hidden relative">
-                        <div class="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-6 mx-auto">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <!-- Payment Method Card -->
+                        <div class="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm flex flex-col">
+                            <h3 class="text-base font-bold text-gray-900 mb-6">Payment Method</h3>
+                            
+                            <div class="border border-gray-150 rounded-2xl p-5 flex items-center justify-between flex-1">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-12 h-8 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center p-1.5 shrink-0">
+                                        <!-- MasterCard SVG Logo -->
+                                        <svg viewBox="0 0 24 15" class="w-8 h-auto">
+                                            <circle cx="7" cy="7.5" r="7" fill="#EB001B"/>
+                                            <circle cx="17" cy="7.5" r="7" fill="#F79E1B" fill-opacity="0.8"/>
+                                        </svg>
+                                    </div>
+                                    <div class="space-y-0.5">
+                                        <h4 class="text-sm font-bold text-gray-900">Master Card</h4>
+                                        <p class="text-xs font-semibold text-gray-600">•••• •••• •••• 4002</p>
+                                        <p class="text-[10px] text-gray-400 font-medium">Expiry on 20/2024</p>
+                                        <div class="flex items-center gap-1 text-[10px] text-gray-400 font-semibold mt-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                            </svg>
+                                            billing@acme.corp
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="px-4 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold shadow-sm transition-all">
+                                    Change
+                                </button>
+                            </div>
                         </div>
-                        
-                        <h3 class="text-xl font-extrabold text-gray-900 tracking-tight text-center mb-2">Delete Account?</h3>
-                        <p class="text-gray-500 text-center text-sm mb-8">Are you sure? All your data will be <strong>lost forever</strong> and cannot be recovered in any way.</p>
-                        
-                        <form method="POST" class="flex flex-col gap-3">
-                            <input type="hidden" name="action" value="delete_account">
-                            <button type="submit" class="w-full py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold shadow-lg shadow-red-100 transition-all">Yes, Delete Permanently</button>
-                            <button type="button" onclick="document.getElementById('delete-account-modal').classList.add('hidden')" class="w-full py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors text-center">Cancel</button>
-                        </form>
+                    </div>
+
+                    <!-- Invoices Section -->
+                    <div class="space-y-4">
+                        <div class="flex items-end justify-between">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-950">Invoice</h3>
+                                <p class="text-xs text-gray-500 mt-1">Effortlessly handle your billing and invoices right here.</p>
+                            </div>
+                            <button type="button" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                Download
+                            </button>
+                        </div>
+
+                        <!-- Invoices Table -->
+                        <div class="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-gray-100 bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                            <th class="py-4 px-6">
+                                                <div class="flex items-center gap-1 cursor-pointer hover:text-gray-600">
+                                                    Invoice ID
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </th>
+                                            <th class="py-4 px-6">
+                                                <div class="flex items-center gap-1 cursor-pointer hover:text-gray-600">
+                                                    Billing Date
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </th>
+                                            <th class="py-4 px-6">
+                                                <div class="flex items-center gap-1 cursor-pointer hover:text-gray-600">
+                                                    Plan
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </th>
+                                            <th class="py-4 px-6">
+                                                <div class="flex items-center gap-1 cursor-pointer hover:text-gray-600">
+                                                    Amount
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </th>
+                                            <th class="py-4 px-6">
+                                                <div class="flex items-center gap-1 cursor-pointer hover:text-gray-600">
+                                                    Status
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </th>
+                                            <th class="py-4 px-6 w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 text-sm font-semibold text-gray-800">
+                                        <!-- Row 1 -->
+                                        <tr class="hover:bg-gray-50/50 transition">
+                                            <td class="py-4.5 px-6 font-bold text-gray-900">#23456</td>
+                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Jan 2023</td>
+                                            <td class="py-4.5 px-6">Basic Plan</td>
+                                            <td class="py-4.5 px-6 font-bold">$1200</td>
+                                            <td class="py-4.5 px-6">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="py-4.5 px-6 text-right">
+                                                <button class="text-gray-400 hover:text-gray-600 transition">
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 2 -->
+                                        <tr class="hover:bg-gray-50/50 transition">
+                                            <td class="py-4.5 px-6 font-bold text-gray-900">#56489</td>
+                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Feb 2023</td>
+                                            <td class="py-4.5 px-6">Pro Plan</td>
+                                            <td class="py-4.5 px-6 font-bold">$7000</td>
+                                            <td class="py-4.5 px-6">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="py-4.5 px-6 text-right">
+                                                <button class="text-gray-400 hover:text-gray-600 transition">
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 3 -->
+                                        <tr class="hover:bg-gray-50/50 transition">
+                                            <td class="py-4.5 px-6 font-bold text-gray-900">#56489</td>
+                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Mar 2023</td>
+                                            <td class="py-4.5 px-6">Pro Plan</td>
+                                            <td class="py-4.5 px-6 font-bold">$7000</td>
+                                            <td class="py-4.5 px-6">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="py-4.5 px-6 text-right">
+                                                <button class="text-gray-400 hover:text-gray-600 transition">
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 4 -->
+                                        <tr class="hover:bg-gray-50/50 transition">
+                                            <td class="py-4.5 px-6 font-bold text-gray-900">#98380</td>
+                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Apr 2023</td>
+                                            <td class="py-4.5 px-6">Growth Plan</td>
+                                            <td class="py-4.5 px-6 font-bold">$5698</td>
+                                            <td class="py-4.5 px-6">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="py-4.5 px-6 text-right">
+                                                <button class="text-gray-400 hover:text-gray-600 transition">
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 5 -->
+                                        <tr class="hover:bg-gray-50/50 transition">
+                                            <td class="py-4.5 px-6 font-bold text-gray-900">#90394</td>
+                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 May 2023</td>
+                                            <td class="py-4.5 px-6">Basic Plan</td>
+                                            <td class="py-4.5 px-6 font-bold">$1200</td>
+                                            <td class="py-4.5 px-6">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="py-4.5 px-6 text-right">
+                                                <button class="text-gray-400 hover:text-gray-600 transition">
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <?php

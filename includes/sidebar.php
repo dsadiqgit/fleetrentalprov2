@@ -172,17 +172,48 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
         <div class="pt-4 mt-4">
             <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</p>
 
-            <a href="/dashboard/settings.php"
-                class="sidebar-item <?= is_active(['settings.php', 'dealership.php'], $current_page) ?> flex items-center space-x-3 px-4 py-2 rounded-lg">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                    </path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <span class="font-medium text-sm">Settings</span>
-            </a>
+            <div class="relative group settings-menu-item">
+                <a href="/dashboard/settings.php"
+                    class="sidebar-item <?= is_active(['settings.php', 'dealership.php'], $current_page) ?> flex items-center justify-between space-x-3 px-4 py-2 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span class="font-medium text-sm">Settings</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </a>
+                <!-- Submenu -->
+                <div class="absolute left-full top-0 ml-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
+                    <a href="/dashboard/settings.php?tab=general" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+                        General
+                    </a>
+                    <a href="/dashboard/settings.php?tab=booking" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Booking
+                    </a>
+                    <a href="/dashboard/settings.php?tab=main" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Company
+                    </a>
+                    <a href="/dashboard/settings.php?tab=team" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Team
+                    </a>
+                    <a href="/dashboard/settings.php?tab=payments" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Payments
+                    </a>
+                    <a href="/dashboard/settings.php?tab=domain" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Domain
+                    </a>
+                    <a href="/dashboard/settings.php?tab=danger" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg">
+                        Billing
+                    </a>
+                </div>
+            </div>
         </div>
     </nav>
 
