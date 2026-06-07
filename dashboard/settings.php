@@ -126,6 +126,12 @@ catch (PDOException $e) { /* Column might exist */
 }
 
 try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN buffer_time_unit ENUM('hours', 'days') DEFAULT 'hours'");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
+try {
     @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN max_booking_advance_days INT DEFAULT 30");
 }
 catch (PDOException $e) { /* Column might exist */
@@ -169,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $min_notice = intval($_POST['min_notice'] ?? 0);
                 $notice_unit = sanitize($_POST['notice_unit'] ?? 'hours');
                 $buffer_time = intval($_POST['buffer_time'] ?? 0);
+                $buffer_time_unit = sanitize($_POST['buffer_time_unit'] ?? 'hours');
                 $max_advance = intval($_POST['max_advance'] ?? 30);
                 
                 $pickup_locs = $_POST['pickup_locations'] ?? [];
@@ -195,8 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $dropoff_location = implode('; ', $dropoff_locs);
 
                     try {
-                        $stmt = $pdo->prepare("UPDATE tenant_settings SET min_booking_notice = ?, booking_notice_unit = ?, buffer_time_hours = ?, max_booking_advance_days = ?, pickup_location = ?, dropoff_location = ?, opening_time = ?, closing_time = ? WHERE tenant_id = ?");
-                        $stmt->execute([$min_notice, $notice_unit, $buffer_time, $max_advance, $pickup_location, $dropoff_location, $opening_time, $closing_time, $_SESSION['tenant_id']]);
+                        $stmt = $pdo->prepare("UPDATE tenant_settings SET min_booking_notice = ?, booking_notice_unit = ?, buffer_time_hours = ?, buffer_time_unit = ?, max_booking_advance_days = ?, pickup_location = ?, dropoff_location = ?, opening_time = ?, closing_time = ? WHERE tenant_id = ?");
+                        $stmt->execute([$min_notice, $notice_unit, $buffer_time, $buffer_time_unit, $max_advance, $pickup_location, $dropoff_location, $opening_time, $closing_time, $_SESSION['tenant_id']]);
                         $success = 'Booking settings updated successfully!';
                     } catch (Exception $e) {
                         $error = 'Failed to update booking settings: ' . $e->getMessage();
@@ -806,9 +813,17 @@ endif; ?>
 
                     <!-- Buffer Time -->
                     <div>
-                        <h3 class="text-base font-semibold text-gray-900 mb-2">Buffer time between bookings (hours)</h3>
+                        <h3 class="text-base font-semibold text-gray-900 mb-2">Buffer time between bookings</h3>
                         <p class="text-sm text-gray-600 mb-4">Minimum time you need between two rentals for cleaning, inspection, or preparation.</p>
-                        <input type="number" name="buffer_time" value="<?= htmlspecialchars($settings['buffer_time_hours'] ?? '6') ?>" placeholder="e.g. 6" class="w-32 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <div class="flex items-center space-x-3">
+                            <input type="number" name="buffer_time" value="<?= htmlspecialchars($settings['buffer_time_hours'] ?? '6') ?>" placeholder="e.g. 6" class="w-32 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <div class="flex bg-gray-100 rounded-lg p-1" id="bufferUnitToggle">
+                                <button type="button" onclick="setBufferUnit('hours')" id="buffer-btn-hours" class="px-4 py-2 text-sm font-medium rounded-lg transition-all">Hours</button>
+                                <button type="button" onclick="setBufferUnit('days')" id="buffer-btn-days" class="px-4 py-2 text-sm font-medium rounded-lg transition-all">Days</button>
+                            </div>
+                            <?php $currentBufferUnit = strtolower($settings['buffer_time_unit'] ?? 'hours'); ?>
+                            <input type="hidden" name="buffer_time_unit" id="buffer_time_unit" value="<?= htmlspecialchars($currentBufferUnit) ?>">
+                        </div>
                     </div>
 
                     <!-- Maximum Booking Window -->
@@ -2267,7 +2282,28 @@ endif; ?>
         (function() {
             const currentUnit = document.getElementById('notice_unit').value || 'hours';
             setNoticeUnit(currentUnit);
+
+            const currentBuffer = document.getElementById('buffer_time_unit').value || 'hours';
+            setBufferUnit(currentBuffer);
         })();
+
+        // Buffer unit toggle
+        function setBufferUnit(unit) {
+            document.getElementById('buffer_time_unit').value = unit;
+            const hoursBtn = document.getElementById('buffer-btn-hours');
+            const daysBtn = document.getElementById('buffer-btn-days');
+            if (unit === 'hours') {
+                hoursBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                hoursBtn.classList.remove('text-gray-500');
+                daysBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                daysBtn.classList.add('text-gray-500');
+            } else {
+                daysBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                daysBtn.classList.remove('text-gray-500');
+                hoursBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                hoursBtn.classList.add('text-gray-500');
+            }
+        }
 
         // Dynamic location row logic
         function addLocationRow(containerId, inputName) {
