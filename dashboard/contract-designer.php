@@ -795,39 +795,152 @@ endif; ?>
 
         function saveTemplate() {
             const templateName = document.getElementById('templateName').value;
+            if (!templateName.trim()) {
+                showNotification('Please enter a template name', 'error');
+                return;
+            }
+            openSignatureModal();
+        }
+
+        function openSignatureModal() {
+            const modal = document.getElementById('signatureModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            initSignaturePad();
+        }
+
+        function closeSignatureModal() {
+            const modal = document.getElementById('signatureModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            clearSignaturePad();
+        }
+
+        let sigCanvas, sigCtx, isDrawing = false;
+
+        function initSignaturePad() {
+            sigCanvas = document.getElementById('signatureCanvas');
+            if (!sigCanvas) return;
+            sigCtx = sigCanvas.getContext('2d');
+
+            // Set canvas size to match display size
+            const rect = sigCanvas.getBoundingClientRect();
+            sigCanvas.width = rect.width;
+            sigCanvas.height = rect.height;
+
+            sigCtx.strokeStyle = '#1f2937';
+            sigCtx.lineWidth = 2;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+
+            // Mouse events
+            sigCanvas.addEventListener('mousedown', startDraw);
+            sigCanvas.addEventListener('mousemove', draw);
+            sigCanvas.addEventListener('mouseup', stopDraw);
+            sigCanvas.addEventListener('mouseleave', stopDraw);
+
+            // Touch events
+            sigCanvas.addEventListener('touchstart', handleTouch, { passive: false });
+            sigCanvas.addEventListener('touchmove', handleTouch, { passive: false });
+            sigCanvas.addEventListener('touchend', stopDraw);
+        }
+
+        function getPos(e) {
+            const rect = sigCanvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function startDraw(e) {
+            isDrawing = true;
+            const pos = getPos(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(pos.x, pos.y);
+            e.preventDefault();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getPos(e);
+            sigCtx.lineTo(pos.x, pos.y);
+            sigCtx.stroke();
+            e.preventDefault();
+        }
+
+        function stopDraw(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+            sigCtx.closePath();
+            if (e && e.preventDefault) e.preventDefault();
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            sigCanvas.dispatchEvent(mouseEvent);
+        }
+
+        function clearSignaturePad() {
+            if (!sigCtx || !sigCanvas) return;
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        }
+
+        function hasSignature() {
+            if (!sigCanvas) return false;
+            const blank = document.createElement('canvas');
+            blank.width = sigCanvas.width;
+            blank.height = sigCanvas.height;
+            return sigCanvas.toDataURL() !== blank.toDataURL();
+        }
+
+        function confirmSaveWithSignature() {
+            if (!hasSignature()) {
+                showNotification('Please draw your signature before saving', 'error');
+                return;
+            }
+
+            const signatureData = sigCanvas.toDataURL('image/png');
+            closeSignatureModal();
+
+            const templateName = document.getElementById('templateName').value;
             const brandColor = document.getElementById('brandColor').value;
             const contactWebsite = document.getElementById('contactWebsite').value;
             const contactSocial = document.getElementById('contactSocial').value;
             const contactPhone = document.getElementById('contactPhone').value;
-
-            // Get contract HTML
             const contractHtml = document.getElementById('contractPreview').innerHTML;
 
-            // Create template data
             const templateData = {
         <?php if ($edit_mode && $template): ?>
                 template_id : <?= $template['id'] ?>,
         <?php
 endif; ?>
                 name: templateName,
-                    brand_color: brandColor,
-                        logo: logoDataUrl,
-                            contact: {
-                website: contactWebsite,
+                brand_color: brandColor,
+                logo: logoDataUrl,
+                contact: {
+                    website: contactWebsite,
                     social: contactSocial,
-                        phone: contactPhone
-            },
-            html: contractHtml
-        };
+                    phone: contactPhone
+                },
+                html: contractHtml,
+                signature: signatureData
+            };
 
-        // Save to server
-        fetch('/dashboard/save-contract-template.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(templateData)
-        })
+            fetch('/dashboard/save-contract-template.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(templateData)
+            })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -842,7 +955,7 @@ endif; ?>
             .catch(error => {
                 showNotification('Error saving template', 'error');
             });
-}
+        }
     </script>
 
     <?php include __DIR__ . '/../includes/confirmation-modal.php'; ?>
@@ -862,6 +975,11 @@ endif; ?>
             }
         }
 
+        // Close signature modal when clicking outside
+        document.getElementById('signatureModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSignatureModal();
+        });
+
         // Close settings modal when clicking outside
         document.addEventListener('click', function (e) {
             const modal = document.getElementById('settingsModal');
@@ -875,6 +993,44 @@ endif; ?>
             }
         });
     </script>
+
+    <!-- Signature Modal -->
+    <div id="signatureModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col relative" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Authorise & Save</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Draw your signature below to confirm and save this contract template.</p>
+                </div>
+                <button onclick="closeSignatureModal()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Your Signature</label>
+                <div class="relative bg-white border-2 border-gray-200 rounded-xl overflow-hidden" style="height: 180px;">
+                    <canvas id="signatureCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+                    <div class="absolute bottom-8 left-6 right-6 border-b border-dashed border-gray-300 pointer-events-none"></div>
+                    <button type="button" onclick="clearSignaturePad()" class="absolute top-2 right-2 px-2 py-1 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 rounded transition">Clear</button>
+                </div>
+
+                <div class="flex items-start gap-3 mt-5">
+                    <input type="checkbox" id="sigAgree" class="mt-1 w-4 h-4 rounded border-gray-300 cursor-pointer" style="accent-color: #2563eb">
+                    <label for="sigAgree" class="text-sm text-gray-600 cursor-pointer leading-relaxed">
+                        I confirm that I am authorised to create and save this contract template on behalf of my organisation.
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                <button onclick="closeSignatureModal()" class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">Cancel</button>
+                <button onclick="if(!document.getElementById('sigAgree').checked){showNotification('Please confirm authorisation','error');return;}confirmSaveWithSignature();" class="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm">Save Template</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Settings Modal for Mobile -->
     <div id="settingsModal" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-50 hidden">

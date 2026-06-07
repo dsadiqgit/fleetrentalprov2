@@ -1247,7 +1247,7 @@ elseif ($active_tab === 'team'): ?>
                             
                             window.saveWitnessSignature = function() {
                                 if (!hasDrawn) {
-                                    alert('Please draw a signature before saving.');
+                                    document.getElementById('sigRequiredModal').classList.remove('hidden');
                                     return;
                                 }
                                 const dataUrl = canvas.toDataURL('image/png');
@@ -1256,6 +1256,20 @@ elseif ($active_tab === 'team'): ?>
                             };
                         });
                     </script>
+                </div>
+
+                <!-- Signature Required Modal -->
+                <div id="sigRequiredModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+                        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-1">Signature Required</h3>
+                        <p class="text-sm text-gray-500 mb-5">Please draw a signature on the canvas before saving.</p>
+                        <button onclick="document.getElementById('sigRequiredModal').classList.add('hidden')" class="w-full px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition">Got it</button>
+                    </div>
                 </div>
 
                 <!-- Invite Modal -->
