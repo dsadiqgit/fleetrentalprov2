@@ -107,6 +107,30 @@ try {
 catch (PDOException $e) { /* Column might exist */
 }
 
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN min_booking_notice INT DEFAULT 0");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN booking_notice_unit ENUM('hours', 'days') DEFAULT 'hours'");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN buffer_time_hours INT DEFAULT 0");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN max_booking_advance_days INT DEFAULT 30");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
 // Update schema for users to support team member signature
 try {
     @$pdo->exec("ALTER TABLE users ADD COLUMN signature_data LONGTEXT NULL");
@@ -143,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
             case 'update_booking':
                 $min_notice = intval($_POST['min_notice'] ?? 0);
-                $notice_unit = sanitize($_POST['notice_unit'] ?? 'Hours');
+                $notice_unit = sanitize($_POST['notice_unit'] ?? 'hours');
                 $buffer_time = intval($_POST['buffer_time'] ?? 0);
                 $max_advance = intval($_POST['max_advance'] ?? 30);
                 
@@ -771,11 +795,12 @@ endif; ?>
                         <p class="text-sm text-gray-600 mb-4">Minimum time required between the booking request and pickup.</p>
                         <div class="flex items-center space-x-3">
                             <input type="number" name="min_notice" value="<?= htmlspecialchars($settings['min_booking_notice'] ?? '48') ?>" placeholder="e.g. 48" class="w-32 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <div class="flex bg-gray-100 rounded-lg">
-                                <button type="button" onclick="setNoticeUnit('Hours')" class="px-4 py-2 text-sm font-medium rounded-l-lg hover:bg-gray-200">Hours</button>
-                                <button type="button" onclick="setNoticeUnit('Days')" class="px-4 py-2 text-sm font-medium rounded-r-lg hover:bg-gray-200">Days</button>
+                            <div class="flex bg-gray-100 rounded-lg p-1" id="noticeUnitToggle">
+                                <button type="button" onclick="setNoticeUnit('hours')" id="btn-hours" class="px-4 py-2 text-sm font-medium rounded-lg transition-all">Hours</button>
+                                <button type="button" onclick="setNoticeUnit('days')" id="btn-days" class="px-4 py-2 text-sm font-medium rounded-lg transition-all">Days</button>
                             </div>
-                            <input type="hidden" name="notice_unit" id="notice_unit" value="<?= htmlspecialchars($settings['booking_notice_unit'] ?? 'Hours') ?>">
+                            <?php $currentNoticeUnit = strtolower($settings['booking_notice_unit'] ?? 'hours'); ?>
+                            <input type="hidden" name="notice_unit" id="notice_unit" value="<?= htmlspecialchars($currentNoticeUnit) ?>">
                         </div>
                     </div>
 
@@ -2223,7 +2248,26 @@ endif; ?>
         // Notice unit toggle
         function setNoticeUnit(unit) {
             document.getElementById('notice_unit').value = unit;
+            const hoursBtn = document.getElementById('btn-hours');
+            const daysBtn = document.getElementById('btn-days');
+            if (unit === 'hours') {
+                hoursBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                hoursBtn.classList.remove('text-gray-500');
+                daysBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                daysBtn.classList.add('text-gray-500');
+            } else {
+                daysBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                daysBtn.classList.remove('text-gray-500');
+                hoursBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                hoursBtn.classList.add('text-gray-500');
+            }
         }
+
+        // Initialize toggle state on page load
+        (function() {
+            const currentUnit = document.getElementById('notice_unit').value || 'hours';
+            setNoticeUnit(currentUnit);
+        })();
 
         // Dynamic location row logic
         function addLocationRow(containerId, inputName) {

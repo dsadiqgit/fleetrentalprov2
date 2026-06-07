@@ -40,7 +40,7 @@ $payment_method = $_POST['payment_method'] ?? 'cash';
 $intent_only = ($_POST['intent_only'] ?? '0') === '1';
 
 // Get Stripe, Deposit, and Business hour settings for this tenant
-$stmt = $pdo->prepare("SELECT stripe_publishable_key, stripe_secret_key, stripe_test_mode, deposit_amount, deposit_payment_mode, currency, opening_time, closing_time FROM tenant_settings WHERE tenant_id = ?");
+$stmt = $pdo->prepare("SELECT stripe_publishable_key, stripe_secret_key, stripe_test_mode, deposit_amount, deposit_payment_mode, currency, opening_time, closing_time, min_booking_notice, booking_notice_unit FROM tenant_settings WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
 $stripe_settings = $stmt->fetch();
 
@@ -106,7 +106,29 @@ try {
         echo json_encode(['success' => false, 'message' => 'Return date cannot be before pickup date']);
         exit;
     }
-    
+
+    // Validate minimum booking notice
+    $minNotice = (int)($stripe_settings['min_booking_notice'] ?? 0);
+    if ($minNotice > 0) {
+        $noticeUnit = $stripe_settings['booking_notice_unit'] ?? 'hours';
+        $pickupDateTime = new DateTime($booking_data['pickup_date'] . ' ' . ($booking_data['pickup_time'] ?? '00:00'));
+        $now = new DateTime();
+
+        if ($noticeUnit === 'days') {
+            $minAllowed = (clone $now)->modify("+$minNotice days");
+            $minAllowed->setTime(0, 0, 0);
+            $pickupDateTime->setTime(0, 0, 0);
+        } else {
+            $minAllowed = (clone $now)->modify("+$minNotice hours");
+        }
+
+        if ($pickupDateTime < $minAllowed) {
+            $unitLabel = $noticeUnit === 'days' ? 'days' : 'hours';
+            echo json_encode(['success' => false, 'message' => "Bookings must be made at least $minNotice $unitLabel in advance. Please select a later pickup time."]);
+            exit;
+        }
+    }
+
     // Verify vehicle exists and is available
     $stmt = $pdo->prepare("SELECT * FROM vehicles WHERE id = ? AND tenant_id = ? AND availability = 1");
     $stmt->execute([$booking_data['vehicle_id'], $tenant_id]);
