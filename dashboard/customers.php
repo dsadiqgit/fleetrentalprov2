@@ -1090,31 +1090,59 @@ endif; ?>
             }
 
             content.innerHTML = `
-                <div class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-gray-50 rounded-xl p-4">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Pickup</p>
-                            <p class="text-base font-semibold text-gray-900">${data.pickup_date}</p>
-                            <p class="text-sm text-gray-600 mt-0.5">${data.pickup_time}</p>
-                            <p class="text-sm text-gray-600 mt-0.5">${data.pickup_location}</p>
+                <div class="space-y-5">
+                    <!-- Header: Vehicle & Status -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Vehicle</p>
+                            <p class="text-xl font-bold text-gray-900 mt-0.5">${data.vehicle_name}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-xl p-4">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Return</p>
-                            <p class="text-base font-semibold text-gray-900">${data.return_date}</p>
-                            <p class="text-sm text-gray-600 mt-0.5">${data.return_time}</p>
-                            <p class="text-sm text-gray-600 mt-0.5">${data.dropoff_location}</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-xl p-4">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Pricing & Status</p>
-                            <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">£${data.total_price}</span></p>
-                            <p class="text-sm text-gray-600 mt-0.5">Deposit: <span class="font-semibold text-gray-900">£${data.deposit}</span></p>
-                            <div class="mt-2">
-                                <span class="px-2 py-1 ${statusColor} rounded-full text-xs font-medium">${data.status.charAt(0).toUpperCase() + data.status.slice(1)}</span>
+                        <span class="px-3 py-1 ${statusColor} rounded-full text-sm font-medium">${data.status.charAt(0).toUpperCase() + data.status.slice(1)}</span>
+                    </div>
+
+                    <!-- Timeline: Pickup / Return -->
+                    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Pickup</p>
+                                    <p class="text-base font-bold text-gray-900 mt-0.5">${data.pickup_date}</p>
+                                    <p class="text-sm text-gray-600">${data.pickup_time} &middot; ${data.pickup_location}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Return</p>
+                                    <p class="text-base font-bold text-gray-900 mt-0.5">${data.return_date}</p>
+                                    <p class="text-sm text-gray-600">${data.return_time} &middot; ${data.dropoff_location}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    ${data.notes ? `<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4"><p class="text-xs font-medium text-yellow-700 uppercase tracking-wider mb-1">Notes</p><p class="text-sm text-gray-700">${data.notes}</p></div>` : ''}
-                    <div>
+
+                    <!-- Pricing -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 rounded-2xl p-5 text-center">
+                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Price</p>
+                            <p class="text-2xl font-extrabold text-gray-900 mt-1">£${data.total_price}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-2xl p-5 text-center">
+                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Security Deposit</p>
+                            <p class="text-2xl font-extrabold text-gray-900 mt-1">£${data.deposit}</p>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    ${data.notes ? `<div class="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-4"><svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><div><p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Notes</p><p class="text-sm text-gray-700 mt-0.5">${data.notes}</p></div></div>` : ''}
+
+                    <!-- Contract -->
+                    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                         ${contractSection}
                     </div>
                 </div>
