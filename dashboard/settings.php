@@ -662,12 +662,28 @@ $settings = $stmt->fetch();
         <header class="hidden lg:block bg-white border-b border-gray-200 px-6 py-4">
             <div class="flex items-center justify-between">
                 <div>
+                    <?php
+                    $tabLabels = [
+                        'general' => 'General',
+                        'booking' => 'Booking',
+                        'main' => 'Company',
+                        'team' => 'Team',
+                        'payments' => 'Payments',
+                        'domain' => 'Domain',
+                        'billing' => 'Billing',
+                    ];
+                    $tabLabel = $tabLabels[$active_tab] ?? 'Settings';
+                    ?>
                     <nav class="text-sm text-gray-500 mb-1">
                         <a href="/dashboard/" class="hover:text-gray-700">Dashboard</a>
                         <span class="mx-2">/</span>
-                        <span class="text-gray-900">Settings</span>
+                        <a href="/dashboard/settings.php" class="hover:text-gray-700">Settings</a>
+                        <?php if ($active_tab !== 'general'): ?>
+                        <span class="mx-2">/</span>
+                        <span class="text-gray-900"><?= htmlspecialchars($tabLabel) ?></span>
+                        <?php endif; ?>
                     </nav>
-                    <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+                    <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($tabLabel) ?></h1>
                     <p class="text-sm text-gray-600 mt-1">Manage your business and account settings</p>
                 </div>
             </div>
