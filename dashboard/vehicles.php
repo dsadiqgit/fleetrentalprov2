@@ -579,6 +579,8 @@ if ($schedule_view === 'week') {
     for ($d = 0; $d < $days_in_month; $d++) {
         $month_days[] = date('Y-m-d', strtotime("+$d days", strtotime($month_start_date)));
     }
+    $month_today = date('Y-m-d');
+    $month_dow_labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 } else {
     $query_start_date = $selected_schedule_date;
     $query_end_date = $selected_schedule_date;
@@ -669,6 +671,58 @@ if ($show_edit_form) {
     <style>
         [x-cloak] {
             display: none !important;
+        }
+        .cal-month-header-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 0;
+            border-left: 1px solid #f3f4f6;
+            min-width: 0;
+        }
+        .cal-month-header-cell.weekend {
+            background-color: #fafafa;
+        }
+        .cal-month-header-cell.today {
+            background-color: #eff6ff;
+        }
+        .cal-month-header-cell .dow-label {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #9ca3af;
+            margin-bottom: 2px;
+        }
+        .cal-month-header-cell .day-num {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            line-height: 1;
+        }
+        .cal-month-header-cell.today .day-num {
+            color: #2563eb;
+        }
+        .cal-month-header-cell.today .today-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: #2563eb;
+            margin-top: 3px;
+        }
+        .cal-month-col {
+            border-left: 1px solid #f3f4f6;
+            min-height: 80px;
+        }
+        .cal-month-col.weekend {
+            background-color: #fafafa;
+        }
+        .cal-month-col.today {
+            background-color: #eff6ff;
+        }
+        .cal-month-col.week-start {
+            border-left-color: #d1d5db;
         }
         .sidebar-item {
             transition: all 0.2s;
@@ -821,29 +875,40 @@ endif; ?>
 
                 <!-- Schedule Board -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div class="flex border-b border-gray-100 bg-gray-50 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        <div class="w-72">Vehicles (<?= $filteredVehicleCount?>)</div>
+                    <div class="flex border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider <?= $schedule_view === 'month' ? 'overflow-x-auto' : '' ?>">
+                        <div class="w-72 px-6 py-3 flex-shrink-0">Vehicles (<?= $filteredVehicleCount?>)</div>
                         <?php if ($schedule_view === 'week'): ?>
                         <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                             <?php foreach ($week_days as $day): ?>
-                            <div><?= date('D d/m', strtotime($day)) ?></div>
+                            <div class="py-3"><?= date('D d/m', strtotime($day)) ?></div>
                             <?php endforeach; ?>
                         </div>
                         <?php elseif ($schedule_view === 'month'): ?>
-                        <div class="flex-1 grid gap-0 text-center text-[10px]" style="grid-template-columns: repeat(<?= $days_in_month ?>, minmax(0, 1fr));">
-                            <?php foreach ($month_days as $day): ?>
-                            <div><?= date('j', strtotime($day)) ?></div>
+                        <div class="grid" style="grid-template-columns: repeat(<?= $days_in_month ?>, 42px); min-width: <?= $days_in_month * 42 ?>px;">
+                            <?php foreach ($month_days as $idx => $day):
+                                $dow = (int)date('w', strtotime($day));
+                                $dow = ($dow + 6) % 7; // Monday-based: 0=Mon, 6=Sun
+                                $isWeekend = ($dow >= 5);
+                                $isToday = ($day === $month_today);
+                                $isWeekStart = ($dow === 0);
+                                $cellClass = 'cal-month-header-cell' . ($isWeekend ? ' weekend' : '') . ($isToday ? ' today' : '') . ($isWeekStart ? ' week-start' : '');
+                            ?>
+                            <div class="<?= $cellClass ?>">
+                                <span class="dow-label"><?= $month_dow_labels[$dow] ?></span>
+                                <span class="day-num"><?= date('j', strtotime($day)) ?></span>
+                                <?php if ($isToday): ?><span class="today-dot"></span><?php endif; ?>
+                            </div>
                             <?php endforeach; ?>
                         </div>
                         <?php else: ?>
                         <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(<?= $hourColumns?>, minmax(0, 1fr));">
                             <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
-                            <div><?= sprintf('%02d:00', $hour) ?></div>
+                            <div class="py-3"><?= sprintf('%02d:00', $hour) ?></div>
                             <?php endfor; ?>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div class="divide-y divide-gray-100">
+                    <div class="divide-y divide-gray-100 <?= $schedule_view === 'month' ? 'overflow-x-auto' : '' ?>">
                         <?php if (empty($filteredVehicles)): ?>
                         <div class="p-12 text-center text-gray-500 text-sm">No vehicles match your filters.</div>
                         <?php else: ?>
@@ -860,8 +925,8 @@ endif; ?>
                             }
                             $vehicleBookings = $assignmentsByVehicle[$vehicle['id']] ?? [];
                         ?>
-                        <div class="flex">
-                            <div class="w-72 px-4 py-3.5 flex items-center gap-3 border-r border-gray-100 hover:bg-gray-50 transition-colors">
+                        <div class="flex <?= $schedule_view === 'month' ? 'min-w-max' : '' ?>">
+                            <div class="w-72 px-4 py-3.5 flex items-center gap-3 border-r border-gray-100 hover:bg-gray-50 transition-colors flex-shrink-0">
                                 <?php if ($vehicleImage): ?>
                                 <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>" class="w-12 h-12 rounded-xl object-cover border border-gray-200 shadow-sm flex-shrink-0">
                                 <?php else: ?>
@@ -896,7 +961,7 @@ endif; ?>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex-1 relative border-l border-gray-100">
+                            <div class="flex-1 relative border-l border-gray-100 <?= $schedule_view === 'month' ? 'min-w-max' : '' ?>">
                                 <?php if ($schedule_view === 'week'): ?>
                                 <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                                     <?php for ($d = 0; $d < 7; $d++): ?>
@@ -904,10 +969,17 @@ endif; ?>
                                     <?php endfor; ?>
                                 </div>
                                 <?php elseif ($schedule_view === 'month'): ?>
-                                <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(<?= $days_in_month ?>, minmax(0, 1fr));">
-                                    <?php for ($d = 0; $d < $days_in_month; $d++): ?>
-                                    <div class="border-l border-gray-100 min-h-[80px]"></div>
-                                    <?php endfor; ?>
+                                <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(<?= $days_in_month ?>, 42px); min-width: <?= $days_in_month * 42 ?>px;">
+                                    <?php foreach ($month_days as $idx => $day):
+                                        $dow = (int)date('w', strtotime($day));
+                                        $dow = ($dow + 6) % 7;
+                                        $isWeekend = ($dow >= 5);
+                                        $isToday = ($day === $month_today);
+                                        $isWeekStart = ($dow === 0);
+                                        $cellClass = 'cal-month-col' . ($isWeekend ? ' weekend' : '') . ($isToday ? ' today' : '') . ($isWeekStart ? ' week-start' : '');
+                                    ?>
+                                    <div class="<?= $cellClass ?> min-h-[80px]"></div>
+                                    <?php endforeach; ?>
                                 </div>
                                 <?php else: ?>
                                 <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(<?= $hourColumns?>, minmax(0, 1fr));">
