@@ -62,8 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_esigning'])) {
 
 // Handle delete template
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
+    $template_id = intval($_GET['delete']);
+    $tenant_id = $_SESSION['tenant_id'];
+
+    // Check if any vehicle is assigned to this template
+    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM vehicles WHERE tenant_id = ? AND contract_template_id = ?");
+    $checkStmt->execute([$tenant_id, $template_id]);
+    $assignedCount = (int) $checkStmt->fetchColumn();
+
+    if ($assignedCount > 0) {
+        header('Location: /dashboard/e-signing.php?error=assigned');
+        exit;
+    }
+
     $stmt = $pdo->prepare("DELETE FROM contract_templates WHERE id = ? AND tenant_id = ?");
-    $stmt->execute([$_GET['delete'], $_SESSION['tenant_id']]);
+    $stmt->execute([$template_id, $tenant_id]);
     header('Location: /dashboard/e-signing.php');
     exit;
 }
@@ -279,6 +292,15 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
 
         <div class="flex-1 overflow-auto bg-gray-50">
             <div class="px-4 sm:px-6 lg:px-8 py-8">
+
+                <?php if (isset($_GET['error']) && $_GET['error'] === 'assigned'): ?>
+                <div class="mb-6 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-sm font-medium">This template cannot be deleted because it is currently assigned to one or more vehicles. Please unassign it from all vehicles first.</span>
+                </div>
+                <?php endif; ?>
 
                 <!-- E-Sign Feature Toggle -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">

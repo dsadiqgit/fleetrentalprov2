@@ -537,8 +537,28 @@ $customers = $stmt->fetchAll();
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
-                            <?php foreach ($customer_bookings as $booking): ?>
-                            <tr class="hover:bg-gray-50">
+                            <?php foreach ($customer_bookings as $booking):
+                $b_json = json_encode([
+                    'id' => $booking['id'],
+                    'vehicle_name' => htmlspecialchars($booking['vehicle_name'] ?? ($booking['brand'] . ' ' . $booking['model'])),
+                    'pickup_date' => date('M d, Y', strtotime($booking['pickup_date'])),
+                    'pickup_time' => date('g:i A', strtotime($booking['pickup_time'] ?? '10:00')),
+                    'pickup_location' => htmlspecialchars($booking['pickup_location'] ?? 'Default Location'),
+                    'return_date' => date('M d, Y', strtotime($booking['return_date'])),
+                    'return_time' => date('g:i A', strtotime($booking['return_time'] ?? '10:00')),
+                    'dropoff_location' => htmlspecialchars($booking['dropoff_location'] ?? 'Default Location'),
+                    'status' => $booking['status'],
+                    'total_price' => number_format($booking['total_price'], 2),
+                    'deposit' => number_format($booking['security_deposit'] ?? 0, 2),
+                    'notes' => htmlspecialchars($booking['notes'] ?? ''),
+                    'contract_id' => $booking['contract_id'],
+                    'contract_status' => $booking['contract_status'],
+                    'signed_at' => $booking['signed_at'] ? date('M d, Y', strtotime($booking['signed_at'])) : '',
+                    'signing_token' => htmlspecialchars($booking['signing_token'] ?? ''),
+                    'has_pdf' => !empty($booking['signed_pdf_path']) && file_exists($booking['signed_pdf_path'])
+                ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
+?>
+                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="openBookingDetailModal(this)" data-booking="<?= htmlspecialchars($b_json, ENT_QUOTES, 'UTF-8')?>">
                                 <td class="px-6 py-4 text-sm font-medium text-gray-900">#
                                     <?= $booking['id']?>
                                 </td>
@@ -553,14 +573,14 @@ $customers = $stmt->fetchAll();
                                 </td>
                                 <td class="px-6 py-4">
                                     <?php
-            $status_colors = [
-                'pending' => 'bg-yellow-100 text-yellow-800',
-                'confirmed' => 'bg-blue-100 text-blue-800',
-                'active' => 'bg-green-100 text-green-800',
-                'completed' => 'bg-gray-100 text-gray-800',
-                'cancelled' => 'bg-red-100 text-red-800'
-            ];
-            $color = $status_colors[$booking['status']] ?? 'bg-gray-100 text-gray-800';
+                $status_colors = [
+                    'pending' => 'bg-yellow-100 text-yellow-800',
+                    'confirmed' => 'bg-blue-100 text-blue-800',
+                    'active' => 'bg-green-100 text-green-800',
+                    'completed' => 'bg-gray-100 text-gray-800',
+                    'cancelled' => 'bg-red-100 text-red-800'
+                ];
+                $color = $status_colors[$booking['status']] ?? 'bg-gray-100 text-gray-800';
 ?>
                                     <span class="px-2 py-1 <?= $color?> rounded-full text-xs font-medium">
                                         <?= ucfirst($booking['status'])?>
@@ -573,50 +593,16 @@ $customers = $stmt->fetchAll();
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <?php if ($booking['contract_id']): ?>
                                     <?php if ($booking['contract_status'] === 'signed'): ?>
-                                    <div class="flex items-center gap-2">
-                                        <button
-                                            onclick="viewContract(<?= $booking['id']?>, '<?= htmlspecialchars($booking['signing_token'])?>')"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                                                </path>
-                                            </svg>
-                                            View
-                                        </button>
-                                        <?php if (!empty($booking['signed_pdf_path']) && file_exists($booking['signed_pdf_path'])): ?>
-                                        <a href="/api/download-contract.php?booking_id=<?= $booking['id']?>"
-                                            target="_blank" rel="noopener noreferrer"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                                </path>
-                                            </svg>
-                                            PDF
-                                        </a>
-                                        <?php
-                    endif; ?>
-                                    </div>
-                                    <?php
-                else: ?>
-                                    <span
-                                        class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Pending</span>
-                                    <?php
-                endif; ?>
-                                    <?php
-            else: ?>
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Signed</span>
+                                    <?php else: ?>
+                                    <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Pending</span>
+                                    <?php endif; ?>
+                                    <?php else: ?>
                                     <span class="text-xs text-gray-400">—</span>
-                                    <?php
-            endif; ?>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                            <?php
-        endforeach; ?>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
@@ -793,7 +779,7 @@ else: ?>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             <?php foreach ($customers as $customer): ?>
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/dashboard/customers.php?view=<?= urlencode($customer['email'])?>'">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div
@@ -828,8 +814,8 @@ else: ?>
                                     <div class="flex items-center gap-3">
                                         <?php if ($current_tab === 'all'): ?>
                                         <a href="/dashboard/customers.php?view=<?= urlencode($customer['email'])?>"
-                                            class="text-blue-600 hover:text-blue-900">View</a>
-                                        <form id="softDeleteForm_<?= md5($customer['email'])?>" method="POST">
+                                            class="text-blue-600 hover:text-blue-900" onclick="event.stopPropagation()">View</a>
+                                        <form id="softDeleteForm_<?= md5($customer['email'])?>" method="POST" onclick="event.stopPropagation()">
                                             <input type="hidden" name="email"
                                                 value="<?= htmlspecialchars($customer['email'])?>">
                                             <input type="hidden" name="action" value="soft_delete">
@@ -845,14 +831,14 @@ else: ?>
                                         </form>
                                         <?php
             else: ?>
-                                        <form method="POST">
+                                        <form method="POST" onclick="event.stopPropagation()">
                                             <input type="hidden" name="email"
                                                 value="<?= htmlspecialchars($customer['email'])?>">
                                             <input type="hidden" name="action" value="restore">
                                             <button type="submit"
                                                 class="text-green-600 hover:text-green-900">Restore</button>
                                         </form>
-                                        <form id="permDeleteForm_<?= md5($customer['email'])?>" method="POST">
+                                        <form id="permDeleteForm_<?= md5($customer['email'])?>" method="POST" onclick="event.stopPropagation()">
                                             <input type="hidden" name="email"
                                                 value="<?= htmlspecialchars($customer['email'])?>">
                                             <input type="hidden" name="action" value="permanent_delete">
@@ -899,6 +885,31 @@ else: ?>
             <?php
 endif; ?>
         </main>
+    </div>
+
+    <!-- Booking Detail Modal -->
+    <div id="bookingDetailModal"
+        class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Booking Details</h3>
+                    <p class="text-sm text-gray-500" id="bookingDetailSubtitle"></p>
+                </div>
+                <button onclick="closeBookingDetailModal()"
+                    class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6" id="bookingDetailContent">
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-end">
+                <button onclick="closeBookingDetailModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Close</button>
+            </div>
+        </div>
     </div>
 
     <!-- Contract Viewer Modal -->
@@ -1026,6 +1037,95 @@ endif; ?>
             document.body.style.overflow = '';
         }
 
+        function openBookingDetailModal(row) {
+            const data = JSON.parse(row.dataset.booking);
+            const modal = document.getElementById('bookingDetailModal');
+            const subtitle = document.getElementById('bookingDetailSubtitle');
+            const content = document.getElementById('bookingDetailContent');
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            subtitle.textContent = 'Booking #' + String(data.id).padStart(5, '0');
+
+            const statusColors = {
+                pending: 'bg-yellow-100 text-yellow-800',
+                confirmed: 'bg-blue-100 text-blue-800',
+                active: 'bg-green-100 text-green-800',
+                completed: 'bg-gray-100 text-gray-800',
+                cancelled: 'bg-red-100 text-red-800'
+            };
+            const statusColor = statusColors[data.status] || 'bg-gray-100 text-gray-800';
+
+            let contractSection = '';
+            if (data.contract_id) {
+                if (data.contract_status === 'signed') {
+                    contractSection = `
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Contract</p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Signed ${data.signed_at || ''}</span>
+                                <button onclick="event.stopPropagation(); viewContract(${data.id}, '${data.signing_token}')" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    View Contract
+                                </button>
+                                ${data.has_pdf ? `<a href="/api/download-contract.php?booking_id=${data.id}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    Download PDF
+                                </a>` : ''}
+                            </div>
+                        </div>`;
+                } else {
+                    contractSection = `
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Contract</p>
+                            <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Pending Signature</span>
+                        </div>`;
+                }
+            } else {
+                contractSection = `
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        No contract associated with this booking.
+                    </div>`;
+            }
+
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Pickup</p>
+                            <p class="text-base font-semibold text-gray-900">${data.pickup_date}</p>
+                            <p class="text-sm text-gray-600 mt-0.5">${data.pickup_time}</p>
+                            <p class="text-sm text-gray-600 mt-0.5">${data.pickup_location}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Return</p>
+                            <p class="text-base font-semibold text-gray-900">${data.return_date}</p>
+                            <p class="text-sm text-gray-600 mt-0.5">${data.return_time}</p>
+                            <p class="text-sm text-gray-600 mt-0.5">${data.dropoff_location}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Pricing & Status</p>
+                            <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">£${data.total_price}</span></p>
+                            <p class="text-sm text-gray-600 mt-0.5">Deposit: <span class="font-semibold text-gray-900">£${data.deposit}</span></p>
+                            <div class="mt-2">
+                                <span class="px-2 py-1 ${statusColor} rounded-full text-xs font-medium">${data.status.charAt(0).toUpperCase() + data.status.slice(1)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ${data.notes ? `<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4"><p class="text-xs font-medium text-yellow-700 uppercase tracking-wider mb-1">Notes</p><p class="text-sm text-gray-700">${data.notes}</p></div>` : ''}
+                    <div>
+                        ${contractSection}
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeBookingDetailModal() {
+            document.getElementById('bookingDetailModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
         function openAddCustomerModal() {
             const modal = document.getElementById('addCustomerModal');
             modal.classList.remove('hidden');
@@ -1042,6 +1142,10 @@ endif; ?>
             if (e.target === this) closeContractModal();
         });
 
+        document.getElementById('bookingDetailModal')?.addEventListener('click', function (e) {
+            if (e.target === this) closeBookingDetailModal();
+        });
+
         document.getElementById('addCustomerModal')?.addEventListener('click', function (e) {
             if (e.target === this) closeAddCustomerModal();
         });
@@ -1049,6 +1153,7 @@ endif; ?>
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeContractModal();
+                closeBookingDetailModal();
                 closeAddCustomerModal();
             }
         });
