@@ -927,6 +927,8 @@ endif; ?>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </button>
+                            <div class="w-px h-5 bg-gray-200 mx-1"></div>
+                            <button onclick="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= date('Y-m-d') ?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="text-xs font-semibold text-blue-600 hover:text-blue-800 px-1">Today</button>
                         </div>
                         <div class="flex items-center gap-2 border border-gray-200 rounded-lg p-1 bg-white text-sm">
                             <a href="/dashboard/vehicles.php?schedule_view=day&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
