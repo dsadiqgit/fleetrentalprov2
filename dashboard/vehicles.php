@@ -925,9 +925,9 @@ endif; ?>
                 </div>
 
                 <!-- Schedule Board -->
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div class="flex border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider <?= $schedule_view === 'month' ? 'overflow-x-auto' : '' ?>">
-                        <div class="w-72 px-6 py-3 flex-shrink-0">Vehicles (<?= $filteredVehicleCount?>)</div>
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm <?= $schedule_view === 'month' ? 'overflow-x-auto' : 'overflow-hidden' ?>">
+                    <div class="flex border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider <?= $schedule_view === 'month' ? 'min-w-max' : '' ?>">
+                        <div class="w-72 px-6 py-3 flex-shrink-0 <?= $schedule_view === 'month' ? 'sticky left-0 z-20 bg-gray-50' : '' ?>" style="<?= $schedule_view === 'month' ? 'box-shadow: 2px 0 4px rgba(0,0,0,0.04);' : '' ?>">Vehicles (<?= $filteredVehicleCount?>)</div>
                         <?php if ($schedule_view === 'week'): ?>
                         <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                             <?php foreach ($week_days as $day): ?>
@@ -959,7 +959,7 @@ endif; ?>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div class="divide-y divide-gray-100 <?= $schedule_view === 'month' ? 'overflow-x-auto' : '' ?>">
+                    <div class="divide-y divide-gray-100">
                         <?php if (empty($filteredVehicles)): ?>
                         <div class="p-12 text-center text-gray-500 text-sm">No vehicles match your filters.</div>
                         <?php else: ?>
@@ -977,7 +977,7 @@ endif; ?>
                             $vehicleBookings = $assignmentsByVehicle[$vehicle['id']] ?? [];
                         ?>
                         <div class="flex <?= $schedule_view === 'month' ? 'min-w-max' : '' ?>">
-                            <div class="w-72 px-4 py-3.5 flex items-center gap-3 border-r border-gray-100 hover:bg-gray-50 transition-colors flex-shrink-0">
+                            <div class="w-72 px-4 py-3.5 flex items-center gap-3 border-r border-gray-100 hover:bg-gray-50 transition-colors flex-shrink-0 <?= $schedule_view === 'month' ? 'sticky left-0 z-10 bg-white' : '' ?>" style="<?= $schedule_view === 'month' ? 'box-shadow: 2px 0 4px rgba(0,0,0,0.04);' : '' ?>">
                                 <?php if ($vehicleImage): ?>
                                 <img src="<?= htmlspecialchars($vehicleImage)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>" class="w-12 h-12 rounded-xl object-cover border border-gray-200 shadow-sm flex-shrink-0">
                                 <?php else: ?>
