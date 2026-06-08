@@ -544,12 +544,21 @@ $selected_schedule_date = $_GET['schedule_date'] ?? date('Y-m-d');
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $selected_schedule_date)) {
     $selected_schedule_date = date('Y-m-d');
 }
-$prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 day'));
-$nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 day'));
 
 $schedule_view = $_GET['schedule_view'] ?? 'day';
 if (!in_array($schedule_view, ['day', 'week', 'month'])) {
     $schedule_view = 'day';
+}
+
+if ($schedule_view === 'month') {
+    $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 month'));
+    $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 month'));
+} elseif ($schedule_view === 'week') {
+    $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -7 days'));
+    $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +7 days'));
+} else {
+    $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 day'));
+    $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 day'));
 }
 
 $timelineStartHour = 8;
@@ -901,7 +910,13 @@ endif; ?>
                                 </svg>
                             </button>
                             <button id="scheduleDateBtn" class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                <?= date('F j, Y', strtotime($selected_schedule_date))?>
+                                <?php if ($schedule_view === 'month'): ?>
+                                    <?= date('F Y', strtotime($selected_schedule_date)) ?>
+                                <?php elseif ($schedule_view === 'week'): ?>
+                                    <?= date('M j', strtotime($week_days[0])) ?> – <?= date('M j, Y', strtotime($week_days[6])) ?>
+                                <?php else: ?>
+                                    <?= date('F j, Y', strtotime($selected_schedule_date)) ?>
+                                <?php endif; ?>
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
@@ -1118,16 +1133,22 @@ endif; ?>
                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-[2rem] w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col relative"
                     onclick="event.stopPropagation()">
-                    <div
-                        class="p-8 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
-                        <div>
-                            <h3 class="text-xl font-black text-gray-900 uppercase tracking-tighter">Management</h3>
-                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">Booking Operations
-                            </p>
+                    <div id="bookingModalHeader"
+                        class="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 id="bookingModalTitle" class="text-base font-semibold text-gray-900 truncate">Booking Details</h3>
+                                <p id="bookingModalSubtitle" class="text-xs text-gray-500 mt-0.5">Loading...</p>
+                            </div>
                         </div>
                         <button onclick="closeBookingModal()"
-                            class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all flex-shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                                 </path>
                             </svg>
@@ -2382,6 +2403,16 @@ endif; ?>
 
             const content = document.getElementById('bookingModalContent');
             if (!content) return;
+
+            // Update modal header with real booking data
+            const titleEl = document.getElementById('bookingModalTitle');
+            const subEl = document.getElementById('bookingModalSubtitle');
+            if (titleEl) titleEl.textContent = booking.customer_name || 'Guest Booking';
+            if (subEl) {
+                const pickup = new Date(booking.pickup_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                const ret = new Date(booking.return_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                subEl.innerHTML = `<span class="inline-flex items-center gap-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusMap[booking.status] || 'bg-gray-100 text-gray-600'}">${booking.status}</span><span class="text-gray-400">|</span><span>#${String(booking.id).padStart(5,'0')}</span><span class="text-gray-400">|</span><span>${pickup} – ${ret}</span></span>`;
+            }
 
             content.innerHTML = `
                 <div class="flex items-center justify-center mb-8">
