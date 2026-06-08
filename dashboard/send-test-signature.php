@@ -54,7 +54,13 @@ $sampleData = [
     '{{included_distance}}' => '500 miles',
     '{{excess_distance_fee}}' => '$0.50',
     '{{deductible_amount}}' => '$1,000',
-    '{{current_datetime}}' => date('F j, Y g:i A'),
+    '{{current_datetime}}' => (function() {
+        $tz = date_default_timezone_get();
+        date_default_timezone_set('Europe/London');
+        $dt = date('F j, Y g:i A');
+        date_default_timezone_set($tz);
+        return $dt;
+    })(),
     '{{signature}}' => '<div style="border-bottom: 2px solid #333; height: 60px; margin: 20px 0;"></div>'
 ];
 
@@ -117,7 +123,6 @@ if ($isHtmlTemplate) {
                 background-color: #f9f9f9;
             }
         </style>
-        <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
 </head>
     <body>
         <div class='email-wrapper'>

@@ -156,7 +156,13 @@ try {
         '{{included_distance}}' => ($data['mileage_limit'] ?? 'Unlimited') . ' miles',
         '{{excess_distance_fee}}' => '£0.50',
         '{{deductible_amount}}' => '£500',
-        '{{current_datetime}}' => date('F j, Y h:i A'),
+        '{{current_datetime}}' => (function() {
+            $tz = date_default_timezone_get();
+            date_default_timezone_set('Europe/London');
+            $dt = date('F j, Y h:i A');
+            date_default_timezone_set($tz);
+            return $dt;
+        })(),
         '{{signature}}' => '',
         '{{witness_signature}}' => $witness_signature_html,
         '{{user_name}}' => $witness_name,
