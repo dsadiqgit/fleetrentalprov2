@@ -2802,21 +2802,25 @@ endif; ?>
         }
 
         async function generateManualContract(bookingId) {
-            const templateIdEl = document.getElementById('selected-template-id');
-            const btn = document.getElementById('send-contract-btn');
-            if (!templateIdEl || !btn) return;
-
-            const templateId = templateIdEl.value;
-            if (!templateId) {
-                showNotification('Please select a template', 'error');
-                return;
-            }
-
-            const originalContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Sending...';
-
             try {
+                const templateIdEl = document.getElementById('selected-template-id');
+                const btn = document.getElementById('send-contract-btn');
+                if (!templateIdEl || !btn) {
+                    showNotification('Contract form not found. Please reopen the booking.', 'error');
+                    console.error('Missing elements:', { templateIdEl: !!templateIdEl, btn: !!btn });
+                    return;
+                }
+
+                const templateId = templateIdEl.value;
+                if (!templateId) {
+                    showNotification('Please select a template', 'error');
+                    return;
+                }
+
+                const originalContent = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Sending...';
+
                 const response = await fetch('/dashboard/generate-manual-contract.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2834,9 +2838,13 @@ endif; ?>
                     btn.innerHTML = originalContent;
                 }
             } catch (error) {
-                showNotification('Failed to generate contract', 'error');
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
+                console.error('generateManualContract error:', error);
+                showNotification('Failed to generate contract: ' + error.message, 'error');
+                const btn = document.getElementById('send-contract-btn');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Send Invitation';
+                }
             }
         }
 
