@@ -724,6 +724,57 @@ if ($show_edit_form) {
         .cal-month-col.week-start {
             border-left-color: #d1d5db;
         }
+        /* Flatpickr schedule date picker custom styles */
+        .flatpickr-calendar:not(.inline) {
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            border: 1px solid #e5e7eb;
+            margin-top: 8px;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-months {
+            padding: 8px 0;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-month {
+            color: #1f2937;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-current-month {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-weekday {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #9ca3af;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day {
+            border-radius: 8px;
+            font-size: 13px;
+            color: #374151;
+            margin: 2px;
+            height: 36px;
+            width: 36px;
+            line-height: 36px;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day:hover {
+            background: #f3f4f6;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day.selected {
+            background: transparent;
+            border: 2px solid #1f2937;
+            color: #1f2937;
+            font-weight: 700;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day.today {
+            background: #f3f4f6;
+            color: #1f2937;
+            font-weight: 600;
+            border: none;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day.prevMonthDay,
+        .flatpickr-calendar:not(.inline) .flatpickr-day.nextMonthDay {
+            color: #d1d5db;
+        }
         .sidebar-item {
             transition: all 0.2s;
         }
@@ -849,13 +900,13 @@ endif; ?>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
-                            <button class="text-sm font-semibold text-gray-700 flex items-center gap-2" onclick="document.getElementById('scheduleDatePicker').showPicker()">
+                            <button id="scheduleDateBtn" class="text-sm font-semibold text-gray-700 flex items-center gap-2">
                                 <?= date('F j, Y', strtotime($selected_schedule_date))?>
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </button>
-                            <input type="date" id="scheduleDatePicker" class="hidden" value="<?= htmlspecialchars($selected_schedule_date)?>" onchange="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date='+this.value+'&vehicle_search=<?= urlencode($vehicle_search) ?>'">
+                            <input type="text" id="scheduleDateInput" value="<?= htmlspecialchars($selected_schedule_date)?>" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" tabindex="-1">
                             <button onclick="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= $nextScheduleDate?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="p-1 text-gray-500 hover:text-gray-900">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -1958,6 +2009,27 @@ endif; ?>
             }
         }
         
+        // Schedule date picker
+        const scheduleDateInput = document.getElementById('scheduleDateInput');
+        const scheduleDateBtn = document.getElementById('scheduleDateBtn');
+        if (scheduleDateInput && scheduleDateBtn) {
+            const scheduleFp = flatpickr(scheduleDateInput, {
+                dateFormat: "Y-m-d",
+                defaultDate: scheduleDateInput.value,
+                locale: { firstDayOfWeek: 1 },
+                monthSelectorType: 'static',
+                onChange: function(selectedDates, dateStr) {
+                    if (dateStr) {
+                        window.location = '/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=' + dateStr + '&vehicle_search=<?= urlencode($vehicle_search) ?>';
+                    }
+                }
+            });
+            scheduleDateBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                scheduleFp.open();
+            });
+        }
+
         // Inline Read-Only Availability Calendar for Admin
         const inlineCalContainer = document.getElementById('inline-availability-calendar');
         if (inlineCalContainer) {
