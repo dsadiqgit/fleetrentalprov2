@@ -197,7 +197,7 @@ function renderContractToPDF($pdf, $contractData, $booking, $tenant, $vehicle, $
         $pdf->SetTextColor(107, 114, 128);
         $pdf->SetFont('helvetica', '', 8);
         
-        $contactText = ($tenant['website'] ?? 'www.fleetrentalpro.com') . '  |  ' . ($tenant['email'] ?? 'info@fleetrentalpro.com') . '  |  ' . ($tenant['phone'] ?? '+44 000 000 000');
+        $contactText = ($tenant['company_website'] ?? 'www.fleetrentalpro.com') . '  |  ' . ($tenant['company_email'] ?? 'info@fleetrentalpro.com') . '  |  ' . ($tenant['company_phone'] ?? '+44 000 000 000');
         $pdf->Cell(0, 6, $contactText, 0, 1, 'C');
         
         $pdf->Ln(10);

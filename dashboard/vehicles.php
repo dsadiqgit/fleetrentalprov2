@@ -1297,7 +1297,7 @@ endif; ?>
                         <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
                                 <div>
-                                    <h2 class="text-lg font-semibold text-gray-900">Vehicle Information</h2>
+                                    <h2 @click="navigateToTab('basic', $data)" class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors">Vehicle Information</h2>
                                     <p class="text-sm text-gray-500">Provide basic details about the vehicle.</p>
                                 </div>
                                 <span class="px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-full">Step 1</span>
@@ -1476,7 +1476,7 @@ endif; ?>
                     <!-- Images Tab -->
                     <div x-show="vehicleTab === 'images'" class="space-y-8" x-cloak>
                         <div>
-                            <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Vehicle Images</h2>
+                            <h2 @click="navigateToTab('images', $data)" class="text-base sm:text-lg font-semibold text-gray-900 mb-4 cursor-pointer hover:text-blue-600 transition-colors">Vehicle Images</h2>
                             <div class="space-y-3 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                                 <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
                                     <div class="flex-1 w-full flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors" onclick="document.getElementById('vehicleImageInput').click()">
@@ -1535,7 +1535,7 @@ endif; ?>
                         <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
                                 <div>
-                                    <h2 class="text-lg font-semibold text-gray-900">Rental Policy & Documents</h2>
+                                    <h2 @click="navigateToTab('settings', $data)" class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors">Rental Policy & Documents</h2>
                                     <p class="text-sm text-gray-500">Specify deposit requirements and renter qualifications.</p>
                                 </div>
                                 <span class="px-3 py-1 text-xs font-semibold text-amber-600 bg-amber-50 rounded-full">Step 2</span>
@@ -1623,7 +1623,7 @@ endif; ?>
                         <div id="pricing-settings-container" class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
                                 <div>
-                                    <h2 class="text-lg font-semibold text-gray-900">Pricing Settings</h2>
+                                    <h2 @click="navigateToTab('pricing', $data)" class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors">Pricing Settings</h2>
                                     <p class="text-sm text-gray-500">Adjust daily rates and custom packages.</p>
                                 </div>
                                 <span class="px-3 py-1 text-xs font-semibold text-violet-600 bg-violet-50 rounded-full">Step 4</span>
@@ -1702,7 +1702,7 @@ endif; ?>
                         <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
                                 <div>
-                                    <h2 class="text-lg font-semibold text-gray-900">Availability Management</h2>
+                                    <h2 @click="navigateToTab('calendar', $data)" class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors">Availability Management</h2>
                                     <p class="text-sm text-gray-500">Block maintenance days or inspect bookings at a glance.</p>
                                 </div>
                                 <span class="px-3 py-1 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-full">Live</span>

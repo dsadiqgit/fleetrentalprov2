@@ -143,11 +143,24 @@ try {
         }
     }
     
+    // Fetch tenant contact info
+    $stmt_t = $pdo->prepare("SELECT company_email, company_phone, company_address, company_website FROM tenant_settings WHERE tenant_id = ?");
+    $stmt_t->execute([$tenant_id]);
+    $tenant_contact = $stmt_t->fetch();
+    $tenant_email = $tenant_contact['company_email'] ?? '';
+    $tenant_phone = $tenant_contact['company_phone'] ?? '';
+    $tenant_address = $tenant_contact['company_address'] ?? '';
+    $tenant_website = $tenant_contact['company_website'] ?? '';
+
     $replacements = [
         '{{vehicle_name}}' => $vehicleName,
         '{{vehicle_registration}}' => 'N/A',
         '{{renter_full_name}}' => $data['customer_name'],
         '{{tenant_name}}' => $data['tenant_name'],
+        '{{tenant_email}}' => $tenant_email,
+        '{{tenant_phone}}' => $tenant_phone,
+        '{{tenant_address}}' => $tenant_address,
+        '{{tenant_website}}' => $tenant_website,
         '{{booking_reference}}' => '#' . str_pad($booking_id, 5, '0', STR_PAD_LEFT),
         '{{pickup_datetime}}' => date('M d, Y', strtotime($data['pickup_date'])) . ' ' . date('g:i A', strtotime($data['pickup_time'] ?? '10:00')),
         '{{return_datetime}}' => date('M d, Y', strtotime($data['return_date'])) . ' ' . date('g:i A', strtotime($data['return_time'] ?? '10:00')),

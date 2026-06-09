@@ -45,13 +45,23 @@ if (strpos($host_without_port, 'localhost') !== false || strpos($host_without_po
 $pdo = getDB();
 
 // 1. First, try to match by custom domain (exact host match)
-$stmt = $pdo->prepare("SELECT * FROM tenants WHERE custom_domain = ? AND status = 'active'");
+$stmt = $pdo->prepare("
+    SELECT t.*, ts.company_email, ts.company_phone, ts.company_address, ts.company_website
+    FROM tenants t
+    LEFT JOIN tenant_settings ts ON t.id = ts.tenant_id
+    WHERE t.custom_domain = ? AND t.status = 'active'
+");
 $stmt->execute([$host_without_port]);
 $tenant = $stmt->fetch();
 
 if (!$tenant && !empty($subdomain)) {
     // 2. Fallback to subdomain match
-    $stmt = $pdo->prepare("SELECT * FROM tenants WHERE subdomain = ? AND status = 'active'");
+    $stmt = $pdo->prepare("
+        SELECT t.*, ts.company_email, ts.company_phone, ts.company_address, ts.company_website
+        FROM tenants t
+        LEFT JOIN tenant_settings ts ON t.id = ts.tenant_id
+        WHERE t.subdomain = ? AND t.status = 'active'
+    ");
     $stmt->execute([$subdomain]);
     $tenant = $stmt->fetch();
 }
@@ -61,6 +71,12 @@ if (!$tenant) {
     http_response_code(404);
     require __DIR__ . '/../404.php';
     exit;
+}
+
+// Ensure company_website is not null (build from subdomain if empty)
+if (empty($tenant['company_website']) && !empty($tenant['subdomain'])) {
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $tenant['company_website'] = $protocol . '://' . $tenant['subdomain'] . '.' . (getenv('ROOT_DOMAIN') ?: 'localhost');
 }
 
 // Set tenant data globally

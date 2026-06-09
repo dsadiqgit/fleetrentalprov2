@@ -80,6 +80,11 @@ try {
 catch (PDOException $e) { /* Column might exist */
 }
 try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN company_website VARCHAR(255) DEFAULT ''");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+try {
     @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN stripe_live_secret_key VARCHAR(255) DEFAULT ''");
 }
 catch (PDOException $e) { /* Column might exist */
@@ -216,6 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $company_address = sanitize($_POST['company_address'] ?? '');
                 $phone = sanitize($_POST['phone'] ?? '');
                 $company_email = sanitize($_POST['company_email'] ?? '');
+                $company_website = sanitize($_POST['company_website'] ?? '');
 
                 try {
                     // Handle logo upload
@@ -268,8 +274,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt = $pdo->prepare("UPDATE tenants SET name = ?, logo = ? WHERE id = ?");
                         $stmt->execute([$company_name, $logo_path, $_SESSION['tenant_id']]);
 
-                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ?, company_email = ? WHERE tenant_id = ?");
-                        $stmt->execute([$company_address, $phone, $company_email, $_SESSION['tenant_id']]);
+                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ?, company_email = ?, company_website = ? WHERE tenant_id = ?");
+                        $stmt->execute([$company_address, $phone, $company_email, $company_website, $_SESSION['tenant_id']]);
 
                         $success = 'Company information updated successfully!';
                         if ($logo_uploaded) {
@@ -991,7 +997,13 @@ endif; ?>
                     </div>
 
                     <!-- Website -->
-                    <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Company website</label>
+                        <input type="url" name="company_website" value="<?= htmlspecialchars($settings['company_website'] ?? '')?>" placeholder="https://yourcompany.com" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <!-- Website Preview -->
+                    <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-6">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-900 mb-1">Your Website</label>

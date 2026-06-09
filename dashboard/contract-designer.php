@@ -433,7 +433,7 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                             <div class="text-gray-700 leading-relaxed" contenteditable="true">
                                 This Vehicle Rental Contract ("Contract") is entered into as of
                                 <strong>{{current_datetime}}</strong>, by and between <strong>{{tenant_name}}</strong>
-                                ("Owner"), with a principal place of business at <strong>Your Business Address</strong>,
+                                ("Owner"), with a principal place of business at <strong>{{tenant_address}}</strong>,
                                 and <strong>{{renter_full_name}}</strong> ("Renter"), residing at <strong>Renter
                                     Address</strong>. This Contract outlines the terms and conditions under which the
                                 Owner agrees to lease the vehicle described below to the Renter.
@@ -614,7 +614,7 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
         const sectionTemplates = {
             agreement: {
                 title: 'Agreement',
-                content: 'This Vehicle Rental Contract ("Contract") is entered into as of <strong>{{current_datetime}}</strong>, by and between <strong>{{tenant_name}}</strong> ("Owner"), with a principal place of business at <strong>Your Business Address</strong>, and <strong>{{renter_full_name}}</strong> ("Renter"), residing at <strong>Renter Address</strong>. This Contract outlines the terms and conditions under which the Owner agrees to lease the vehicle described below to the Renter.'
+                content: 'This Vehicle Rental Contract ("Contract") is entered into as of <strong>{{current_datetime}}</strong>, by and between <strong>{{tenant_name}}</strong> ("Owner"), with a principal place of business at <strong>{{tenant_address}}</strong>, and <strong>{{renter_full_name}}</strong> ("Renter"), residing at <strong>Renter Address</strong>. This Contract outlines the terms and conditions under which the Owner agrees to lease the vehicle described below to the Renter.'
             },
             vehicle: {
                 title: 'Leased Vehicle',
