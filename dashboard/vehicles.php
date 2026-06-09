@@ -1132,32 +1132,31 @@ endif; ?>
 
             <!-- Booking Details Modal -->
             <div id="bookingModal"
-                class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
-                <div class="bg-white rounded-[2rem] w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col relative"
+                class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col relative"
                     onclick="event.stopPropagation()">
                     <div id="bookingModalHeader"
-                        class="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+                        class="px-8 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-xl z-10">
                         <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                             </div>
                             <div class="min-w-0">
-                                <h3 id="bookingModalTitle" class="text-base font-semibold text-gray-900 truncate">Booking Details</h3>
-                                <p id="bookingModalSubtitle" class="text-xs text-gray-500 mt-0.5">Loading...</p>
+                                <h3 id="bookingModalTitle" class="text-lg font-bold text-gray-900 truncate">Booking Details</h3>
+                                <p id="bookingModalSubtitle" class="text-sm text-gray-500 mt-0.5 flex items-center gap-2">Loading...</p>
                             </div>
                         </div>
                         <button onclick="closeBookingModal()"
-                            class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all flex-shrink-0">
+                            class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all flex-shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
                     </div>
 
-                    <div id="bookingModalContent" class="p-8 overflow-y-auto flex-1">
+                    <div id="bookingModalContent" class="px-8 py-6 overflow-y-auto flex-1 bg-gray-50/50">
                         <!-- Content will be loaded here -->
                     </div>
                 </div>
@@ -2413,338 +2412,351 @@ endif; ?>
             if (subEl) {
                 const pickup = new Date(booking.pickup_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
                 const ret = new Date(booking.return_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                subEl.innerHTML = `<span class="inline-flex items-center gap-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusMap[booking.status] || 'bg-gray-100 text-gray-600'}">${booking.status}</span><span class="text-gray-400">|</span><span>#${String(booking.id).padStart(5,'0')}</span><span class="text-gray-400">|</span><span>${pickup} – ${ret}</span></span>`;
+                const statusColors = {
+                    'pending': 'bg-amber-100 text-amber-700 border-amber-200',
+                    'confirmed': 'bg-blue-100 text-blue-700 border-blue-200',
+                    'active': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                    'completed': 'bg-gray-100 text-gray-700 border-gray-200',
+                    'cancelled': 'bg-red-100 text-red-700 border-red-200'
+                };
+                const statusLabel = booking.status.charAt(0).toUpperCase() + booking.status.slice(1);
+                subEl.innerHTML = `
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusColors[booking.status] || 'bg-gray-100 text-gray-700 border-gray-200'}">${statusLabel}</span>
+                    <span class="text-gray-300">|</span>
+                    <span class="text-gray-500">#${String(booking.id).padStart(5,'0')}</span>
+                    <span class="text-gray-300">|</span>
+                    <span class="flex items-center gap-1 text-gray-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        ${pickup} – ${ret}
+                    </span>
+                `;
             }
 
             content.innerHTML = `
-                <div class="flex items-center justify-center mb-8">
-                    <div class="flex h-11 w-fit max-w-full items-center rounded-full border border-gray-100 bg-gray-50/50 p-1 select-none backdrop-blur-sm">
-                        <button onclick="switchModalTab('details')" id="tab-btn-details" class="flex cursor-pointer items-center gap-2 rounded-full px-5 py-1.5 font-bold whitespace-nowrap transition-all text-[11px] uppercase tracking-widest bg-white shadow-sm text-blue-600">
+                <div class="flex items-center justify-center mb-6">
+                    <div class="flex h-10 w-fit items-center rounded-full border border-gray-200 bg-white p-1 shadow-sm">
+                        <button onclick="switchModalTab('details')" id="tab-btn-details" class="flex cursor-pointer items-center gap-2 rounded-full px-4 py-1.5 font-semibold whitespace-nowrap transition-all text-xs bg-gray-900 text-white shadow-sm">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            Information
+                            Overview
                         </button>
-                        <button onclick="switchModalTab('condition')" id="tab-btn-condition" class="flex cursor-pointer items-center gap-2 rounded-full px-5 py-1.5 font-bold whitespace-nowrap transition-all text-[11px] uppercase tracking-widest text-[#4b5058] hover:text-black">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <button onclick="switchModalTab('condition')" id="tab-btn-condition" class="flex cursor-pointer items-center gap-2 rounded-full px-4 py-1.5 font-semibold whitespace-nowrap transition-all text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-50">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                             Condition
                         </button>
-                        <button onclick="switchModalTab('contract')" id="tab-btn-contract" class="flex cursor-pointer items-center gap-2 rounded-full px-5 py-1.5 font-bold whitespace-nowrap transition-all text-[11px] uppercase tracking-widest text-[#4b5058] hover:text-black">
+                        <button onclick="switchModalTab('contract')" id="tab-btn-contract" class="flex cursor-pointer items-center gap-2 rounded-full px-4 py-1.5 font-semibold whitespace-nowrap transition-all text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-50">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             Contract
                         </button>
                     </div>
                 </div>
 
-                <div id="tab-content-details" class="tab-pane space-y-8 animate-fade-in-up">
+                <div id="tab-content-details" class="tab-pane space-y-6 animate-fade-in-up">
                     <div class="grid md:grid-cols-12 gap-6">
                         <div class="md:col-span-8 space-y-6">
-                            <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)]">
-                                <div class="flex items-center justify-between mb-6">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ref</span>
-                                        <p class="text-xl font-black text-gray-900 leading-none">#${String(booking.id).padStart(5, '0')}</p>
+                            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                <div class="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-gray-400 font-medium">Ref</span>
+                                        <p class="text-lg font-bold text-gray-900">#${String(booking.id).padStart(5, '0')}</p>
                                     </div>
-                                    <div class="flex gap-2">
-                                        <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${statusMap[booking.status] || 'bg-gray-100 text-gray-800'}">
-                                            ${booking.status}
-                                        </span>
-                                    </div>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusMap[booking.status] || 'bg-gray-100 text-gray-700'}">${booking.status}</span>
                                 </div>
 
-                                <div class="flex items-center gap-6 p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 mb-8">
-                                    <div class="flex-1 text-center">
-                                        <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">Pickup</p>
-                                        <p class="text-base font-black text-gray-900">${new Date(booking.pickup_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                <div class="flex items-center gap-4 p-5 bg-gray-50/50 rounded-2xl border border-gray-100/50 mb-6">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            <p class="text-xs font-semibold text-gray-500">Pickup</p>
+                                        </div>
+                                        <p class="text-lg font-bold text-gray-900">${new Date(booking.pickup_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                        <p class="text-sm text-gray-400">${booking.pickup_time || '10:00'}</p>
                                     </div>
-                                    <div class="flex flex-col items-center gap-1">
-                                        <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-width="2.5" /></svg>
-                                        <span class="text-[9px] font-black text-gray-300 uppercase tracking-tighter">${booking.total_days} Days</span>
+                                    <div class="flex flex-col items-center px-2">
+                                        <div class="w-px h-4 bg-gray-200"></div>
+                                        <span class="my-1 px-2.5 py-0.5 bg-white rounded-full text-xs font-medium text-gray-500 border border-gray-100 shadow-sm">${booking.total_days} days</span>
+                                        <div class="w-px h-4 bg-gray-200"></div>
                                     </div>
-                                    <div class="flex-1 text-center">
-                                        <p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">Return</p>
-                                        <p class="text-base font-black text-gray-900">${new Date(booking.return_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                    <div class="flex-1 text-right">
+                                        <div class="flex items-center justify-end gap-2 mb-1">
+                                            <p class="text-xs font-semibold text-gray-500">Return</p>
+                                            <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        </div>
+                                        <p class="text-lg font-bold text-gray-900">${new Date(booking.return_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                        <p class="text-sm text-gray-400">${booking.return_time || '10:00'}</p>
                                     </div>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">
-                                    <div class="p-5 bg-gray-50/30 rounded-2xl border border-gray-100/50 group hover:bg-white hover:border-blue-100 transition-all">
-                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Vehicle</p>
-                                        <p class="text-sm font-black text-gray-900 leading-tight small-vechicle-fix">${booking.brand} ${booking.model}</p>
-                                        <p class="text-[10px] text-gray-400 mt-1">${booking.year} • ${(booking.category || '').toUpperCase()}</p>
+                                    <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                            <p class="text-xs font-semibold text-gray-500">Vehicle</p>
+                                        </div>
+                                        <p class="text-sm font-bold text-gray-900 leading-tight">${booking.brand} ${booking.model}</p>
+                                        <p class="text-xs text-gray-400 mt-1">${booking.year} &middot; ${(booking.category || 'Standard').replace('_', ' ')}</p>
                                     </div>
-                                    <div class="p-5 bg-gray-50/30 rounded-2xl border border-gray-100/50 group hover:bg-white hover:border-blue-100 transition-all">
-                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Customer</p>
-                                        <p class="text-sm font-black text-gray-900 leading-tight truncate">${booking.customer_name}</p>
-                                        <p class="text-[10px] text-gray-400 mt-1 truncate">${booking.customer_email}</p>
+                                    <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                            <p class="text-xs font-semibold text-gray-500">Customer</p>
+                                        </div>
+                                        <p class="text-sm font-bold text-gray-900 leading-tight truncate">${booking.customer_name}</p>
+                                        <p class="text-xs text-gray-400 mt-1 truncate">${booking.customer_email}</p>
                                     </div>
                                 </div>
 
-                                <div class="mt-6 grid grid-cols-3 gap-4 pt-6 border-t border-gray-50">
-                                    <div>
-                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Price / Day</p>
-                                        <p class="text-sm font-black text-gray-900">£${parseFloat(booking.price_per_day).toLocaleString()}</p>
+                                <div class="mt-5 pt-5 border-t border-gray-100 space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Daily rate</span>
+                                        <span class="font-semibold text-gray-900">£${parseFloat(booking.price_per_day).toLocaleString()}</span>
                                     </div>
-                                    <div>
-                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tax Amount</p>
-                                        <p class="text-sm font-black text-gray-900">£${parseFloat(booking.tax_amount || 0).toLocaleString()}</p>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">${booking.total_days} days</span>
+                                        <span class="font-semibold text-gray-900">£${(parseFloat(booking.price_per_day) * parseInt(booking.total_days)).toLocaleString()}</span>
                                     </div>
-                                    <div class="text-right">
-                                        <p class="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-1">Grand Total</p>
-                                        <p class="text-sm font-black text-blue-600">£${parseFloat(booking.total_price).toLocaleString()}</p>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Tax</span>
+                                        <span class="font-semibold text-gray-900">£${parseFloat(booking.tax_amount || 0).toLocaleString()}</span>
+                                    </div>
+                                    <div class="pt-2 border-t border-gray-100 flex justify-between items-center">
+                                        <span class="text-sm font-medium text-gray-700">Total</span>
+                                        <span class="text-base font-bold text-gray-900">£${parseFloat(booking.total_price).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="md:col-span-4 flex flex-col gap-4">
-                            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quick Actions</h4>
-                            <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)] space-y-3">
-                                <button onclick="updateBookingStatus(${booking.id}, 'confirmed')" class="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-gray-200 hover:bg-black hover:-translate-y-0.5 transition-all">Confirm</button>
-                                <button onclick="updateBookingStatus(${booking.id}, 'active')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all">Start Trip</button>
-                                <div class="pt-4 mt-2 border-t border-gray-50">
-                                    <button onclick="updateBookingStatus(${booking.id}, 'cancelled')" class="w-full py-3 bg-white text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-red-50 hover:bg-red-50 transition-all">Void Agreement</button>
+                            ${booking.notes ? `
+                            <div class="bg-amber-50 rounded-2xl p-5 border border-amber-100">
+                                <div class="flex items-start gap-3">
+                                    <svg class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    <div>
+                                        <p class="text-xs font-semibold text-amber-700 mb-1">Notes</p>
+                                        <p class="text-sm text-amber-900/80">${booking.notes}</p>
+                                    </div>
                                 </div>
                             </div>
-
-                            ${booking.notes ? `
-                                <div class="bg-amber-50/50 p-6 rounded-3xl border border-amber-100 group shadow-sm">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2.5" /></svg>
-                                        <p class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Internal Notes</p>
-                                    </div>
-                                    <p class="text-xs text-amber-900/80 font-bold italic leading-relaxed">"${booking.notes}"</p>
-                                </div>
                             ` : ''}
                         </div>
                     </div>
 
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between ml-2">
-                            <div class="flex items-center gap-3">
-                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <h4 class="text-[11px] font-black text-gray-900 uppercase tracking-widest">Financial Guarantee</h4>
+                    <!-- Actions Bar -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        ${booking.status === 'pending' ? `<button onclick="updateBookingStatus(${booking.id}, 'confirmed')" class="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-black transition-all shadow-sm">Confirm Booking</button>` : ''}
+                        ${booking.status === 'confirmed' ? `<button onclick="updateBookingStatus(${booking.id}, 'active')" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm shadow-blue-100">Start Trip</button>` : ''}
+                        ${booking.status === 'active' ? `<button onclick="updateBookingStatus(${booking.id}, 'completed')" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-100">Complete Trip</button>` : ''}
+                        ${booking.status !== 'cancelled' && booking.status !== 'completed' ? `<button onclick="updateBookingStatus(${booking.id}, 'cancelled')" class="px-5 py-2.5 bg-white text-red-600 border border-red-100 rounded-xl text-sm font-semibold hover:bg-red-50 transition-all">Cancel</button>` : ''}
+                    </div>
+
+                    <!-- Deposit Section -->
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                <h4 class="text-sm font-semibold text-gray-900">Security Deposit</h4>
                             </div>
-                            <div class="px-3 py-1 bg-blue-50 rounded-full border border-blue-100 text-[9px] font-black text-blue-600 uppercase tracking-tighter shadow-sm">Securing Assets</div>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentMap[booking.security_deposit_status] || 'bg-gray-100 text-gray-600'}">${(booking.security_deposit_status || 'unpaid').replace('_', ' ')}</span>
                         </div>
-                        <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-[0_15px_40px_-20px_rgba(0,0,0,0.08)] p-8 space-y-10 border-t-2 border-t-blue-500/10">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                <div class="space-y-3">
-                                    <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Amount Secured</label>
-                                    <div class="relative group">
-                                        <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-900 font-black text-sm">£</div>
-                                        <input type="number" id="deposit-amount" value="${booking.security_deposit || 0}" class="w-full bg-gray-50/50 border border-transparent rounded-3xl pl-10 pr-6 py-5 text-sm font-black focus:bg-white focus:border-blue-500/20 focus:ring-8 focus:ring-blue-500/5 transition-all outline-none shadow-inner">
+                        <div class="p-6 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1.5">Deposit Amount</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 font-semibold text-sm">£</div>
+                                        <input type="number" id="deposit-amount" value="${booking.security_deposit || 0}" class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 text-sm font-semibold focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none">
                                     </div>
                                 </div>
-                                <div class="space-y-3">
-                                    <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Status Tracking</label>
-                                    <div class="relative">
-                                        <select id="deposit-status" class="w-full bg-gray-50/50 border border-transparent rounded-3xl pl-6 pr-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] focus:bg-white focus:border-blue-500/20 transition-all outline-none appearance-none shadow-inner cursor-pointer">
-                                            <option value="unpaid" ${booking.security_deposit_status === 'unpaid' ? 'selected' : ''}>⚠️ Outstanding</option>
-                                            <option value="paid" ${booking.security_deposit_status === 'paid' ? 'selected' : ''}>💎 Fully Paid</option>
-                                            <option value="refunded" ${booking.security_deposit_status === 'refunded' ? 'selected' : ''}>🔄 Refunded</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="3" /></svg>
-                                        </div>
-                                    </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1.5">Payment Status</label>
+                                    <select id="deposit-status" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none cursor-pointer">
+                                        <option value="unpaid" ${booking.security_deposit_status === 'unpaid' ? 'selected' : ''}>Outstanding</option>
+                                        <option value="paid" ${booking.security_deposit_status === 'paid' ? 'selected' : ''}>Paid</option>
+                                        <option value="refunded" ${booking.security_deposit_status === 'refunded' ? 'selected' : ''}>Refunded</option>
+                                    </select>
                                 </div>
-                                <div class="space-y-3">
-                                    <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Payment Channel</label>
-                                    <div class="relative">
-                                        <select id="deposit-method" class="w-full bg-gray-50/50 border border-transparent rounded-3xl pl-6 pr-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] focus:bg-white focus:border-blue-500/20 transition-all outline-none appearance-none shadow-inner cursor-pointer">
-                                            <option value="" ${!booking.security_deposit_method ? 'selected' : ''}>Not Set</option>
-                                            <option value="cash" ${booking.security_deposit_method === 'cash' ? 'selected' : ''}>💵 Cash Deposit</option>
-                                            <option value="card" ${booking.security_deposit_method === 'card' ? 'selected' : ''}>💳 Terminal</option>
-                                            <option value="stripe" ${booking.security_deposit_method === 'stripe' ? 'selected' : ''}>🌍 Online Payment</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="3" /></svg>
-                                        </div>
-                                    </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1.5">Payment Method</label>
+                                    <select id="deposit-method" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none cursor-pointer">
+                                        <option value="" ${!booking.security_deposit_method ? 'selected' : ''}>Not set</option>
+                                        <option value="cash" ${booking.security_deposit_method === 'cash' ? 'selected' : ''}>Cash</option>
+                                        <option value="card" ${booking.security_deposit_method === 'card' ? 'selected' : ''}>Card Terminal</option>
+                                        <option value="stripe" ${booking.security_deposit_method === 'stripe' ? 'selected' : ''}>Online</option>
+                                    </select>
                                 </div>
                             </div>
-                            <button onclick="updateSecurityDeposit(${booking.id})" class="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-[12px] uppercase tracking-[0.4em] shadow-2xl shadow-blue-500/20 hover:bg-blue-700 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-5 group/btn">
-                                <span class="bg-white/20 p-2 rounded-xl group-hover/btn:rotate-12 transition-transform">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="3" /></svg>
-                                </span>
-                                Synchronize Deposit Data
+                            <button onclick="updateSecurityDeposit(${booking.id})" class="w-full py-3 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-black transition-all shadow-sm">
+                                Update Deposit
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div id="tab-content-condition" class="tab-pane hidden space-y-6">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-black text-gray-900 uppercase tracking-tighter">Condition Report</h4>
-                        <div class="flex p-1 bg-gray-100 rounded-xl">
-                            <button type="button" onclick="switchConditionTab('pickup')" id="tab-pickup-btn" class="px-4 py-1.5 text-[10px] font-black rounded-lg transition-all bg-white shadow-sm text-blue-600 uppercase">Pickup</button>
-                            <button type="button" onclick="switchConditionTab('return')" id="tab-return-btn" class="px-4 py-1.5 text-[10px] font-black rounded-lg transition-all text-gray-500 hover:text-gray-700 uppercase">Return</button>
-                        </div>
+                <div id="tab-content-condition" class="tab-pane hidden space-y-5">
+                    <div class="flex items-center gap-3 bg-white rounded-xl p-1 border border-gray-200 w-fit">
+                        <button type="button" onclick="switchConditionTab('pickup')" id="tab-pickup-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-gray-900 text-white shadow-sm">Pickup</button>
+                        <button type="button" onclick="switchConditionTab('return')" id="tab-return-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-900">Return</button>
                     </div>
 
-                    <div id="section-pickup" class="space-y-6">
+                    <div id="section-pickup" class="space-y-5">
                         <form onsubmit="submitConditionReport(event, 'pickup', ${booking.id})">
-                            <div class="bg-gray-50 rounded-3xl p-6 space-y-8 border border-gray-100">
-                                <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Mileage at Pickup</label>
-                                     <input type="number" name="mileage" value="${pickupReport ? pickupReport.mileage : ''}" required class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none" placeholder="00,000">
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                <div class="px-6 py-4 border-b border-gray-100">
+                                    <h4 class="text-sm font-semibold text-gray-900">Pickup Condition Report</h4>
                                 </div>
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Vehicle Photos</p>
-                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                        ${renderPhotoField('photo_front', 'Front View', '', pickupReport ? pickupReport.photo_front : '', 'pickup')}
-                                        ${renderPhotoField('photo_back', 'Rear View', '', pickupReport ? pickupReport.photo_back : '', 'pickup')}
-                                        ${renderPhotoField('photo_left', 'Left Side', '', pickupReport ? pickupReport.photo_left : '', 'pickup')}
-                                        ${renderPhotoField('photo_right', 'Right Side', '', pickupReport ? pickupReport.photo_right : '', 'pickup')}
+                                <div class="p-6 space-y-6">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-2">Mileage at Pickup</label>
+                                        <input type="number" name="mileage" value="${pickupReport ? pickupReport.mileage : ''}" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none" placeholder="00,000">
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-500 mb-3">Vehicle Photos</p>
+                                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                            ${renderPhotoField('photo_front', 'Front View', '', pickupReport ? pickupReport.photo_front : '', 'pickup')}
+                                            ${renderPhotoField('photo_back', 'Rear View', '', pickupReport ? pickupReport.photo_back : '', 'pickup')}
+                                            ${renderPhotoField('photo_left', 'Left Side', '', pickupReport ? pickupReport.photo_left : '', 'pickup')}
+                                            ${renderPhotoField('photo_right', 'Right Side', '', pickupReport ? pickupReport.photo_right : '', 'pickup')}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-500 mb-3">Wheels & Rims</p>
+                                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                            ${renderPhotoField('photo_rim1', 'Front Left', '', pickupReport ? pickupReport.photo_rim1 : '', 'pickup')}
+                                            ${renderPhotoField('photo_rim2', 'Front Right', '', pickupReport ? pickupReport.photo_rim2 : '', 'pickup')}
+                                            ${renderPhotoField('photo_rim3', 'Rear Left', '', pickupReport ? pickupReport.photo_rim3 : '', 'pickup')}
+                                            ${renderPhotoField('photo_rim4', 'Rear Right', '', pickupReport ? pickupReport.photo_rim4 : '', 'pickup')}
+                                        </div>
+                                    </div>
+                                    <div class="pt-4 border-t border-gray-100">
+                                        <p class="text-xs font-medium text-gray-500 mb-3">Additional Photos</p>
+                                        <div class="grid grid-cols-4 gap-3 mb-3" id="misc-pickup-preview">
+                                            ${prepareMiscPhotos(pickupReport)}
+                                        </div>
+                                        <input type="file" name="misc_photos[]" multiple accept="image/*" onchange="previewMiscPhotos(this, 'pickup')" class="block w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all cursor-pointer">
                                     </div>
                                 </div>
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Alloys & Rims</p>
-                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                        ${renderPhotoField('photo_rim1', 'Front Left', '', pickupReport ? pickupReport.photo_rim1 : '', 'pickup')}
-                                        ${renderPhotoField('photo_rim2', 'Front Right', '', pickupReport ? pickupReport.photo_rim2 : '', 'pickup')}
-                                        ${renderPhotoField('photo_rim3', 'Rear Left', '', pickupReport ? pickupReport.photo_rim3 : '', 'pickup')}
-                                        ${renderPhotoField('photo_rim4', 'Rear Right', '', pickupReport ? pickupReport.photo_rim4 : '', 'pickup')}
-                                    </div>
+                                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                                    <button type="submit" class="w-full py-3 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-black transition-all shadow-sm">Save Pickup Report</button>
                                 </div>
-                                <div class="pt-6 border-t border-gray-200">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1 italic">Additional Photos (up to 4)</p>
-                                    <div class="grid grid-cols-4 gap-4 mb-4" id="misc-pickup-preview">
-                                        ${prepareMiscPhotos(pickupReport)}
-                                    </div>
-                                    <label class="block">
-                                        <span class="sr-only">Upload images</span>
-                                        <input type="file" name="misc_photos[]" multiple accept="image/*" onchange="previewMiscPhotos(this, 'pickup')" class="block w-full text-[10px] text-gray-400 file:mr-4 file:py-2 file:px-6 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-gray-900 file:text-white hover:file:bg-black transition-all cursor-pointer">
-                                    </label>
-                                </div>
-                                <button type="submit" class="w-full py-4 bg-gray-900 text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-gray-200 hover:scale-[1.02] transition-all">Update Pickup Status</button>
                             </div>
                         </form>
                     </div>
 
-                    <div id="section-return" class="hidden space-y-6">
+                    <div id="section-return" class="hidden space-y-5">
                         <form onsubmit="submitConditionReport(event, 'return', ${booking.id})">
-                            <div class="bg-gray-50 rounded-3xl p-6 space-y-8 border border-gray-100">
-                                <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Mileage at Return</label>
-                                     <input type="number" name="mileage" value="${returnReport ? returnReport.mileage : ''}" required class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none" placeholder="00,000">
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                <div class="px-6 py-4 border-b border-gray-100">
+                                    <h4 class="text-sm font-semibold text-gray-900">Return Condition Report</h4>
                                 </div>
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Vehicle Photos</p>
-                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                        ${renderPhotoField('photo_front', 'Front View', '', returnReport ? returnReport.photo_front : '', 'return')}
-                                        ${renderPhotoField('photo_back', 'Rear View', '', returnReport ? returnReport.photo_back : '', 'return')}
-                                        ${renderPhotoField('photo_left', 'Left Side', '', returnReport ? returnReport.photo_left : '', 'return')}
-                                        ${renderPhotoField('photo_right', 'Right Side', '', returnReport ? returnReport.photo_right : '', 'return')}
+                                <div class="p-6 space-y-6">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-2">Mileage at Return</label>
+                                        <input type="number" name="mileage" value="${returnReport ? returnReport.mileage : ''}" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none" placeholder="00,000">
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-500 mb-3">Vehicle Photos</p>
+                                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                            ${renderPhotoField('photo_front', 'Front View', '', returnReport ? returnReport.photo_front : '', 'return')}
+                                            ${renderPhotoField('photo_back', 'Rear View', '', returnReport ? returnReport.photo_back : '', 'return')}
+                                            ${renderPhotoField('photo_left', 'Left Side', '', returnReport ? returnReport.photo_left : '', 'return')}
+                                            ${renderPhotoField('photo_right', 'Right Side', '', returnReport ? returnReport.photo_right : '', 'return')}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-500 mb-3">Wheels & Rims</p>
+                                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                            ${renderPhotoField('photo_rim1', 'Front Left', '', returnReport ? returnReport.photo_rim1 : '', 'return')}
+                                            ${renderPhotoField('photo_rim2', 'Front Right', '', returnReport ? returnReport.photo_rim2 : '', 'return')}
+                                            ${renderPhotoField('photo_rim3', 'Rear Left', '', returnReport ? returnReport.photo_rim3 : '', 'return')}
+                                            ${renderPhotoField('photo_rim4', 'Rear Right', '', returnReport ? returnReport.photo_rim4 : '', 'return')}
+                                        </div>
+                                    </div>
+                                    <div class="pt-4 border-t border-gray-100">
+                                        <p class="text-xs font-medium text-gray-500 mb-3">Additional Photos</p>
+                                        <div class="grid grid-cols-4 gap-3 mb-3" id="misc-return-preview">
+                                            ${prepareMiscPhotos(returnReport)}
+                                        </div>
+                                        <input type="file" name="misc_photos[]" multiple accept="image/*" onchange="previewMiscPhotos(this, 'return')" class="block w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all cursor-pointer">
                                     </div>
                                 </div>
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 ml-1">Alloys & Rims</p>
-                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                        ${renderPhotoField('photo_rim1', 'Front Left', '', returnReport ? returnReport.photo_rim1 : '', 'return')}
-                                        ${renderPhotoField('photo_rim2', 'Front Right', '', returnReport ? returnReport.photo_rim2 : '', 'return')}
-                                        ${renderPhotoField('photo_rim3', 'Rear Left', '', returnReport ? returnReport.photo_rim3 : '', 'return')}
-                                        ${renderPhotoField('photo_rim4', 'Rear Right', '', returnReport ? returnReport.photo_rim4 : '', 'return')}
-                                    </div>
+                                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                                    <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm">Save Return Report</button>
                                 </div>
-                                <div class="pt-6 border-t border-gray-200">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1 italic">Additional Photos (up to 4)</p>
-                                    <div class="grid grid-cols-4 gap-4 mb-4" id="misc-return-preview">
-                                        ${prepareMiscPhotos(returnReport)}
-                                    </div>
-                                    <label class="block">
-                                        <span class="sr-only">Upload images</span>
-                                        <input type="file" name="misc_photos[]" multiple accept="image/*" onchange="previewMiscPhotos(this, 'return')" class="block w-full text-[10px] text-gray-400 file:mr-4 file:py-2 file:px-6 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-gray-900 file:text-white hover:file:bg-black transition-all cursor-pointer">
-                                    </label>
-                                </div>
-                                <button type="submit" class="w-full py-4 bg-blue-600 text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 hover:scale-[1.02] transition-all">Finalize Return Condition</button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <div id="tab-content-contract" class="tab-pane hidden space-y-6">
-                    <div class="bg-gray-50 rounded-3xl p-8 border border-gray-100">
-                        ${contract ? `
-                            <div class="flex items-center justify-between mb-8 pb-8 border-b border-gray-200">
-                                <div class="flex items-center gap-5">
-                                    <div class="w-16 h-16 bg-white rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center">
-                                        <svg class="w-8 h-8 ${contract.contract_status === 'signed' ? 'text-green-500' : 'text-amber-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2.5" />
-                                        </svg>
+                <div id="tab-content-contract" class="tab-pane hidden space-y-5">
+                    ${contract ? `
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-lg ${contract.contract_status === 'signed' ? 'bg-green-50' : 'bg-amber-50'} flex items-center justify-center">
+                                        <svg class="w-5 h-5 ${contract.contract_status === 'signed' ? 'text-green-600' : 'text-amber-600'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                     </div>
                                     <div>
-                                        <h4 class="text-base font-black text-gray-900 uppercase tracking-tighter">Agreement</h4>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="w-2.5 h-2.5 rounded-full ${contract.contract_status === 'signed' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}"></span>
-                                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                                Status: <span class="${contract.contract_status === 'signed' ? 'text-green-600' : 'text-amber-600'}">${contract.contract_status.toUpperCase()}</span>
-                                            </p>
+                                        <h4 class="text-sm font-semibold text-gray-900">Agreement</h4>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span class="w-2 h-2 rounded-full ${contract.contract_status === 'signed' ? 'bg-green-500' : 'bg-amber-500'}"></span>
+                                            <span class="text-xs text-gray-500 capitalize">${contract.contract_status}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <button onclick="viewContractPDF(${booking.id})" class="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-900 rounded-2xl hover:bg-gray-50 transition-all text-xs font-black uppercase tracking-widest shadow-sm group">
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2.5"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2.5"/></svg>
-                                        View Agreement
+                                <div class="flex items-center gap-2">
+                                    <button onclick="viewContractPDF(${booking.id})" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium shadow-sm">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        View
                                     </button>
                                     ${contract.contract_status === 'signed' ? `
-                                        <a href="/api/download-contract.php?booking_id=${booking.id}" target="_blank" class="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all text-xs font-black uppercase tracking-widest shadow-2xl shadow-gray-200">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0 0l-4-4m4 4l4-4" stroke-width="2.5" /></svg>
-                                            Export PDF
+                                        <a href="/api/download-contract.php?booking_id=${booking.id}" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black transition-all text-sm font-medium shadow-sm">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0 0l-4-4m4 4l4-4"></path></svg>
+                                            Export
                                         </a>
                                     ` : `
-                                        <div class="px-5 py-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-200 text-[10px] font-black uppercase tracking-widest">Awaiting Signature</div>
+                                        <span class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 text-xs font-medium">Awaiting Signature</span>
                                     `}
                                 </div>
                             </div>
-
-                            <div class="space-y-4">
-                                <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                            <div class="p-6 space-y-4">
+                                <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Execution Detail</p>
-                                        <p class="text-xs font-bold text-gray-900">${contract.contract_status === 'signed' ? 'Signed successfully' : 'Invitation sent to client'}</p>
+                                        <p class="text-xs text-gray-500 mb-0.5">Status</p>
+                                        <p class="text-sm font-semibold text-gray-900">${contract.contract_status === 'signed' ? 'Signed successfully' : 'Invitation sent to client'}</p>
                                     </div>
                                 </div>
-
                                 ${contract.contract_status !== 'signed' ? `
-                                <div class="p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
-                                    <p class="text-xs text-blue-900 font-black uppercase tracking-[0.1em] mb-3">Quick Link</p>
-                                    <div class="flex items-center gap-3">
-                                        <input type="text" value="${window.location.origin}/templates/contract-sign.php?booking_id=${booking.id}&token=${contract.signing_token}" readonly 
-                                               class="flex-1 bg-white border border-blue-100 rounded-xl px-4 py-3 text-[10px] text-gray-500 font-mono shadow-sm">
-                                        <button onclick="copyContractLink(this)" class="p-3.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-all shadow-xl shadow-blue-200">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" stroke-width="2.5" /></svg>
-                                        </button>
-                                    </div>
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                    <input type="text" value="${window.location.origin}/templates/contract-sign.php?booking_id=${booking.id}&token=${contract.signing_token}" readonly class="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-500 font-mono truncate">
+                                    <button onclick="copyContractLink(this)" class="px-3 py-2 bg-gray-900 text-white hover:bg-black rounded-lg transition-all text-xs font-medium shadow-sm flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                        Copy
+                                    </button>
                                 </div>
                                 ` : ''}
                             </div>
-                        ` : `
-                            <div class="text-center py-12">
-                                <div class="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                                    <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2" /></svg>
-                                </div>
-                                <h4 class="text-lg font-black text-gray-900 uppercase tracking-tighter mb-2">No Active Contract</h4>
-                                <p class="text-xs text-gray-400 mb-10 max-w-[280px] mx-auto font-bold leading-relaxed">This booking does not have an electronic agreement. you can send one manually below.</p>
-                                
-                                ${available_templates && available_templates.length > 0 ? `
-                                    <div class="max-w-xs mx-auto space-y-5">
-                                        <div class="text-left bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Template Selection</label>
-                                            <select id="selected-template-id" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none">
-                                                ${available_templates.map(tmpl => `<option value="${tmpl.id}">${tmpl.name}</option>`).join('')}
-                                            </select>
-                                        </div>
-                                        <button onclick="generateManualContract(${booking.id})" id="send-contract-btn" class="w-full py-4 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-gray-200 flex items-center justify-center gap-3">
-                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                             Send Invitation
-                                        </button>
-                                    </div>
-                                ` : `
-                                    <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 font-bold text-amber-700 text-xs italic">No published templates found.</div>
-                                `}
+                        </div>
+                    ` : `
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+                            <div class="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             </div>
-                        `}
-                    </div>
+                            <h4 class="text-base font-semibold text-gray-900 mb-1">No Active Contract</h4>
+                            <p class="text-sm text-gray-400 mb-6 max-w-xs mx-auto">This booking does not have an electronic agreement yet.</p>
+                            ${available_templates && available_templates.length > 0 ? `
+                                <div class="max-w-xs mx-auto space-y-3">
+                                    <select id="selected-template-id" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none cursor-pointer">
+                                        ${available_templates.map(tmpl => `<option value="${tmpl.id}">${tmpl.name}</option>`).join('')}
+                                    </select>
+                                    <button onclick="generateManualContract(${booking.id})" id="send-contract-btn" class="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition-all text-sm font-semibold shadow-sm flex items-center justify-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                        Send Invitation
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 text-sm text-amber-700 font-medium">No published templates found.</div>
+                            `}
+                        </div>
+                    `}
                 </div>
             `;
 
@@ -2766,14 +2778,14 @@ endif; ?>
             target.classList.add('animate-fade-in-up');
 
             document.querySelectorAll('[id^="tab-btn-"]').forEach(btn => {
-                btn.classList.add('text-[#4b5058]', 'hover:text-black');
-                btn.classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+                btn.className = btn.className.replace('bg-gray-900 text-white shadow-sm', '').replace('text-gray-500 hover:text-gray-900 hover:bg-gray-50', '').trim();
+                btn.classList.add('text-gray-500', 'hover:text-gray-900', 'hover:bg-gray-50');
             });
 
             const activeBtn = document.getElementById('tab-btn-' + tabId);
             if (activeBtn) {
-                activeBtn.classList.remove('text-[#4b5058]', 'hover:text-black');
-                activeBtn.classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+                activeBtn.classList.remove('text-gray-500', 'hover:text-gray-900', 'hover:bg-gray-50');
+                activeBtn.classList.add('bg-gray-900', 'text-white', 'shadow-sm');
             }
         }
 
@@ -2956,22 +2968,22 @@ endif; ?>
             const pickupSec = document.getElementById('section-pickup');
             const returnSec = document.getElementById('section-return');
 
-            const activeClass = 'bg-white shadow-sm text-blue-600';
-            const inactiveClass = 'text-[#4b5058] hover:text-black';
+            const activeClass = 'bg-gray-900 text-white shadow-sm';
+            const inactiveClass = 'text-gray-500 hover:text-gray-900';
 
             pickupSec?.classList.remove('animate-fade-in-up');
             returnSec?.classList.remove('animate-fade-in-up');
 
             if (type === 'pickup') {
-                pickupBtn && (pickupBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${activeClass} uppercase`);
-                returnBtn && (returnBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${inactiveClass} uppercase`);
+                pickupBtn && (pickupBtn.className = `px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeClass}`);
+                returnBtn && (returnBtn.className = `px-4 py-2 text-sm font-semibold rounded-lg transition-all ${inactiveClass}`);
                 pickupSec?.classList.remove('hidden');
                 returnSec?.classList.add('hidden');
                 void pickupSec?.offsetWidth;
                 pickupSec?.classList.add('animate-fade-in-up');
             } else {
-                returnBtn && (returnBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${activeClass} uppercase`);
-                pickupBtn && (pickupBtn.className = `flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${inactiveClass} uppercase`);
+                returnBtn && (returnBtn.className = `px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeClass}`);
+                pickupBtn && (pickupBtn.className = `px-4 py-2 text-sm font-semibold rounded-lg transition-all ${inactiveClass}`);
                 returnSec?.classList.remove('hidden');
                 pickupSec?.classList.add('hidden');
                 void returnSec?.offsetWidth;
