@@ -18,6 +18,12 @@ if (!$_SESSION['tenant_id']) {
 
 $pdo = getDB();
 
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN company_website VARCHAR(255) DEFAULT ''");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
 // Check if editing existing template
 $edit_mode = isset($_GET['id']) && is_numeric($_GET['id']);
 $template = null;
@@ -42,9 +48,15 @@ if ($edit_mode) {
 }
 
 // Get tenant information
-$stmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
+$stmt = $pdo->prepare("SELECT t.*, ts.company_email, ts.company_phone, ts.company_address, ts.company_website FROM tenants t LEFT JOIN tenant_settings ts ON t.id = ts.tenant_id WHERE t.id = ?");
 $stmt->execute([$_SESSION['tenant_id']]);
 $tenant = $stmt->fetch();
+
+// Ensure company_website is not null (build from subdomain if empty)
+if (empty($tenant['company_website']) && !empty($tenant['subdomain'])) {
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $tenant['company_website'] = $protocol . '://' . $tenant['subdomain'] . '.' . (getenv('ROOT_DOMAIN') ?: 'localhost');
+}
 
 $trial_days_remaining = 0;
 $trial_percentage = 0;
@@ -268,10 +280,10 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                         </button>
                     </div>
                     <div class="flex items-center space-x-2 mb-2">
-                        <input type="text" id="contactSocial" placeholder="@yourcompany"
+                        <input type="email" id="contactEmail" placeholder="info@yourcompany.com"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                        <button onclick="deleteContactField('social')"
-                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete social">
+                        <button onclick="deleteContactField('email')"
+                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete email">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -393,10 +405,10 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                         <div class="flex items-center space-x-2">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207">
+                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
                                 </path>
                             </svg>
-                            <span id="displaySocial" class="text-gray-600">@yourcompany</span>
+                            <span id="displayEmail" class="text-gray-600">info@yourcompany.com</span>
                         </div>
                         <div class="flex items-center space-x-2">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,8 +558,8 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
             document.getElementById('displayWebsite').textContent = this.value || 'www.yourcompany.com';
         });
 
-        document.getElementById('contactSocial').addEventListener('input', function () {
-            document.getElementById('displaySocial').textContent = this.value || '@yourcompany';
+        document.getElementById('contactEmail').addEventListener('input', function () {
+            document.getElementById('displayEmail').textContent = this.value || 'info@yourcompany.com';
         });
 
         document.getElementById('contactPhone').addEventListener('input', function () {
@@ -711,9 +723,9 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                 if (type === 'website') {
                     document.getElementById('contactWebsite').value = '';
                     document.getElementById('displayWebsite').closest('.flex').style.display = 'none';
-                } else if (type === 'social') {
-                    document.getElementById('contactSocial').value = '';
-                    document.getElementById('displaySocial').closest('.flex').style.display = 'none';
+                } else if (type === 'email') {
+                    document.getElementById('contactEmail').value = '';
+                    document.getElementById('displayEmail').closest('.flex').style.display = 'none';
                 } else if (type === 'phone') {
                     document.getElementById('contactPhone').value = '';
                     document.getElementById('displayPhone').closest('.flex').style.display = 'none';
@@ -744,11 +756,11 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
             document.getElementById('displayWebsite').textContent = '<?= htmlspecialchars($content['contact']['website'])?>';
     <?php
             endif; ?>
-    <?php if (isset($content['contact']['social'])): ?>
-                document.getElementById('contactSocial').value = '<?= htmlspecialchars($content['contact']['social'])?>';
-            document.getElementById('displaySocial').textContent = '<?= htmlspecialchars($content['contact']['social'])?>';
-    <?php
-            endif; ?>
+    <?php if (isset($content['contact']['email']) || isset($content['contact']['social'])): ?>
+    <?php $email_val = $content['contact']['email'] ?? ($content['contact']['social'] ?? ''); ?>
+                document.getElementById('contactEmail').value = '<?= htmlspecialchars($email_val)?>';
+            document.getElementById('displayEmail').textContent = '<?= htmlspecialchars($email_val)?>';
+    <?php endif; ?>
     <?php if (isset($content['contact']['phone'])): ?>
                 document.getElementById('contactPhone').value = '<?= htmlspecialchars($content['contact']['phone'])?>';
             document.getElementById('displayPhone').textContent = '<?= htmlspecialchars($content['contact']['phone'])?>';
@@ -791,6 +803,30 @@ else: ?>
             });
     <?php
 endif; ?>
+
+    // Pre-fill tenant contact defaults if fields are empty
+    (function() {
+        const websiteEl = document.getElementById('contactWebsite');
+        const emailEl   = document.getElementById('contactEmail');
+        const phoneEl   = document.getElementById('contactPhone');
+
+        const defaultWebsite = '<?= htmlspecialchars($tenant['company_website'] ?? '') ?>';
+        const defaultEmail   = '<?= htmlspecialchars($tenant['company_email']   ?? '') ?>';
+        const defaultPhone   = '<?= htmlspecialchars($tenant['company_phone']   ?? '') ?>';
+
+        if (!websiteEl.value && defaultWebsite) {
+            websiteEl.value = defaultWebsite;
+            document.getElementById('displayWebsite').textContent = defaultWebsite;
+        }
+        if (!emailEl.value && defaultEmail) {
+            emailEl.value = defaultEmail;
+            document.getElementById('displayEmail').textContent = defaultEmail;
+        }
+        if (!phoneEl.value && defaultPhone) {
+            phoneEl.value = defaultPhone;
+            document.getElementById('displayPhone').textContent = defaultPhone;
+        }
+    })();
 });
 
         function saveTemplate() {
@@ -913,7 +949,7 @@ endif; ?>
             const templateName = document.getElementById('templateName').value;
             const brandColor = document.getElementById('brandColor').value;
             const contactWebsite = document.getElementById('contactWebsite').value;
-            const contactSocial = document.getElementById('contactSocial').value;
+            const contactEmail = document.getElementById('contactEmail').value;
             const contactPhone = document.getElementById('contactPhone').value;
             const contractHtml = document.getElementById('contractPreview').innerHTML;
 
@@ -927,7 +963,7 @@ endif; ?>
                 logo: logoDataUrl,
                 contact: {
                     website: contactWebsite,
-                    social: contactSocial,
+                    email: contactEmail,
                     phone: contactPhone
                 },
                 html: contractHtml,
