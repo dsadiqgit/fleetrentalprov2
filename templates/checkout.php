@@ -148,7 +148,7 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Phone *</label>
-                                <input type="tel" name="customer_phone" required maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-3 border rounded-lg" placeholder="Enter up to 12 digits">
+                                <input type="tel" name="customer_phone" required maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-3 border rounded-lg" placeholder="Enter up to 12 digits" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Licence Number *</label>
