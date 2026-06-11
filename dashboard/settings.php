@@ -1469,39 +1469,15 @@ elseif ($active_tab === 'payments'): ?>
                             
                             <!-- Mode Selection -->
                             <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                                <label class="block text-sm font-bold text-gray-900 mb-4">Environment Mode</label>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <label class="relative cursor-pointer">
-                                        <input type="radio" name="stripe_test_mode" value="1" class="sr-only peer" <?= $is_test ? 'checked' : ''?> onchange="toggleStripeMode(true)">
-                                        <div class="p-4 rounded-xl border-2 transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50 border-gray-200 hover:border-gray-300">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <div class="font-semibold text-gray-900">Test Mode</div>
-                                                    <div class="text-xs text-gray-500">For testing only</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </label>
-                                    <label class="relative cursor-pointer">
-                                        <input type="radio" name="stripe_test_mode" value="0" class="sr-only peer" <?= !$is_test ? 'checked' : ''?> onchange="toggleStripeMode(false)">
-                                        <div class="p-4 rounded-xl border-2 transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50 border-gray-200 hover:border-gray-300">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <div class="font-semibold text-gray-900">Live Mode</div>
-                                                    <div class="text-xs text-gray-500">Real transactions</div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-900 mb-1">Environment Mode</label>
+                                        <p class="text-xs text-gray-500" id="mode-description"><?= $is_test ? 'Test Mode - For testing only' : 'Live Mode - Real transactions' ?></p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="stripe_test_mode" value="1" class="sr-only peer" <?= $is_test ? 'checked' : ''?> onchange="toggleStripeMode(this.checked)">
+                                        <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <span class="ml-3 text-sm font-medium text-gray-700" id="mode-label"><?= $is_test ? 'Test' : 'Live' ?></span>
                                     </label>
                                 </div>
                             </div>
@@ -1603,13 +1579,19 @@ elseif ($active_tab === 'payments'): ?>
                             const testFields = document.getElementById('stripe-test-fields');
                             const liveFields = document.getElementById('stripe-live-fields');
                             const statusBadge = document.getElementById('stripe-status-badge');
+                            const modeDescription = document.getElementById('mode-description');
+                            const modeLabel = document.getElementById('mode-label');
 
                             if (isTest) {
                                 testFields.style.display = '';
                                 liveFields.style.display = 'none';
+                                modeDescription.textContent = 'Test Mode - For testing only';
+                                modeLabel.textContent = 'Test';
                             } else {
                                 testFields.style.display = 'none';
                                 liveFields.style.display = '';
+                                modeDescription.textContent = 'Live Mode - Real transactions';
+                                modeLabel.textContent = 'Live';
                             }
                         }
 
