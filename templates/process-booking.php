@@ -91,28 +91,15 @@ try {
         }
     }
 
-    // Validate dates
-    $pickupDate = new DateTime($booking_data['pickup_date']);
-    $returnDate = new DateTime($booking_data['return_date']);
-    $now = new DateTime();
-    $now->setTime(0, 0, 0);
-    
-    if ($pickupDate < $now) {
-        echo json_encode(['success' => false, 'message' => 'Pickup date cannot be in the past']);
-        exit;
-    }
-    
-    if ($returnDate < $pickupDate) {
-        echo json_encode(['success' => false, 'message' => 'Return date cannot be before pickup date']);
-        exit;
-    }
-
-    // Validate minimum booking notice
+    // Validate minimum booking notice FIRST
     $minNotice = (int)($stripe_settings['min_booking_notice'] ?? 0);
     if ($minNotice > 0) {
         $noticeUnit = $stripe_settings['booking_notice_unit'] ?? 'hours';
-        $pickupDateTime = new DateTime($booking_data['pickup_date'] . ' ' . ($booking_data['pickup_time'] ?? '00:00'));
-        $now = new DateTime();
+        
+        // Use Europe/London timezone for accurate UK time comparison
+        $timezone = new DateTimeZone('Europe/London');
+        $pickupDateTime = new DateTime($booking_data['pickup_date'] . ' ' . ($booking_data['pickup_time'] ?? '00:00'), $timezone);
+        $now = new DateTime('now', $timezone);
 
         if ($noticeUnit === 'days') {
             $minAllowed = (clone $now)->modify("+$minNotice days");
@@ -127,6 +114,23 @@ try {
             echo json_encode(['success' => false, 'message' => "Bookings must be made at least $minNotice $unitLabel in advance. Please select a later pickup time."]);
             exit;
         }
+    }
+
+    // Validate dates
+    $timezone = new DateTimeZone('Europe/London');
+    $pickupDate = new DateTime($booking_data['pickup_date'], $timezone);
+    $returnDate = new DateTime($booking_data['return_date'], $timezone);
+    $now = new DateTime('now', $timezone);
+    $now->setTime(0, 0, 0);
+    
+    if ($pickupDate < $now) {
+        echo json_encode(['success' => false, 'message' => 'Pickup date cannot be in the past']);
+        exit;
+    }
+    
+    if ($returnDate < $pickupDate) {
+        echo json_encode(['success' => false, 'message' => 'Return date cannot be before pickup date']);
+        exit;
     }
 
     // Verify vehicle exists and is available

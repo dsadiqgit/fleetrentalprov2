@@ -323,6 +323,25 @@ if (!$vehicle) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
+                // Check minimum booking notice FIRST
+                const minNotice = <?= isset($settings['min_booking_notice']) ? (int)$settings['min_booking_notice'] : 48 ?>;
+                const noticeUnit = <?= json_encode($settings['booking_notice_unit'] ?? 'hours') ?>;
+                
+                if (minNotice > 0) {
+                    let minAllowed = new Date(today);
+                    if (noticeUnit === 'hours') {
+                        minAllowed.setHours(minAllowed.getHours() + minNotice);
+                    } else {
+                        minAllowed.setDate(minAllowed.getDate() + minNotice);
+                    }
+                    
+                    if (pickup < minAllowed) {
+                        const unitLabel = noticeUnit === 'days' ? 'days' : 'hours';
+                        showErrorModal(`Bookings must be made at least ${minNotice} ${unitLabel} in advance. Please select a later pickup date.`);
+                        return;
+                    }
+                }
+                
                 // Check pickup date is not in the past
                 if (pickup < today) {
                     showErrorModal('Pickup date cannot be in the past.');

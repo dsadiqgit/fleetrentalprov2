@@ -590,7 +590,11 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         <h3 class="font-bold text-gray-900 mb-4">Pricing Breakdown</h3>
                         
                         <!-- Minimum Days warning -->
-                        <div id="min_days_warning" class="hidden p-3 mb-4 text-xs font-semibold text-amber-700 bg-amber-50 rounded-xl border border-amber-100 flex items-center gap-2">
+                        <div id="min_days_warning" class="p-3 mb-4 text-xs font-semibold text-red-700 bg-red-50 rounded-xl border border-red-100 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <span>Minimum rental period is <?= (int)($vehicle['min_days'] ?? 1) ?> days.</span>
                         </div>
                         
                         <div class="space-y-3 text-sm">
@@ -1210,6 +1214,8 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 }
             }
             
+            // Note: Minimum booking notice validation is handled server-side to ensure correct timezone handling
+
             // Validate that pickup date is not in the past
             if (pickupDateObj) {
                 const today = new Date();
@@ -1414,22 +1420,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
             }
             if (diffDays < 1) diffDays = 1;
             
-            // Check minimum days
-            const minDays = priceConfig.min_days || 1;
-            const warningEl = document.getElementById('min_days_warning');
-            if (diffDays < minDays) {
-                if (warningEl) {
-                    warningEl.innerHTML = `
-                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                        <span>Minimum rental period is ${minDays} days.</span>
-                    `;
-                    warningEl.classList.remove('hidden');
-                }
-            } else {
-                if (warningEl) warningEl.classList.add('hidden');
-            }
             
             // Calculate Base Price
             let totalBasePrice = 0;
