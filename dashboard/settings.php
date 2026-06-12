@@ -99,6 +99,11 @@ try {
 }
 catch (PDOException $e) { /* Column might exist */
 }
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN stripe_customer_id VARCHAR(255) DEFAULT ''");
+}
+catch (PDOException $e) { /* Column might exist */
+}
 
 try {
     @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN opening_time VARCHAR(10) DEFAULT '08:00'");
@@ -1806,6 +1811,46 @@ elseif ($active_tab === 'domain'): ?>
 
                 <?php
 elseif ($active_tab === 'billing'): ?>
+                <?php
+                // Fetch Stripe billing data
+                $stripe_customer_id = $settings['stripe_customer_id'] ?? '';
+                $stripe_payment_methods = [];
+                $stripe_invoices = [];
+                $stripe_subscription = null;
+                $stripe_error = null;
+
+                if (!empty($stripe_customer_id) && !empty($settings['stripe_secret_key'])) {
+                    try {
+                        \Stripe\Stripe::setApiKey($settings['stripe_secret_key']);
+                        
+                        // Fetch payment methods
+                        $payment_methods = \Stripe\PaymentMethod::all([
+                            'customer' => $stripe_customer_id,
+                            'type' => 'card',
+                        ]);
+                        $stripe_payment_methods = $payment_methods->data;
+                        
+                        // Fetch invoices
+                        $invoices = \Stripe\Invoice::all([
+                            'customer' => $stripe_customer_id,
+                            'limit' => 10,
+                        ]);
+                        $stripe_invoices = $invoices->data;
+                        
+                        // Fetch subscription
+                        $subscriptions = \Stripe\Subscription::all([
+                            'customer' => $stripe_customer_id,
+                            'limit' => 1,
+                            'status' => 'active',
+                        ]);
+                        if (!empty($subscriptions->data)) {
+                            $stripe_subscription = $subscriptions->data[0];
+                        }
+                    } catch (Exception $e) {
+                        $stripe_error = $e->getMessage();
+                    }
+                }
+                ?>
                 <!-- Billing & Invoice Tab -->
                 <div class="space-y-8">
                     <!-- Cards Grid -->
@@ -1819,78 +1864,109 @@ elseif ($active_tab === 'billing'): ?>
                                 </a>
                             </div>
                             
-                            <div class="grid grid-cols-3 gap-4 mb-6">
-                                <div>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Plan Name</p>
-                                    <p class="text-base font-bold text-gray-900">Growth Plan</p>
+                            <?php if ($stripe_subscription): ?>
+                                <?php
+                                $plan_name = 'Basic Plan';
+                                $billing_cycle = 'Monthly';
+                                $plan_cost = '0';
+                                
+                                if (!empty($stripe_subscription->items->data)) {
+                                    $plan_item = $stripe_subscription->items->data[0];
+                                    $plan_cost = number_format($plan_item->price->unit_amount / 100, 2);
+                                    $billing_cycle = ucfirst($plan_item->price->recurring->interval);
+                                    $plan_name = ucfirst($plan_item->price->nickname ?? 'Plan');
+                                }
+                                ?>
+                                <div class="grid grid-cols-3 gap-4 mb-6">
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Plan Name</p>
+                                        <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($plan_name) ?></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Billing Cycle</p>
+                                        <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($billing_cycle) ?></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Plan Cost</p>
+                                        <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($settings['currency'] ?? 'GBP') ?><?= htmlspecialchars($plan_cost) ?></p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Billing Cycle</p>
-                                    <p class="text-base font-bold text-gray-900">Monthly</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Plan Cost</p>
-                                    <p class="text-base font-bold text-gray-900">$5698</p>
-                                </div>
-                            </div>
 
-                            <div>
-                                <div class="flex justify-between items-center mb-2">
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Usage</p>
-                                    <p class="text-xs font-semibold text-gray-700">4,850 out of 5k monthly active users</p>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
+                                        <p class="text-xs font-semibold text-gray-700"><?= ucfirst($stripe_subscription->status ?? 'Unknown') ?></p>
+                                    </div>
+                                    <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                        <div class="bg-green-600 h-2.5 rounded-full" style="width: 100%;"></div>
+                                    </div>
                                 </div>
-                                <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: 97%;"></div>
+                            <?php else: ?>
+                                <div class="text-center py-8">
+                                    <p class="text-sm text-gray-500">No active subscription found.</p>
+                                    <p class="text-xs text-gray-400 mt-2">Add Stripe customer ID to view subscription details.</p>
                                 </div>
-                            </div>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Payment Method Card -->
                         <div class="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm flex flex-col">
                             <h3 class="text-base font-bold text-gray-900 mb-6">Payment Method</h3>
                             
-                            <div class="border border-gray-150 rounded-2xl p-5 flex items-center justify-between flex-1">
-                                <div class="flex items-start gap-4">
-                                    <div class="w-12 h-8 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center p-1.5 shrink-0">
-                                        <!-- MasterCard SVG Logo -->
-                                        <svg viewBox="0 0 24 15" class="w-8 h-auto">
-                                            <circle cx="7" cy="7.5" r="7" fill="#EB001B"/>
-                                            <circle cx="17" cy="7.5" r="7" fill="#F79E1B" fill-opacity="0.8"/>
-                                        </svg>
-                                    </div>
-                                    <div class="space-y-0.5">
-                                        <h4 class="text-sm font-bold text-gray-900">Master Card</h4>
-                                        <p class="text-xs font-semibold text-gray-600">•••• •••• •••• 4002</p>
-                                        <p class="text-[10px] text-gray-400 font-medium">Expiry on 20/2024</p>
-                                        <div class="flex items-center gap-1 text-[10px] text-gray-400 font-semibold mt-1">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                            </svg>
-                                            billing@acme.corp
-                                        </div>
-                                    </div>
+                            <?php if ($stripe_error): ?>
+                                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl text-sm">
+                                    Error loading payment methods: <?= htmlspecialchars($stripe_error) ?>
                                 </div>
-                                
-                                <button type="button" class="px-4 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold shadow-sm transition-all">
-                                    Change
-                                </button>
-                            </div>
+                            <?php elseif (empty($stripe_payment_methods)): ?>
+                                <div class="border border-gray-150 rounded-2xl p-5 flex items-center justify-center flex-1">
+                                    <p class="text-sm text-gray-500">No payment methods found. Add Stripe keys to enable billing.</p>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($stripe_payment_methods as $pm): ?>
+                                    <?php if ($pm->type === 'card'): ?>
+                                        <div class="border border-gray-150 rounded-2xl p-5 flex items-center justify-between flex-1 mb-3 last:mb-0">
+                                            <div class="flex items-start gap-4">
+                                                <div class="w-12 h-8 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center p-1.5 shrink-0">
+                                                    <?php
+                                                    $card_brand = strtolower($pm->card->brand ?? 'card');
+                                                    $card_colors = [
+                                                        'visa' => '#1A1F71',
+                                                        'mastercard' => '#EB001B',
+                                                        'amex' => '#006FCF',
+                                                        'discover' => '#FF6000',
+                                                    ];
+                                                    $color = $card_colors[$card_brand] ?? '#666666';
+                                                    ?>
+                                                    <div class="w-8 h-5 rounded" style="background: <?= $color ?>;"></div>
+                                                </div>
+                                                <div class="space-y-0.5">
+                                                    <h4 class="text-sm font-bold text-gray-900"><?= ucfirst($pm->card->brand ?? 'Card') ?></h4>
+                                                    <p class="text-xs font-semibold text-gray-600">•••• •••• •••• <?= $pm->card->last4 ?? '****' ?></p>
+                                                    <p class="text-[10px] text-gray-400 font-medium">Expiry on <?= $pm->card->exp_month ?>/<?= $pm->card->exp_year ?></p>
+                                                    <div class="flex items-center gap-1 text-[10px] text-gray-400 font-semibold mt-1">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                        <?= htmlspecialchars($settings['company_email'] ?? 'No email on file') ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <button type="button" class="px-4 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold shadow-sm transition-all">
+                                                Change
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
 
                     <!-- Invoices Section -->
                     <div class="space-y-4">
-                        <div class="flex items-end justify-between">
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-950">Invoice</h3>
-                                <p class="text-xs text-gray-500 mt-1">Effortlessly handle your billing and invoices right here.</p>
-                            </div>
-                            <button type="button" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                </svg>
-                                Download
-                            </button>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-950">Invoice</h3>
+                            <p class="text-xs text-gray-500 mt-1">Effortlessly handle your billing and invoices right here.</p>
                         </div>
 
                         <!-- Invoices Table -->
@@ -1943,186 +2019,67 @@ elseif ($active_tab === 'billing'): ?>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100 text-sm font-semibold text-gray-800">
-                                        <!-- Row 1 -->
-                                        <tr class="hover:bg-gray-50/50 transition">
-                                            <td class="py-4.5 px-6 font-bold text-gray-900">#23456</td>
-                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Jan 2023</td>
-                                            <td class="py-4.5 px-6">Basic Plan</td>
-                                            <td class="py-4.5 px-6 font-bold">$1200</td>
-                                            <td class="py-4.5 px-6">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
-                                                    Paid
-                                                </span>
-                                            </td>
-                                            <td class="py-4.5 px-6 text-right relative">
-                                                <div class="relative inline-block">
-                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
-                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
-                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                            </svg>
-                                                            View Invoice
-                                                        </a>
-                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                                            </svg>
-                                                            Download Invoice
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <!-- Row 2 -->
-                                        <tr class="hover:bg-gray-50/50 transition">
-                                            <td class="py-4.5 px-6 font-bold text-gray-900">#56489</td>
-                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Feb 2023</td>
-                                            <td class="py-4.5 px-6">Pro Plan</td>
-                                            <td class="py-4.5 px-6 font-bold">$7000</td>
-                                            <td class="py-4.5 px-6">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
-                                                    Paid
-                                                </span>
-                                            </td>
-                                            <td class="py-4.5 px-6 text-right relative">
-                                                <div class="relative inline-block">
-                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
-                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
-                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                            </svg>
-                                                            View Invoice
-                                                        </a>
-                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                                            </svg>
-                                                            Download Invoice
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <!-- Row 3 -->
-                                        <tr class="hover:bg-gray-50/50 transition">
-                                            <td class="py-4.5 px-6 font-bold text-gray-900">#56489</td>
-                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Mar 2023</td>
-                                            <td class="py-4.5 px-6">Pro Plan</td>
-                                            <td class="py-4.5 px-6 font-bold">$7000</td>
-                                            <td class="py-4.5 px-6">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
-                                                    Paid
-                                                </span>
-                                            </td>
-                                            <td class="py-4.5 px-6 text-right relative">
-                                                <div class="relative inline-block">
-                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
-                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
-                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                            </svg>
-                                                            View Invoice
-                                                        </a>
-                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                                            </svg>
-                                                            Download Invoice
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <!-- Row 4 -->
-                                        <tr class="hover:bg-gray-50/50 transition">
-                                            <td class="py-4.5 px-6 font-bold text-gray-900">#98380</td>
-                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 Apr 2023</td>
-                                            <td class="py-4.5 px-6">Growth Plan</td>
-                                            <td class="py-4.5 px-6 font-bold">$5698</td>
-                                            <td class="py-4.5 px-6">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
-                                                    Paid
-                                                </span>
-                                            </td>
-                                            <td class="py-4.5 px-6 text-right relative">
-                                                <div class="relative inline-block">
-                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
-                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
-                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                            </svg>
-                                                            View Invoice
-                                                        </a>
-                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                                            </svg>
-                                                            Download Invoice
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <!-- Row 5 -->
-                                        <tr class="hover:bg-gray-50/50 transition">
-                                            <td class="py-4.5 px-6 font-bold text-gray-900">#90394</td>
-                                            <td class="py-4.5 px-6 text-gray-500 font-medium">23 May 2023</td>
-                                            <td class="py-4.5 px-6">Basic Plan</td>
-                                            <td class="py-4.5 px-6 font-bold">$1200</td>
-                                            <td class="py-4.5 px-6">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50">
-                                                    Paid
-                                                </span>
-                                            </td>
-                                            <td class="py-4.5 px-6 text-right relative">
-                                                <div class="relative inline-block">
-                                                    <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
-                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
-                                                        <a href="#" onclick="viewInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                            </svg>
-                                                            View Invoice
-                                                        </a>
-                                                        <a href="#" onclick="downloadInvoice(this); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                                            </svg>
-                                                            Download Invoice
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        <?php if ($stripe_error): ?>
+                                            <tr>
+                                                <td colspan="6" class="py-8 px-6 text-center text-gray-500">
+                                                    Error loading invoices: <?= htmlspecialchars($stripe_error) ?>
+                                                </td>
+                                            </tr>
+                                        <?php elseif (empty($stripe_invoices)): ?>
+                                            <tr>
+                                                <td colspan="6" class="py-8 px-6 text-center text-gray-500">
+                                                    No invoices found. Add Stripe customer ID to enable billing.
+                                                </td>
+                                            </tr>
+                                        <?php else: ?>
+                                            <?php foreach ($stripe_invoices as $invoice): ?>
+                                                <tr class="hover:bg-gray-50/50 transition">
+                                                    <td class="py-4.5 px-6 font-bold text-gray-900">#<?= htmlspecialchars(substr($invoice->id ?? '', -8)) ?></td>
+                                                    <td class="py-4.5 px-6 text-gray-500 font-medium"><?= date('d M Y', $invoice->created ?? time()) ?></td>
+                                                    <td class="py-4.5 px-6"><?= htmlspecialchars($invoice->description ?? 'Fleet Rental') ?></td>
+                                                    <td class="py-4.5 px-6 font-bold"><?= htmlspecialchars($settings['currency'] ?? 'GBP') ?><?= number_format(($invoice->total ?? 0) / 100, 2) ?></td>
+                                                    <td class="py-4.5 px-6">
+                                                        <?php
+                                                        $status = $invoice->status ?? 'unknown';
+                                                        $status_colors = [
+                                                            'paid' => 'text-green-700 bg-green-50 border-green-100/50',
+                                                            'open' => 'text-blue-700 bg-blue-50 border-blue-100/50',
+                                                            'void' => 'text-gray-700 bg-gray-50 border-gray-100/50',
+                                                            'uncollectible' => 'text-red-700 bg-red-50 border-red-100/50',
+                                                        ];
+                                                        $status_class = $status_colors[$status] ?? 'text-gray-700 bg-gray-50 border-gray-100/50';
+                                                        ?>
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold <?= $status_class ?>">
+                                                            <?= ucfirst($status) ?>
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-4.5 px-6 text-right relative">
+                                                        <div class="relative inline-block">
+                                                            <button onclick="toggleInvoiceMenu(this)" class="text-gray-400 hover:text-gray-600 transition p-1">
+                                                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                </svg>
+                                                            </button>
+                                                            <div class="invoice-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10">
+                                                                <a href="<?= $invoice->hosted_invoice_url ?? '#' ?>" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                                    </svg>
+                                                                    View Invoice
+                                                                </a>
+                                                                <a href="<?= $invoice->invoice_pdf ?? '#' ?>" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                                    </svg>
+                                                                    Download Invoice
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </tbody>
                                 </table>
                             </div>

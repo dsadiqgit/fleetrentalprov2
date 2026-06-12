@@ -923,8 +923,7 @@ else: ?>
                                             <?= number_format($booking['total_price'], 2)?>
                                         </div>
                                         <div class="text-xs text-gray-500">
-                                            <?= $booking['total_days']?> day
-                                            <?= $booking['total_days'] > 1 ? 's' : ''?>
+                                            <?= $booking['total_days']?> day<?= $booking['total_days'] > 1 ? 's' : ''?>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap space-y-1">
