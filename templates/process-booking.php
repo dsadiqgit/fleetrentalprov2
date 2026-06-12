@@ -118,10 +118,15 @@ try {
 
     // Validate dates
     $timezone = new DateTimeZone('Europe/London');
-    $pickupDate = new DateTime($booking_data['pickup_date'], $timezone);
-    $returnDate = new DateTime($booking_data['return_date'], $timezone);
+    $pickupDate = DateTime::createFromFormat('Y-m-d', $booking_data['pickup_date'], $timezone);
+    $returnDate = DateTime::createFromFormat('Y-m-d', $booking_data['return_date'], $timezone);
     $now = new DateTime('now', $timezone);
     $now->setTime(0, 0, 0);
+    
+    if (!$pickupDate || !$returnDate) {
+        echo json_encode(['success' => false, 'message' => 'Invalid date format']);
+        exit;
+    }
     
     if ($pickupDate < $now) {
         echo json_encode(['success' => false, 'message' => 'Pickup date cannot be in the past']);

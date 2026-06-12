@@ -1214,20 +1214,7 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 }
             }
             
-            // Note: Minimum booking notice validation is handled server-side to ensure correct timezone handling
-
-            // Validate that pickup date is not in the past
-            if (pickupDateObj) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const pickupDay = new Date(pickupDateObj);
-                pickupDay.setHours(0, 0, 0, 0);
-                
-                if (pickupDay < today) {
-                    showErrorModal('Pickup date cannot be in the past.');
-                    return;
-                }
-            }
+            // Note: Date validations (past date, minimum booking notice) are handled server-side to ensure correct timezone handling
 
             // Validate that dates do not exceed maximum advance days
             if (pickupDateObj || returnDateObj) {

@@ -4,6 +4,75 @@ $tenant_id = getTenantId();
 $tenant = getTenant();
 $pdo = getDB();
 
+// Handle contact form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_verification_help') {
+    header('Content-Type: application/json');
+    
+    $name = sanitize($_POST['contact_name'] ?? '');
+    $phone = sanitize($_POST['contact_phone'] ?? '');
+    $message = sanitize($_POST['contact_message'] ?? '');
+    $vehicle_id = $_POST['vehicle_id'] ?? null;
+    
+    if (empty($name) || empty($phone)) {
+        echo json_encode(['success' => false, 'message' => 'Name and phone are required']);
+        exit;
+    }
+    
+    // Get tenant email
+    $stmt = $pdo->prepare("SELECT company_email FROM tenant_settings WHERE tenant_id = ?");
+    $stmt->execute([$tenant_id]);
+    $tenant_settings = $stmt->fetch();
+    $tenant_email = $tenant_settings['company_email'] ?? '';
+    
+    if (empty($tenant_email)) {
+        echo json_encode(['success' => false, 'message' => 'Unable to send message']);
+        exit;
+    }
+    
+    // Get vehicle info
+    $vehicle_info = '';
+    if ($vehicle_id) {
+        $stmt = $pdo->prepare("SELECT brand, model FROM vehicles WHERE id = ? AND tenant_id = ?");
+        $stmt->execute([$vehicle_id, $tenant_id]);
+        $vehicle = $stmt->fetch();
+        if ($vehicle) {
+            $vehicle_info = htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']);
+        }
+    }
+    
+    // Send email
+    try {
+        require_once __DIR__ . '/../includes/email.php';
+        
+        $subject = "Customer ID Verification Help Request";
+        $body = "
+            <h2>Customer ID Verification Help Request</h2>
+            <p><strong>Customer Name:</strong> " . htmlspecialchars($name) . "</p>
+            <p><strong>Phone Number:</strong> " . htmlspecialchars($phone) . "</p>
+            <p><strong>Message:</strong></p>
+            <p>" . nl2br(htmlspecialchars($message)) . "</p>
+            " . ($vehicle_info ? "<p><strong>Vehicle:</strong> " . $vehicle_info . "</p>" : "") . "
+            <hr>
+            <p><em>This customer is having trouble with the ID verification process and needs assistance.</em></p>
+        ";
+        
+        $headers = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: " . $tenant_email . "\r\n";
+        
+        $sent = mail($tenant_email, $subject, $body, $headers);
+        
+        if ($sent) {
+            echo json_encode(['success' => true, 'message' => 'Message sent successfully']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to send email']);
+        }
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
 $vehicle_id = $_GET['vehicle_id'] ?? $_GET['id'] ?? null;
 if (!$vehicle_id) die('Vehicle not found');
 
@@ -203,8 +272,8 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
                     </div>
                     <div id="manualApproveSection" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden">
                         <p class="text-sm text-yellow-800 mb-2">If you've completed verification but the button hasn't activated:</p>
-                        <button onclick="forceApprove()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm">
-                            I've Completed Verification - Enable Button
+                        <button onclick="openContactModal()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm">
+                            Contact Rental Company
                         </button>
                     </div>
                     <div class="flex gap-4">
@@ -636,6 +705,39 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
             });
         }
 
+        // Custom success modal function
+        function showSuccessModal(message) {
+            const existingModal = document.getElementById('customSuccessModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'customSuccessModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Success</h3>
+                    <p class="text-gray-600 text-center mb-6">${message}</p>
+                    <button onclick="document.getElementById('customSuccessModal').remove()" class="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
         // Form validation function
         function validateCheckoutForm(form) {
             const errors = [];
@@ -731,6 +833,67 @@ $back_url = "/templates/vehicle-booking.php?id=" . urlencode($vehicle_id) .
                 }
             }
         });
+    </script>
+
+    <!-- Contact Modal -->
+    <div id="contactModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md mx-4 w-full">
+            <h3 class="text-xl font-bold mb-4">Contact Rental Company</h3>
+            <p class="text-sm text-gray-600 mb-4">Having trouble with ID verification? Let us know and we'll help you complete your booking.</p>
+            <form id="contactForm" onsubmit="submitContactForm(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Your Name *</label>
+                    <input type="text" name="contact_name" required class="w-full px-4 py-3 border rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Phone Number *</label>
+                    <input type="tel" name="contact_phone" required class="w-full px-4 py-3 border rounded-lg" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Message</label>
+                    <textarea name="contact_message" rows="3" class="w-full px-4 py-3 border rounded-lg" placeholder="Describe your issue..."></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeContactModal()" class="flex-1 px-4 py-3 border rounded-lg">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg">Send Message</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openContactModal() {
+            document.getElementById('contactModal').classList.remove('hidden');
+        }
+
+        function closeContactModal() {
+            document.getElementById('contactModal').classList.add('hidden');
+        }
+
+        async function submitContactForm(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            formData.append('action', 'send_verification_help');
+            formData.append('vehicle_id', '<?= $vehicle_id ?>');
+
+            try {
+                const res = await fetch('/templates/checkout.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if (result.success) {
+                    closeContactModal();
+                    showSuccessModal('Message sent! The rental company will contact you shortly.');
+                    form.reset();
+                } else {
+                    showErrorModal('Failed to send message: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                showErrorModal('Error sending message: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>
