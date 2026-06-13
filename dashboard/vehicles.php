@@ -285,6 +285,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
+    // Handle duplicate vehicle action
+    if ($_POST['action'] === 'duplicate_vehicle' && !empty($_POST['vehicle_id'])) {
+        $vehicle_id = intval($_POST['vehicle_id']);
+        $stmt = $pdo->prepare("SELECT * FROM vehicles WHERE id = ? AND tenant_id = ?");
+        $stmt->execute([$vehicle_id, $_SESSION['tenant_id']]);
+        $original = $stmt->fetch();
+
+        if ($original) {
+            $new_name = $original['name'] . ' (Copy)';
+            $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $_SESSION['tenant_id'],
+                $new_name,
+                $original['brand'],
+                $original['model'],
+                $original['year'],
+                $original['category'],
+                $original['transmission'],
+                $original['fuel_type'],
+                $original['seats'],
+                $original['price_per_day'],
+                $original['deposit'],
+                $original['images'],
+                $original['featured'],
+                $original['contract_template_id'],
+                $original['daily_pricing'],
+                $original['pricing_packages'],
+                $original['unavailable_dates'],
+                $original['doors'],
+                $original['bags'],
+                $original['exterior_color'],
+                $original['interior_color'],
+                $original['engine_capacity'],
+                $original['air_conditioning'],
+                $original['gps'],
+                $original['description'],
+                $original['license_plate'],
+                $original['vehicle_features'],
+                $original['min_days'],
+                $original['min_age'],
+                $original['min_license_years'],
+                $original['mileage_limit'],
+                $original['unlimited_mileage'],
+                $original['require_deposit'],
+                $original['deposit_type']
+            ]);
+            $new_id = $pdo->lastInsertId();
+            redirect('/dashboard/vehicles.php?edit=' . $new_id);
+        }
+    }
+
     $brand = sanitize($_POST['make'] ?? '');
     $model = sanitize($_POST['model'] ?? '');
     $year = intval($_POST['year'] ?? date('Y'));
@@ -1262,7 +1313,6 @@ endif; ?>
                     ?>
                     <div class="mb-8" x-cloak>
                         <div class="relative flex items-center justify-between">
-                            <div class="hidden md:block absolute top-1/2 -translate-y-1/2 h-px bg-gray-200 z-0" style="left: 50%; transform: translateX(-50%); width: calc(100% - 80px);"></div>
                             <?php foreach ($stepNavigation as $stepIdx => $step): ?>
                             <button type="button" id="step-btn-<?= $step['tab']?>" @click="navigateToTab('<?= $step['tab']?>', $data)" class="relative z-10 flex flex-col items-center text-center gap-2 focus:outline-none px-2 md:px-4">
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all" :class="vehicleTab === '<?= $step['tab']?>' ? 'bg-blue-600 text-white border-2 border-blue-600' : 'bg-white text-gray-500 border border-gray-300'">
@@ -1276,6 +1326,13 @@ endif; ?>
                         </div>
                         <div class="flex flex-wrap items-center justify-end gap-3 mt-6">
                             <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-gray-300 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:shadow-md transition">Cancel</a>
+                            <?php if ($show_edit_form): ?>
+                            <form method="POST" class="inline" onsubmit="return confirm('Duplicate this vehicle?');">
+                                <input type="hidden" name="action" value="duplicate_vehicle">
+                                <input type="hidden" name="vehicle_id" value="<?= $edit_vehicle['id'] ?>">
+                                <button type="submit" class="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-100 transition">Duplicate</button>
+                            </form>
+                            <?php endif; ?>
                             <button form="vehicleForm" type="submit" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save</button>
                             <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : 'pricing'), $data)" x-show="vehicleTab !== 'pricing'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
                         </div>
