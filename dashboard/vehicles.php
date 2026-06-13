@@ -85,6 +85,7 @@ $new_details = [
     'air_conditioning' => 'TINYINT(1) DEFAULT 1',
     'gps' => 'TINYINT(1) DEFAULT 1',
     'description' => 'TEXT',
+    'booking_overview' => 'TEXT',
     'license_plate' => "VARCHAR(50) DEFAULT ''",
     'vehicle_features' => 'TEXT',
     'min_days' => 'INT DEFAULT 1',
@@ -195,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $air_conditioning = isset($_POST['air_conditioning']) ? 1 : 0;
         $gps = isset($_POST['gps']) ? 1 : 0;
         $description = $_POST['description'] ?? '';
+        $booking_overview = $_POST['booking_overview'] ?? '[]';
         $license_plate = sanitize($_POST['license_plate'] ?? '');
         $vehicle_features = $_POST['vehicle_features'] ?? '[]';
         $min_days = intval($_POST['min_days'] ?? 1);
@@ -269,12 +271,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             if ($vehicle_id) {
                 // Update existing vehicle
-                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ? WHERE id = ? AND tenant_id = ?");
-                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $vehicle_id, $_SESSION['tenant_id']]);
+                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, booking_overview = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ? WHERE id = ? AND tenant_id = ?");
+                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $vehicle_id, $_SESSION['tenant_id']]);
             } else {
                 // Insert new vehicle
-                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type]);
+                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type]);
                 $vehicle_id = $pdo->lastInsertId();
             }
 
@@ -294,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         if ($original) {
             $new_name = $original['name'] . ' (Copy)';
-            $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $_SESSION['tenant_id'],
                 $new_name,
@@ -321,6 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $original['air_conditioning'],
                 $original['gps'],
                 $original['description'],
+                $original['booking_overview'],
                 $original['license_plate'],
                 $original['vehicle_features'],
                 $original['min_days'],
@@ -360,6 +363,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $air_conditioning = isset($_POST['air_conditioning']) ? 1 : 0;
     $gps = isset($_POST['gps']) ? 1 : 0;
     $description = $_POST['description'] ?? ''; // Allow some HTML or just text if preferred, but keep it safe for DB
+    $booking_overview = $_POST['booking_overview'] ?? '[]';
     $license_plate = sanitize($_POST['license_plate'] ?? '');
     $vehicle_features = $_POST['vehicle_features'] ?? '[]';
     $min_days = intval($_POST['min_days'] ?? 1);
@@ -469,14 +473,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 // Update existing vehicle
                 $vehicle_id = intval($_POST['vehicle_id']);
 
-                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ? WHERE id = ? AND tenant_id = ?");
-                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $vehicle_id, $_SESSION['tenant_id']]);
+                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, booking_overview = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ? WHERE id = ? AND tenant_id = ?");
+                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $vehicle_id, $_SESSION['tenant_id']]);
                 $success = 'Vehicle updated successfully!';
             }
             else {
                 // Insert new vehicle
-                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type]);
+                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type]);
                 $success = 'Vehicle added successfully!';
             }
 
@@ -1513,8 +1517,48 @@ endif; ?>
                                 <input type="hidden" name="vehicle_features" id="vehicle_features_input" value="<?= htmlspecialchars(json_encode($saved_features))?>">
                             </div>
                             <div class="col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Description</label>
-                                <textarea name="description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter car description..."><?= field_value('description')?></textarea>
+                                <?php
+    $saved_overview = [];
+    $raw_overview = field_raw('booking_overview', '');
+    if (!empty($raw_overview)) {
+        $saved_overview = json_decode($raw_overview, true) ?? [];
+    } elseif ($show_edit_form && !empty($edit_vehicle['booking_overview'])) {
+        $saved_overview = json_decode($edit_vehicle['booking_overview'], true) ?? [];
+    }
+    // Default items for new vehicles (or if empty on edit)
+    $default_overview = [
+        'Third party insurance',
+        '24/7 Breakdown assistance',
+        'Registration Fee / Road Tax',
+        'Unlimited miles',
+        'Booking option: Best price - Free cancellation and rebooking within 24h.'
+    ];
+    if (!$show_edit_form && empty($saved_overview)) {
+        $saved_overview = $default_overview;
+    }
+?>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Booking Overview</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="overviewInput" placeholder="Add booking overview item..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm text-gray-700">
+                                    <button type="button" onclick="addOverviewItem()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="overviewContainer" class="mt-3 space-y-2">
+                                    <?php foreach ($saved_overview as $item): ?>
+                                    <div class="overview-item flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                                        <input type="text" value="<?= htmlspecialchars($item)?>" oninput="syncOverviewItems()" class="flex-1 bg-transparent border-0 focus:ring-0 text-sm text-gray-700 p-0" placeholder="Enter item text...">
+                                        <button type="button" onclick="removeOverviewItem(this)" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Delete">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <input type="hidden" name="booking_overview" id="booking_overview_input" value="<?= htmlspecialchars(json_encode($saved_overview)) ?>">
                             </div>
                             </div>
                         </div>
@@ -3554,6 +3598,56 @@ endif; ?>
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         window.addFeature();
+                    }
+                });
+            }
+
+            // Booking Overview Repeater
+            const overviewInput = document.getElementById('overviewInput');
+            const overviewHiddenInput = document.getElementById('booking_overview_input');
+            const overviewContainer = document.getElementById('overviewContainer');
+
+            function syncOverviewItems() {
+                if (!overviewContainer || !overviewHiddenInput) return;
+                const items = Array.from(overviewContainer.querySelectorAll('.overview-item input[type="text"]'))
+                    .map(input => input.value.trim())
+                    .filter(v => v !== '');
+                overviewHiddenInput.value = JSON.stringify(items);
+            }
+
+            window.removeOverviewItem = function(btn) {
+                const row = btn.closest('.overview-item');
+                if (row) {
+                    row.remove();
+                    syncOverviewItems();
+                }
+            };
+
+            function createOverviewRow(val) {
+                val = val.trim();
+                if (!val) return;
+                const row = document.createElement('div');
+                row.className = 'overview-item flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2';
+                row.innerHTML = '<input type="text" value="' + val.replace(/"/g, '&quot;') + '" oninput="syncOverviewItems()" class="flex-1 bg-transparent border-0 focus:ring-0 text-sm text-gray-700 p-0" placeholder="Enter item text...">' +
+                    '<button type="button" onclick="removeOverviewItem(this)" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Delete">' +
+                    '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>';
+                overviewContainer.appendChild(row);
+                syncOverviewItems();
+            }
+
+            window.addOverviewItem = function() {
+                if (overviewInput && overviewInput.value.trim()) {
+                    createOverviewRow(overviewInput.value);
+                    overviewInput.value = '';
+                    overviewInput.focus();
+                }
+            };
+
+            if (overviewInput) {
+                overviewInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        window.addOverviewItem();
                     }
                 });
             }

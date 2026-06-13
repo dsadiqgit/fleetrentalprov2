@@ -398,8 +398,8 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         <button onclick="switchTab('details')" id="tab-details" class="tab-button pb-3 border-b-2 border-blue-600 text-blue-600 font-semibold text-sm">
                             Car details
                         </button>
-                        <button onclick="switchTab('policies')" id="tab-policies" class="tab-button pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
-                            Policies
+                        <button onclick="switchTab('overview')" id="tab-overview" class="tab-button pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
+                            Booking Overview
                         </button>
                     </nav>
                 </div>
@@ -520,10 +520,32 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     </div>
                 </div>
 
-                <div id="content-policies" class="tab-content hidden">
+                <div id="content-overview" class="tab-content hidden">
                     <div class="space-y-4">
-                        <h2 class="text-xl font-bold text-gray-900">Rental Policies</h2>
-                        <p class="text-gray-600">Policy information will be displayed here.</p>
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Booking Overview</h2>
+                        <?php
+                        $overview_items = [];
+                        if (!empty($vehicle['booking_overview'])) {
+                            $decoded_overview = json_decode($vehicle['booking_overview'], true);
+                            if (is_array($decoded_overview)) {
+                                $overview_items = $decoded_overview;
+                            }
+                        }
+                        ?>
+                        <?php if (!empty($overview_items)): ?>
+                        <div class="space-y-3">
+                            <?php foreach ($overview_items as $item): ?>
+                            <div class="flex items-center gap-3 text-sm text-gray-700">
+                                <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span><?= htmlspecialchars($item) ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
+                        <p class="text-gray-600">No booking overview items available.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
 

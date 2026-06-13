@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   fuel_type ENUM('petrol', 'diesel', 'electric', 'hybrid') DEFAULT 'petrol',
   images TEXT,
   features TEXT,
+  booking_overview TEXT,
   availability BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
