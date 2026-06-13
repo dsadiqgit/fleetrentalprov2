@@ -103,7 +103,7 @@ $rental_days = ($pickup_ts && $return_ts) ? max(1, (int)round(($return_ts - $pic
         .contract-body { max-height: 340px; overflow-y: auto; font-size: .875rem; line-height: 1.65; color: #374151; border: 1.5px solid #d1d5db; border-radius: .75rem; padding: 1.25rem 1.5rem; background: #fafafa; }
         .contract-body::-webkit-scrollbar { width: 6px; }
         .contract-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .sig-input { font-family: 'Brush Script MT', cursive; font-size: 1.5rem; }
+        #signatureCanvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -162,27 +162,27 @@ $rental_days = ($pickup_ts && $return_ts) ? max(1, (int)round(($return_ts - $pic
                     <div class="grid sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="field-label">First Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="first_name" class="field-input" placeholder="John" required autocomplete="given-name">
+                            <input type="text" name="first_name" class="field-input" placeholder="John" required autocomplete="given-name" value="<?= htmlspecialchars($booking_data['first_name'] ?? '') ?>">
                         </div>
                         <div>
                             <label class="field-label">Last Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="last_name" class="field-input" placeholder="Smith" required autocomplete="family-name">
+                            <input type="text" name="last_name" class="field-input" placeholder="Smith" required autocomplete="family-name" value="<?= htmlspecialchars($booking_data['last_name'] ?? '') ?>">
                         </div>
                         <div>
                             <label class="field-label">Email Address <span class="text-red-500">*</span></label>
-                            <input type="email" name="customer_email" class="field-input" placeholder="john@example.com" required autocomplete="email">
+                            <input type="email" name="customer_email" class="field-input" placeholder="john@example.com" required autocomplete="email" value="<?= htmlspecialchars($booking_data['customer_email'] ?? '') ?>">
                         </div>
                         <div>
                             <label class="field-label">Mobile Number <span class="text-red-500">*</span></label>
-                            <input type="tel" name="customer_phone" class="field-input" placeholder="07700 900000" required maxlength="12" oninput="this.value=this.value.replace(/[^0-9]/g,'')" autocomplete="tel">
+                            <input type="tel" name="customer_phone" class="field-input" placeholder="07700 900000" required maxlength="12" oninput="this.value=this.value.replace(/[^0-9]/g,'')" autocomplete="tel" value="<?= htmlspecialchars($booking_data['customer_phone'] ?? '') ?>">
                         </div>
                         <div>
                             <label class="field-label">Date of Birth <span class="text-red-500">*</span></label>
-                            <input type="date" name="customer_dob" class="field-input" required autocomplete="bday">
+                            <input type="date" name="customer_dob" class="field-input" required autocomplete="bday" value="<?= htmlspecialchars($booking_data['customer_dob'] ?? '') ?>">
                         </div>
                         <div>
                             <label class="field-label">Driver's Licence Number <span class="text-red-500">*</span></label>
-                            <input type="text" name="customer_license" class="field-input" placeholder="SMITH701234AB9CD" required autocomplete="off">
+                            <input type="text" name="customer_license" class="field-input" placeholder="SMITH701234AB9CD" required autocomplete="off" value="<?= htmlspecialchars($booking_data['customer_license'] ?? '') ?>">
                         </div>
                     </div>
 
@@ -191,35 +191,29 @@ $rental_days = ($pickup_ts && $return_ts) ? max(1, (int)round(($return_ts - $pic
                     <div class="grid sm:grid-cols-2 gap-4 mb-6">
                         <div class="sm:col-span-2">
                             <label class="field-label">Address Line 1 <span class="text-red-500">*</span></label>
-                            <input type="text" name="address_line1" class="field-input" placeholder="123 High Street" required autocomplete="address-line1">
+                            <input type="text" name="address_line1" class="field-input" placeholder="123 High Street" required autocomplete="address-line1" value="<?= htmlspecialchars($booking_data['address_line1'] ?? '') ?>">
                         </div>
                         <div class="sm:col-span-2">
                             <label class="field-label">Address Line 2</label>
-                            <input type="text" name="address_line2" class="field-input" placeholder="Apartment, suite, etc. (optional)" autocomplete="address-line2">
+                            <input type="text" name="address_line2" class="field-input" placeholder="Apartment, suite, etc. (optional)" autocomplete="address-line2" value="<?= htmlspecialchars($booking_data['address_line2'] ?? '') ?>">
                         </div>
                         <div>
                             <label class="field-label">City <span class="text-red-500">*</span></label>
-                            <input type="text" name="city" class="field-input" placeholder="London" required autocomplete="address-level2">
+                            <input type="text" name="city" class="field-input" placeholder="London" required autocomplete="address-level2" value="<?= htmlspecialchars($booking_data['city'] ?? '') ?>">
                         </div>
                         <div>
                             <label class="field-label">Postcode <span class="text-red-500">*</span></label>
-                            <input type="text" name="postcode" class="field-input" placeholder="SW1A 1AA" required autocomplete="postal-code">
+                            <input type="text" name="postcode" class="field-input" placeholder="SW1A 1AA" required autocomplete="postal-code" value="<?= htmlspecialchars($booking_data['postcode'] ?? '') ?>">
                         </div>
                         <div class="sm:col-span-2">
                             <label class="field-label">Country <span class="text-red-500">*</span></label>
                             <select name="country" class="field-input" required autocomplete="country">
-                                <option value="">Select country…</option>
-                                <option value="GB" selected>United Kingdom</option>
-                                <option value="IE">Ireland</option>
-                                <option value="US">United States</option>
-                                <option value="AU">Australia</option>
-                                <option value="CA">Canada</option>
-                                <option value="FR">France</option>
-                                <option value="DE">Germany</option>
-                                <option value="ES">Spain</option>
-                                <option value="IT">Italy</option>
-                                <option value="NL">Netherlands</option>
-                                <option value="Other">Other</option>
+<?php
+                                $saved_country = $booking_data['country'] ?? 'GB';
+                                $country_options = [''=>'Select country…','GB'=>'United Kingdom','IE'=>'Ireland','US'=>'United States','AU'=>'Australia','CA'=>'Canada','FR'=>'France','DE'=>'Germany','ES'=>'Spain','IT'=>'Italy','NL'=>'Netherlands','Other'=>'Other'];
+                                foreach ($country_options as $code => $label): ?>
+                                <option value="<?= htmlspecialchars($code) ?>"<?= $saved_country === $code ? ' selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
@@ -303,12 +297,18 @@ $rental_days = ($pickup_ts && $return_ts) ? max(1, (int)round(($return_ts - $pic
                             <span class="text-sm text-gray-700">I confirm I have read and agree to all terms in this rental agreement</span>
                         </label>
 
-                        <div id="signSection" class="hidden space-y-3 pt-2 border-t border-gray-100">
-                            <div>
-                                <label class="field-label">Type Your Full Name as Signature <span class="text-red-500">*</span></label>
-                                <input type="text" id="signatureInput" class="field-input sig-input" placeholder="Your full name…" oninput="toggleSignBtn()">
+                        <div id="signSection" class="hidden space-y-3 pt-3 border-t border-gray-100">
+                            <label class="field-label">Draw Your Signature <span class="text-red-500">*</span></label>
+                            <div class="relative border-2 border-gray-200 rounded-xl bg-white overflow-hidden">
+                                <canvas id="signatureCanvas"></canvas>
+                                <div id="sigPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                                    <span class="text-gray-300 text-sm">Sign here with mouse or finger</span>
+                                </div>
                             </div>
-                            <p class="text-xs text-gray-400">By typing your name and clicking Agree & Sign, you are electronically signing this rental agreement.</p>
+                            <div class="flex justify-end">
+                                <button type="button" onclick="clearSignature()" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear Signature</button>
+                            </div>
+                            <p class="text-xs text-gray-400">By drawing your signature and clicking Agree &amp; Sign, you are electronically signing this rental agreement.</p>
                         </div>
                     </div>
 
@@ -691,7 +691,15 @@ async function loadContract() {
         const data = await res.json();
         if (data.success) {
             document.getElementById('contractTitle').textContent = data.name || 'Rental Agreement';
-            document.getElementById('contractBody').innerHTML = data.content || 'Standard rental agreement applies.';
+            let html = data.content || 'Standard rental agreement applies.';
+            if (data.is_html) {
+                // Visual template — set directly as HTML
+                document.getElementById('contractBody').innerHTML = html;
+            } else {
+                // Plain text — convert newlines and basic markdown
+                html = html.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                document.getElementById('contractBody').innerHTML = html;
+            }
             contractLoaded = true;
             if (loading) loading.classList.add('hidden');
             if (content) content.classList.remove('hidden');
@@ -703,27 +711,71 @@ async function loadContract() {
     }
 }
 
+// ─── Canvas Signature Pad ────────────────────────────────────────────────────
+let sigCanvas, sigCtx, sigDrawing = false, sigHasSigned = false;
+
+function initSignatureCanvas() {
+    sigCanvas = document.getElementById('signatureCanvas');
+    if (!sigCanvas || sigCtx) return; // already initialised
+    sigCtx = sigCanvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const w = sigCanvas.parentElement.clientWidth;
+    const h = 160;
+    sigCanvas.width = w * dpr;
+    sigCanvas.height = h * dpr;
+    sigCanvas.style.width = w + 'px';
+    sigCanvas.style.height = h + 'px';
+    sigCtx.scale(dpr, dpr);
+    sigCtx.strokeStyle = '#000000';
+    sigCtx.lineWidth = 2.5;
+    sigCtx.lineCap = 'round';
+    sigCtx.lineJoin = 'round';
+
+    function pos(e) {
+        const r = sigCanvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+    sigCanvas.addEventListener('mousedown', e => { sigDrawing = true; const p = pos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); });
+    sigCanvas.addEventListener('mousemove', e => { if (!sigDrawing) return; const p = pos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); onSigned(); });
+    sigCanvas.addEventListener('mouseup', () => sigDrawing = false);
+    sigCanvas.addEventListener('mouseleave', () => sigDrawing = false);
+    sigCanvas.addEventListener('touchstart', e => { e.preventDefault(); sigDrawing = true; const p = pos(e.touches[0]); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); }, {passive:false});
+    sigCanvas.addEventListener('touchmove', e => { e.preventDefault(); if (!sigDrawing) return; const p = pos(e.touches[0]); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); onSigned(); }, {passive:false});
+    sigCanvas.addEventListener('touchend', () => sigDrawing = false);
+}
+
+function onSigned() {
+    sigHasSigned = true;
+    document.getElementById('sigPlaceholder')?.classList.add('hidden');
+    document.getElementById('signBtn').disabled = false;
+}
+
+function clearSignature() {
+    if (!sigCanvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    sigCtx.clearRect(0, 0, sigCanvas.width / dpr, sigCanvas.height / dpr);
+    sigHasSigned = false;
+    document.getElementById('sigPlaceholder')?.classList.remove('hidden');
+    document.getElementById('signBtn').disabled = true;
+}
+
 function toggleSignSection() {
     const checked = document.getElementById('agreeCheck')?.checked;
     document.getElementById('signSection')?.classList.toggle('hidden', !checked);
+    if (checked) { setTimeout(initSignatureCanvas, 50); }
     if (!checked) document.getElementById('signBtn').disabled = true;
 }
 
-function toggleSignBtn() {
-    const sig = document.getElementById('signatureInput')?.value?.trim();
-    document.getElementById('signBtn').disabled = !sig;
-}
-
 async function signContract() {
-    const sig = document.getElementById('signatureInput')?.value?.trim();
-    if (!sig) { showErrorModal('Please type your full name as signature.'); return; }
+    if (!sigHasSigned) { showErrorModal('Please draw your signature before continuing.'); return; }
     const btn = document.getElementById('signBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    const signatureData = sigCanvas.toDataURL('image/png');
     try {
         const res = await fetch('/templates/save-contract-signature.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ signature: sig })
+            body: JSON.stringify({ signature: signatureData })
         });
         const data = await res.json();
         if (data.success) {

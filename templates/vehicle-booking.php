@@ -1214,32 +1214,17 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 }
             }
             
-            // Note: Date validations (past date, minimum booking notice) are handled server-side to ensure correct timezone handling
-
-            // Validate that dates do not exceed maximum advance days
-            if (pickupDateObj || returnDateObj) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const maxAdvanceDays = <?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?>;
-                const maxDate = new Date(today.getTime() + maxAdvanceDays * 24 * 60 * 60 * 1000);
-                
-                if ((pickupDateObj && pickupDateObj > maxDate) || (returnDateObj && returnDateObj > maxDate)) {
-                    openMaxBookingModal();
-                    return;
-                }
-            }
-            
+            // Build date/time strings from the Date objects first (needed for all validations below)
             let pDateStr = '';
             let pTimeStr = '';
             let rDateStr = '';
             let rTimeStr = '';
-            
+
             if (pickupDateObj) {
                 const yyyy = pickupDateObj.getFullYear();
                 const mm = String(pickupDateObj.getMonth() + 1).padStart(2, '0');
                 const dd = String(pickupDateObj.getDate()).padStart(2, '0');
                 pDateStr = `${yyyy}-${mm}-${dd}`;
-                
                 const hh = String(pickupDateObj.getHours()).padStart(2, '0');
                 const min = String(pickupDateObj.getMinutes()).padStart(2, '0');
                 pTimeStr = `${hh}:${min}`;
@@ -1249,10 +1234,43 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 const mm = String(returnDateObj.getMonth() + 1).padStart(2, '0');
                 const dd = String(returnDateObj.getDate()).padStart(2, '0');
                 rDateStr = `${yyyy}-${mm}-${dd}`;
-                
                 const hh = String(returnDateObj.getHours()).padStart(2, '0');
                 const min = String(returnDateObj.getMinutes()).padStart(2, '0');
                 rTimeStr = `${hh}:${min}`;
+            }
+
+            // Validate selected times against business hours
+            if (pTimeStr && typeof businessHours !== 'undefined' && businessHours.opening && businessHours.closing) {
+                const toMin = t => { const [h,m] = t.split(':').map(Number); return h * 60 + m; };
+                const fmtTime = t => { const [h,m] = t.split(':').map(Number); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2,'0')} ${ampm}`; };
+                const openMin  = toMin(businessHours.opening);
+                const closeMin = toMin(businessHours.closing);
+                const pMin = toMin(pTimeStr);
+                if (pMin < openMin || pMin > closeMin) {
+                    showErrorModal(`Pick-up time (${fmtTime(pTimeStr)}) is outside business hours (${fmtTime(businessHours.opening)} – ${fmtTime(businessHours.closing)}). Please select a valid pick-up time.`);
+                    return;
+                }
+                if (rTimeStr) {
+                    const rMin = toMin(rTimeStr);
+                    if (rMin < openMin || rMin > closeMin) {
+                        showErrorModal(`Return time (${fmtTime(rTimeStr)}) is outside business hours (${fmtTime(businessHours.opening)} – ${fmtTime(businessHours.closing)}). Please select a valid return time.`);
+                        return;
+                    }
+                }
+            }
+
+            // Note: Further date validations (past date, minimum booking notice) are handled server-side
+
+            // Validate that dates do not exceed maximum advance days
+            if (pickupDateObj || returnDateObj) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const maxAdvanceDays = <?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?>;
+                const maxDate = new Date(today.getTime() + maxAdvanceDays * 24 * 60 * 60 * 1000);
+                if ((pickupDateObj && pickupDateObj > maxDate) || (returnDateObj && returnDateObj > maxDate)) {
+                    openMaxBookingModal();
+                    return;
+                }
             }
             
             const url = `/templates/checkout.php?vehicle_id=<?= $vehicle['id'] ?>` +

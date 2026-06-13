@@ -18,11 +18,59 @@ if (!$template) {
 }
 
 if ($template) {
+    $rawContent   = $template['content'] ?? '';
+    $contentJson  = json_decode($rawContent, true);
+    $isVisual     = ($contentJson && isset($contentJson['html']));
+
+    // Extract working HTML (visual templates wrap it in a JSON envelope)
+    $html = $isVisual ? $contentJson['html'] : $rawContent;
+
+    if ($isVisual) {
+        // Strip editor-only controls (same logic as api/get-contract.php)
+        $html = preg_replace('/<div[^>]*class="[^"]*absolute[^"]*-left-12[^"]*"[^>]*>.*?<\/div>/is', '', $html);
+        $html = preg_replace('/<div[^>]*class="[^"]*no-print[^"]*"[^>]*>.*?<\/div>/is', '', $html);
+        $html = preg_replace('/<button[^>]*onclick="(?:removeSection|moveSection)\([^)]*\)"[^>]*>.*?<\/button>/is', '', $html);
+        $html = preg_replace('/\s*contenteditable(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+))?/i', '', $html);
+
+        // Remove the signature section entirely — signatures are only shown on the
+        // signed document (contract-sign.php / api/get-contract.php).
+        // The template builder wraps the signature block in <div class="px-8 pb-8">.
+        libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+        $dom->loadHTML(
+            '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body id="__croot__">' . $html . '</body></html>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+        libxml_clear_errors();
+
+        $xpath = new DOMXPath($dom);
+        // Match the outer wrapper div that carries BOTH px-8 and pb-8 Tailwind classes
+        $sigDivs = $xpath->query(
+            '//div[contains(concat(" ",normalize-space(@class)," ")," px-8 ") and contains(concat(" ",normalize-space(@class)," ")," pb-8 ")]'
+        );
+        foreach ($sigDivs as $node) {
+            $node->parentNode->removeChild($node);
+        }
+
+        // Extract just the body inner HTML, skipping the wrapper we added
+        $body = $dom->getElementById('__croot__');
+        if ($body) {
+            $inner = '';
+            foreach ($body->childNodes as $child) {
+                $inner .= $dom->saveHTML($child);
+            }
+            $html = $inner;
+        }
+    }
+
+    $isHtml = $isVisual || ($html !== strip_tags($html));
+
     echo json_encode([
         'success' => true,
         'id'      => $template['id'],
         'name'    => $template['name'],
-        'content' => $template['content'],
+        'content' => $html,
+        'is_html' => $isHtml,
     ]);
 } else {
     // Generic fallback when no template is configured
