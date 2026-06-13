@@ -546,7 +546,7 @@ endif; ?>
 else: ?>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php foreach ($vehicles as $vehicle): ?>
-                <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>"
+                <a href="/templates/vehicle-details.php?id=<?= $vehicle['id']?>"
                    class="block bg-[#F8E8EE] rounded-[20px] p-5 transition-all duration-300 hover:shadow-lg group">
                     <!-- Title & Price -->
                     <h3 class="text-base font-bold text-gray-900 mb-1">

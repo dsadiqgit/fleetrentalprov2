@@ -444,11 +444,32 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     <?php
     elseif ($section === 'vehicles' && !($content['vehicles_hidden'] ?? 0)): ?>
     <!-- Vehicles Section -->
-    <section id="fleet" class="py-16 bg-gray-50">
+    <style>#fleet-carousel-preview::-webkit-scrollbar{display:none}</style>
+    <section id="fleet" class="py-24 bg-white">
         <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Exotic Car Rental</h2>
-                <p class="text-gray-600">Discover Exotic Car Rental cars</p>
+            <!-- Header -->
+            <div class="flex items-end justify-between mb-10">
+                <div>
+                    <h2 class="text-[32px] font-bold text-gray-900 mb-3 tracking-tight">Top picks vehicle this month</h2>
+                    <p class="text-gray-500 text-base max-w-xl">Experience the epitome of amazing journey with our top picks.</p>
+                </div>
+                <?php if (!empty($featured_vehicles)): ?>
+                <div class="flex gap-3 pb-1 flex-shrink-0">
+                    <button id="fp-prev"
+                        class="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-500 hover:text-gray-900 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <button id="fp-next"
+                        class="w-10 h-10 rounded-full flex items-center justify-center text-white transition-opacity hover:opacity-80"
+                        style="background-color:<?= htmlspecialchars($content['primary_color'] ?? '#111827')?>">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+                <?php endif; ?>
             </div>
 
             <?php if (empty($featured_vehicles)): ?>
@@ -460,63 +481,96 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">No vehicles are available at the moment</h3>
                 <p class="text-gray-600">Please check back later or contact us for availability</p>
             </div>
-            <?php
-        else: ?>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <?php foreach ($featured_vehicles as $vehicle): ?>
-                <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>"
-                   class="block bg-[#F8E8EE] rounded-[20px] p-5 transition-all duration-300 hover:shadow-lg group">
-                    <!-- Title & Price -->
-                    <h3 class="text-base font-bold text-gray-900 mb-1">
-                        <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
-                    </h3>
-                    <div class="flex items-baseline gap-1 mb-4">
-                        <span class="text-lg font-bold text-gray-900"><?= $currency_symbol ?><?= number_format($vehicle['price_per_day'])?></span>
-                        <span class="text-xs text-gray-500">/day</span>
-                    </div>
-
+            <?php else: ?>
+            <!-- Carousel -->
+            <div id="fleet-carousel-preview" class="flex gap-5 overflow-x-auto pb-2" style="-ms-overflow-style:none;scrollbar-width:none;">
+                <?php foreach ($featured_vehicles as $vehicle):
+                    $v_images = json_decode($vehicle['images'], true);
+                    $v_img = is_array($v_images) ? $v_images[0] : ($vehicle['images'] ?: '');
+                    if (empty($v_img)) $v_img = '/assets/images/placeholder-img.webp';
+                    $v_ml = intval($vehicle['mileage_limit'] ?? 0);
+                    $v_mileage = $v_ml > 0 ? ($v_ml >= 1000 ? round($v_ml / 1000, 1) . 'k mi' : $v_ml . ' mi') : 'Unlimited';
+                ?>
+                <a href="/templates/vehicle-details.php?id=<?= $vehicle['id']?>"
+                   class="group flex-none bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300"
+                   style="min-width:280px;width:280px;">
                     <!-- Image -->
-                    <div class="h-40 mb-4 flex items-center justify-center">
-                        <?php
-                        $images = json_decode($vehicle['images'], true);
-                        $img = is_array($images) ? $images[0] : ($vehicle['images'] ?: '');
-                        if (empty($img)) {
-                            $img = '/assets/images/placeholder-img.webp';
-                        }
-                        ?>
-                        <img src="<?= htmlspecialchars($img)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>"
-                             class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500">
+                    <div class="h-48 overflow-hidden bg-gray-50">
+                        <img src="<?= htmlspecialchars($v_img)?>"
+                             alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                     </div>
-
-                    <!-- Features -->
-                    <div class="flex items-center justify-center gap-4 text-xs text-gray-600">
-                        <span class="flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                            </svg>
-                            <?= htmlspecialchars(ucfirst($vehicle['transmission']))?>
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <?= $vehicle['seats']?> Seats
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                            <?= !empty($vehicle['fuel_type']) ? htmlspecialchars($vehicle['fuel_type']) : 'Petrol'?>
-                        </span>
+                    <!-- Body -->
+                    <div class="p-5">
+                        <!-- Name -->
+                        <h3 class="text-base font-semibold text-gray-900 text-center mb-4">
+                            <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
+                        </h3>
+                        <!-- Specs -->
+                        <div class="flex items-center justify-around py-3 mb-4 border-t border-b border-gray-100">
+                            <!-- Transmission -->
+                            <div class="flex flex-col items-center gap-1">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4m0 0v4m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m0 0h8m0-4a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
+                                </svg>
+                                <span class="text-xs text-gray-500"><?= htmlspecialchars(ucfirst($vehicle['transmission'] ?? 'Manual'))?></span>
+                            </div>
+                            <div class="w-px h-8 bg-gray-200"></div>
+                            <!-- Fuel -->
+                            <div class="flex flex-col items-center gap-1">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 20V8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v12m-8 0h8m-8 0H4m10 0h1M9 6V3.5h2.5"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h.5a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H17"/>
+                                </svg>
+                                <span class="text-xs text-gray-500"><?= htmlspecialchars(ucfirst($vehicle['fuel_type'] ?? 'Petrol'))?></span>
+                            </div>
+                            <div class="w-px h-8 bg-gray-200"></div>
+                            <!-- Mileage -->
+                            <div class="flex flex-col items-center gap-1">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m12 14 4-4"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.34 19a10 10 0 1 1 17.32 0"/>
+                                </svg>
+                                <span class="text-xs text-gray-500"><?= $v_mileage ?></span>
+                            </div>
+                        </div>
+                        <!-- Price & CTA -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-baseline gap-0.5">
+                                <span class="text-xl font-bold text-gray-900"><?= $currency_symbol ?><?= number_format($vehicle['price_per_day'])?></span>
+                                <span class="text-sm text-gray-400">/day</span>
+                            </div>
+                            <span class="text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-opacity hover:opacity-90"
+                                  style="background-color:<?= htmlspecialchars($content['primary_color'] ?? '#dc2626')?>">
+                                Rent now
+                            </span>
+                        </div>
                     </div>
                 </a>
-                <?php
-            endforeach; ?>
+                <?php endforeach; ?>
             </div>
-            <?php
-        endif; ?>
+            <!-- See All -->
+            <div class="flex justify-end mt-6">
+                <a href="/templates/fleet.php"
+                   class="text-gray-600 hover:text-gray-900 font-medium flex items-center gap-2 transition-colors group">
+                    See all
+                    <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0-4 4m4-4H3"/>
+                    </svg>
+                </a>
+            </div>
+            <?php endif; ?>
         </div>
     </section>
+    <script>
+    (function(){
+        var c=document.getElementById('fleet-carousel-preview');
+        var p=document.getElementById('fp-prev');
+        var n=document.getElementById('fp-next');
+        if(p)p.addEventListener('click',function(){c.scrollBy({left:-300,behavior:'smooth'});});
+        if(n)n.addEventListener('click',function(){c.scrollBy({left:300,behavior:'smooth'});});
+    })();
+    </script>
 
     <?php elseif ($section === 'services' && !($content['services_hidden'] ?? 0)): ?>
     <!-- Services Section -->
