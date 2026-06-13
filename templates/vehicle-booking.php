@@ -1118,7 +1118,40 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                 dateFormat: "Y-m-d",
                 minDate: "today",
                 maxDate: new Date(Date.now() + (<?= isset($settings['max_booking_advance_days']) && $settings['max_booking_advance_days'] > 0 ? (int)$settings['max_booking_advance_days'] : 30 ?> * 24 * 60 * 60 * 1000)),
-                disable: <?= json_encode($disabled_dates) ?>,
+                disable: [
+                    ...(<?= json_encode($disabled_dates) ?>),
+                    function(date) {
+                        // If all time slots on this date would be before the minimum booking
+                        // notice, disable the date entirely so the user can't select it.
+                        const d = new Date(date);
+                        d.setHours(0, 0, 0, 0);
+
+                        let minTime = new Date();
+                        if (bookingNotice.noticeUnit === 'hours') {
+                            minTime.setHours(minTime.getHours() + bookingNotice.minNotice);
+                        } else {
+                            minTime.setDate(minTime.getDate() + bookingNotice.minNotice);
+                            minTime.setHours(0, 0, 0, 0);
+                        }
+
+                        // If notice is 0 (or missing), nothing extra to disable
+                        if (bookingNotice.minNotice <= 0) return false;
+
+                        const [openH, openM] = businessHours.opening.split(':').map(Number);
+                        const [closeH, closeM] = businessHours.closing.split(':').map(Number);
+
+                        // Check every 30-min slot; if at least one is >= minTime, keep enabled
+                        let h = openH, m = openM;
+                        while (h < closeH || (h === closeH && m <= closeM)) {
+                            const slot = new Date(d);
+                            slot.setHours(h, m, 0, 0);
+                            if (slot >= minTime) return false; // at least one slot works
+                            m += 30;
+                            if (m >= 60) { m -= 60; h++; }
+                        }
+                        return true; // no slot on this date is available
+                    }
+                ],
                 locale: {
                     firstDayOfWeek: 1
                 },
@@ -1141,7 +1174,8 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                     // When both pickup and return dates are selected
                     if (selectedDates.length === 2) {
                         selectedDate = selectedDates[0];
-                        
+                        generateTimeSlots(); // re-render with selectedDate so past times are disabled
+
                         // Format and display pickup date
                         const pickupDate = selectedDates[0];
                         const pickupFormatted = `${pickupDate.getDate()} ${months[pickupDate.getMonth()]}, ${pickupDate.getFullYear()}`;
