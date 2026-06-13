@@ -546,108 +546,60 @@ endif; ?>
 else: ?>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php foreach ($vehicles as $vehicle): ?>
-                <div
-                    class="bg-white rounded-[20px] p-4 border border-gray-100 hover:shadow-xl transition-all duration-300 relative group">
-                    <?php if ($vehicle['availability']): ?>
-                    <div class="absolute top-6 right-6 z-10">
-                        <span
-                            class="px-2.5 py-1 bg-white/90 backdrop-blur-sm shadow-sm text-green-600 text-[10px] uppercase font-bold rounded-md tracking-wider">Available</span>
+                <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>"
+                   class="block bg-[#F8E8EE] rounded-[20px] p-5 transition-all duration-300 hover:shadow-lg group">
+                    <!-- Title & Price -->
+                    <h3 class="text-base font-bold text-gray-900 mb-1">
+                        <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
+                    </h3>
+                    <div class="flex items-baseline gap-1 mb-4">
+                        <span class="text-lg font-bold text-gray-900"><?= $currency_symbol ?><?= number_format($vehicle['price_per_day'])?></span>
+                        <span class="text-xs text-gray-500">/day</span>
                     </div>
-                    <?php
-        endif; ?>
 
-                    <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>"
-                        class="block relative h-48 bg-[#f4f5f7] rounded-xl overflow-hidden mb-4 flex items-center justify-center group-hover:bg-[#edf0f5] transition-colors duration-300">
+                    <!-- Image -->
+                    <div class="h-40 mb-4 flex items-center justify-center">
                         <?php
-        $image_url = null;
-        if ($vehicle['images']) {
-            $decoded = json_decode($vehicle['images'], true);
-            if (is_array($decoded) && !empty($decoded)) {
-                $image_url = $decoded[0];
-            }
-            else if (!is_array($decoded)) {
-                $image_url = $vehicle['images'];
-            }
-        }
-        // Use placeholder if no image
-        if (empty($image_url)) {
-            $image_url = '/assets/images/placeholder-img.webp';
-        }
-?>
+                        $image_url = null;
+                        if ($vehicle['images']) {
+                            $decoded = json_decode($vehicle['images'], true);
+                            if (is_array($decoded) && !empty($decoded)) {
+                                $image_url = $decoded[0];
+                            }
+                            else if (!is_array($decoded)) {
+                                $image_url = $vehicle['images'];
+                            }
+                        }
+                        if (empty($image_url)) {
+                            $image_url = '/assets/images/placeholder-img.webp';
+                        }
+                        ?>
                         <img src="<?= htmlspecialchars($image_url)?>" alt="<?= htmlspecialchars($vehicle['name'])?>"
-                            class="w-full h-full object-cover">
-                    </a>
-
-                    <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>" class="block">
-                        <h3
-                            class="text-base font-semibold text-gray-900 mb-4 line-clamp-1 hover:text-blue-600 transition-colors uppercase">
-                            <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
-                        </h3>
-                    </a>
-
-                    <!-- Features Grid -->
-                    <div class="grid grid-cols-2 gap-y-3 gap-x-2 mb-6">
-                        <div class="flex items-center text-xs font-medium text-gray-500">
-                            <!-- User Icon -->
-                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <span class="truncate">
-                                <?= htmlspecialchars($vehicle['seats'])?> Passengers
-                            </span>
-                        </div>
-                        <div class="flex items-center text-xs font-medium text-gray-500">
-                            <!-- Manual Shift Icon -->
-                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2">
-                                </path>
-                            </svg>
-                            <span class="truncate">
-                                <?= htmlspecialchars(ucfirst($vehicle['transmission']))?>
-                            </span>
-                        </div>
-                        <div class="flex items-center text-xs font-medium text-gray-500">
-                            <!-- Snowflake Icon -->
-                            <svg class="w-4 h-4 mr-2 text-gray-400" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 2v20M17 5l-5 5-5-5M22 12H2M19 17l-5-5-5 5M12 12l2.5-2.5"></path>
-                            </svg>
-                            <span class="truncate">Air Conditioning</span>
-                        </div>
-                        <div class="flex items-center text-xs font-medium text-gray-500">
-                            <!-- Car Icon -->
-                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-                                </path>
-                            </svg>
-                            <span class="truncate">4 Doors</span>
-                        </div>
+                             class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500">
                     </div>
 
-                    <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div>
-                            <span class="text-base font-bold text-gray-900"><?= $currency_symbol ?>
-                                <?= number_format($vehicle['price_per_day'])?>
-                            </span>
-                            <span class="text-gray-400 text-[13px] font-medium ml-0.5">/day</span>
-                        </div>
-                        <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?><?= $query_append ?>"
-                            class="text-[#3b82f5] hover:text-blue-700 text-[13px] font-semibold flex items-center transition-colors">
-                            Rent Now
-                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                    d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    <!-- Features -->
+                    <div class="flex items-center justify-center gap-4 text-xs text-gray-600">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                             </svg>
-                        </a>
+                            <?= htmlspecialchars(ucfirst($vehicle['transmission']))?>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <?= $vehicle['seats']?> Seats
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <?= !empty($vehicle['fuel_type']) ? htmlspecialchars($vehicle['fuel_type']) : 'Petrol'?>
+                        </span>
                     </div>
-                </div>
+                </a>
                 <?php
     endforeach; ?>
             </div>

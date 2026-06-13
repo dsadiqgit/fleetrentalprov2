@@ -241,75 +241,50 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         else: ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <?php foreach ($featured_vehicles as $vehicle): ?>
-                <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>" class="block group">
-                    <!-- Image Box -->
-                    <div
-                        class="bg-[#F8F9FA] rounded-[24px] h-60 mb-5 relative flex items-center justify-center transition-all duration-300 group-hover:bg-gray-200/60 overflow-hidden">
-                        <div
-                            class="absolute top-4 left-4 bg-white/60 text-gray-700 px-3.5 py-1.5 rounded-full text-[11px] font-semibold backdrop-blur-sm z-10 transition-colors group-hover:bg-black/[0.04]">
-                            <?= htmlspecialchars(ucfirst($vehicle['category']))?>
-                        </div>
-                        <?php
-                $images = json_decode($vehicle['images'], true);
-                $img = is_array($images) ? $images[0] : ($vehicle['images'] ?: '');
-                // Use placeholder if no image
-                if (empty($img)) {
-                    $img = '/assets/images/placeholder-img.webp';
-                }
-?>
-                        <img src="<?= htmlspecialchars($img)?>"
-                            class="w-full h-full object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-500">
-                    </div>
-
-                    <!-- Content -->
-                    <h3
-                        class="text-lg font-bold text-gray-900 mb-1.5 tracking-tight group-hover:text-blue-600 transition-colors">
+                <a href="/templates/vehicle-booking.php?id=<?= $vehicle['id']?>"
+                   class="block bg-[#F8E8EE] rounded-[20px] p-5 transition-all duration-300 hover:shadow-lg group">
+                    <!-- Title & Price -->
+                    <h3 class="text-base font-bold text-gray-900 mb-1">
                         <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model'])?>
                     </h3>
-
-                    <div class="flex items-center text-[13px] text-gray-500 mb-4 gap-1.5 font-medium">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
-                            </path>
-                        </svg>
-                        <?= htmlspecialchars(ucfirst($vehicle['transmission']))?>
+                    <div class="flex items-baseline gap-1 mb-4">
+                        <span class="text-lg font-bold text-gray-900"><?= $currency_symbol ?><?= number_format($vehicle['price_per_day'])?></span>
+                        <span class="text-xs text-gray-500">/day</span>
                     </div>
 
-                    <div class="flex items-center text-[13px] text-gray-600 gap-4 mb-5 font-semibold">
-                        <span class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <?= $vehicle['seats']?>
-                        </span>
-                        <span class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                </path>
-                            </svg>
-                            2
-                        </span>
-                        <span class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z">
-                                </path>
-                            </svg>
-                            4.8
-                        </span>
+                    <!-- Image -->
+                    <div class="h-40 mb-4 flex items-center justify-center">
+                        <?php
+                        $images = json_decode($vehicle['images'], true);
+                        $img = is_array($images) ? $images[0] : ($vehicle['images'] ?: '');
+                        if (empty($img)) {
+                            $img = '/assets/images/placeholder-img.webp';
+                        }
+                        ?>
+                        <img src="<?= htmlspecialchars($img)?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>"
+                             class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500">
                     </div>
 
-                    <div class="flex flex-col">
-                        <span class="text-[11px] text-gray-500 mb-0.5">Start from</span>
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-xl font-bold text-gray-900"><?= $currency_symbol ?>
-                                <?= number_format($vehicle['price_per_day'])?>
-                            </span>
-                            <span class="text-[13px] font-medium text-gray-500">/ day</span>
-                        </div>
+                    <!-- Features -->
+                    <div class="flex items-center justify-center gap-4 text-xs text-gray-600">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                            </svg>
+                            <?= htmlspecialchars(ucfirst($vehicle['transmission']))?>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <?= $vehicle['seats']?> Seats
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <?= !empty($vehicle['fuel_type']) ? htmlspecialchars($vehicle['fuel_type']) : 'Petrol'?>
+                        </span>
                     </div>
                 </a>
                 <?php
