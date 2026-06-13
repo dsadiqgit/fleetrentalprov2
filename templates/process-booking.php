@@ -28,6 +28,29 @@ $booking_data = [
     'price_per_day' => $_POST['price_per_day'] ?? ($_SESSION['booking_data']['price_per_day'] ?? 0),
 ];
 
+// Resolve customer_name from split first/last name fields (new checkout form)
+if (empty($booking_data['customer_name'])) {
+    $fn = $_SESSION['booking_data']['first_name'] ?? '';
+    $ln = $_SESSION['booking_data']['last_name'] ?? '';
+    if ($fn || $ln) {
+        $booking_data['customer_name'] = trim($fn . ' ' . $ln);
+    }
+}
+
+// Build extended notes JSON from address / DOB fields saved in session
+$sd = $_SESSION['booking_data'] ?? [];
+$extNotes = [];
+if (!empty($sd['customer_dob']))    $extNotes['dob']          = $sd['customer_dob'];
+if (!empty($sd['address_line1']))   $extNotes['address_line1'] = $sd['address_line1'];
+if (!empty($sd['address_line2']))   $extNotes['address_line2'] = $sd['address_line2'];
+if (!empty($sd['city']))            $extNotes['city']          = $sd['city'];
+if (!empty($sd['postcode']))        $extNotes['postcode']      = $sd['postcode'];
+if (!empty($sd['country']))         $extNotes['country']       = $sd['country'];
+if (!empty($extNotes)) {
+    $existingNotes = $booking_data['notes'] ? $booking_data['notes'] : '';
+    $booking_data['notes'] = json_encode($extNotes) . ($existingNotes ? ' ' . $existingNotes : '');
+}
+
 if (!$booking_data['vehicle_id'] || !$booking_data['pickup_date'] || !$booking_data['return_date']) {
     error_log("Missing booking data. POST: " . json_encode($_POST));
     echo json_encode(['success' => false, 'message' => 'No booking data found. Please ensure all required fields are filled.']);
@@ -487,12 +510,31 @@ try {
         // Generate unique signing token
         $signingToken = bin2hex(random_bytes(32));
         
+        // Determine if customer already signed inline via the checkout agreement step
+        $inlineSignature = $_SESSION['contract_signature'] ?? null;
+        $inlineSignedAt  = $_SESSION['contract_signed_at'] ?? null;
+        $contractStatus  = $inlineSignature ? 'signed' : 'pending';
+        $signedAtValue   = $inlineSignature ? $inlineSignedAt : null;
+
         // Create contract record
         $contractStmt = $pdo->prepare("
             INSERT INTO contracts (tenant_id, booking_id, template_id, content, contract_status, signing_token, created_at)
-            VALUES (?, ?, ?, ?, 'pending', ?, NOW())
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
         ");
-        $contractStmt->execute([$tenant_id, $booking_id, $templateId, $contractContent, $signingToken]);
+        $contractStmt->execute([$tenant_id, $booking_id, $templateId, $contractContent, $contractStatus, $signingToken]);
+        $newContractId = $pdo->lastInsertId();
+
+        // If signed inline, update the signed_at column (if it exists) and save signature
+        if ($inlineSignature && $newContractId) {
+            try {
+                $updateSigned = $pdo->prepare("UPDATE contracts SET signed_at = ? WHERE id = ?");
+                $updateSigned->execute([$signedAtValue, $newContractId]);
+            } catch (Exception $signEx) {
+                error_log("Could not set signed_at (column may not exist): " . $signEx->getMessage());
+            }
+            // Clear session signature after use
+            unset($_SESSION['contract_signature'], $_SESSION['contract_signed_at']);
+        }
         
         // Send welcome & sign email
         require_once __DIR__ . '/../includes/email.php';
