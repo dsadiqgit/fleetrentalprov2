@@ -24,8 +24,41 @@ function createPHPMailer() {
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port       = 465;
     $mail->Timeout    = 5; // Prevent FastCGI from timing out
+    $mail->CharSet    = 'UTF-8';
+    $mail->Encoding   = 'quoted-printable';
     
     return $mail;
+}
+
+function getCustomEmailTemplate($tenant_id, $template_key) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("SELECT * FROM email_templates WHERE tenant_id = ? AND template_key = ? AND enabled = 1");
+        $stmt->execute([$tenant_id, $template_key]);
+        return $stmt->fetch();
+    } catch (\Exception $e) {
+        error_log("Error fetching custom email template: " . $e->getMessage());
+        return null;
+    }
+}
+
+function getPlainTextFallback($html) {
+    // Replace <br>, <p>, and table rows with newlines to keep structure
+    $text = preg_replace('/<br\s*\/?>/i', "\n", $html);
+    $text = preg_replace('/<\/p>/i', "\n\n", $text);
+    $text = preg_replace('/<\/tr>/i', "\n", $text);
+    $text = preg_replace('/<\/td>/i', " ", $text);
+    
+    // Strip all remaining tags
+    $text = strip_tags($text);
+    
+    // Decode HTML entities (e.g. &nbsp;, &amp;)
+    $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+    
+    // Normalize and trim extra spaces/newlines
+    $text = preg_replace("/[ \t]+/", " ", $text);
+    $text = preg_replace("/\n\s*\n\s*\n+/", "\n\n", $text);
+    return trim($text);
 }
 
 function sendEmail($to, $subject, $message, $from_name = null) {
@@ -41,11 +74,38 @@ function sendEmail($to, $subject, $message, $from_name = null) {
         $mail->addAddress($to);
         $mail->addReplyTo('info@fleetrentalpro.com', $from_name);
         
-        // Content
+        // Clean and decode the subject line
+        $clean_subject = html_entity_decode(strip_tags($subject), ENT_QUOTES, 'UTF-8');
+        
+        // Ensure any HTML entity escaped characters (like &lt; or &gt;) are fully decoded to raw HTML tags
+        $html_message = htmlspecialchars_decode($message, ENT_QUOTES);
+        if (strpos($html_message, '&lt;') !== false) {
+            $html_message = html_entity_decode($html_message, ENT_QUOTES, 'UTF-8');
+        }
+        
+        // Strip DOCTYPE declarations which can confuse some legacy/local email client parsers into plain-text rendering
+        $html_message = preg_replace('/<!DOCTYPE[^>]*>/i', '', $html_message);
+        
+        // Ensure the HTML has proper structural wrappers if not present
+        if (strpos($html_message, '<html') === false) {
+            $html_message = '<html><head>'
+                 . '<meta charset="UTF-8">'
+                 . '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                 . '</head>'
+                 . '<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Arial,sans-serif;background:#f5f5f5;">'
+                 . $html_message
+                 . '</body></html>';
+        }
+        
+        // Format the HTML string by inserting newlines between tags to keep line lengths short.
+        // This prevents quoted-printable soft-wraps (= \r\n) from breaking inline CSS or HTML tags.
+        $html_message = str_replace('><', ">\n<", $html_message);
+        
+        // Content settings
         $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body    = $message;
-        $mail->AltBody = strip_tags($message);
+        $mail->Subject = $clean_subject;
+        $mail->Body    = $html_message;
+        $mail->AltBody = getPlainTextFallback($html_message);
         
         $mail->send();
         return true;
@@ -147,8 +207,26 @@ function sendWelcomeEmail($email, $name) {
  * Send "Welcome & Sign Your Contract" email after booking is created
  */
 function sendContractWelcomeEmail($to, $customerName, $contractUrl, $tenant) {
+    $tenantId = $tenant['id'] ?? null;
     $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
     $tenantName = htmlspecialchars($tenant['name']);
+
+    // Check for custom email template in the database
+    if ($tenantId) {
+        $customTpl = getCustomEmailTemplate($tenantId, 'contract_welcome');
+        if ($customTpl) {
+            $sample = [
+                '{{customer_name}}'  => $customerName,
+                '{{contract_url}}'   => $contractUrl,
+                '{{company_name}}'   => $tenantName,
+                '{{vehicle_name}}'   => 'your booked vehicle', // Generic/fallback since vehicle isn't directly passed here
+                '{{pickup_date}}'    => 'your pickup date',
+            ];
+            $renderedSubject = str_replace(array_keys($sample), array_values($sample), $customTpl['subject']);
+            $renderedBody    = str_replace(array_keys($sample), array_values($sample), $customTpl['body']);
+            return sendEmail($to, $renderedSubject, $renderedBody, $tenantName);
+        }
+    }
     
     $subject = "Welcome! Please Sign Your Rental Contract - " . $tenantName;
     $message = "
@@ -287,12 +365,31 @@ function sendSignedContractEmail($to, $customerName, $pdfPath, $tenant) {
  * Send customer account credentials email after booking
  */
 function sendCustomerAccountEmail($to, $customerName, $password, $tenant, $bookingId) {
+    $tenantId = $tenant['id'] ?? null;
     $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
     $tenantName = htmlspecialchars($tenant['name']);
     
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
     $host = $_SERVER['HTTP_HOST'];
     $loginUrl = $protocol . $host . '/auth/login.php';
+
+    // Check for custom email template in the database
+    if ($tenantId) {
+        $customTpl = getCustomEmailTemplate($tenantId, 'account_created');
+        if ($customTpl) {
+            $sample = [
+                '{{customer_name}}'  => $customerName,
+                '{{customer_email}}' => $to,
+                '{{password}}'       => $password,
+                '{{booking_ref}}'    => str_pad($bookingId, 5, '0', STR_PAD_LEFT),
+                '{{company_name}}'   => $tenantName,
+                '{{login_url}}'      => $loginUrl,
+            ];
+            $renderedSubject = str_replace(array_keys($sample), array_values($sample), $customTpl['subject']);
+            $renderedBody    = str_replace(array_keys($sample), array_values($sample), $customTpl['body']);
+            return sendEmail($to, $renderedSubject, $renderedBody, $tenantName);
+        }
+    }
     
     $subject = "Your Account Details - " . $tenantName;
     $message = "
@@ -402,6 +499,7 @@ function sendContractSignedNotification($adminEmail, $customerName, $bookingRef,
  * Send booking confirmation email to customer
  */
 function sendBookingConfirmationEmail($to, $bookingData, $tenant, $vehicle) {
+    $tenantId = $tenant['id'] ?? null;
     $tenantName = htmlspecialchars($tenant['name'] ?? 'Fleet Rental');
     $primaryColor = $tenant['primary_color'] ?? '#000000';
     $bookingRef = str_pad($bookingData['id'], 5, '0', STR_PAD_LEFT);
@@ -418,6 +516,35 @@ function sendBookingConfirmationEmail($to, $bookingData, $tenant, $vehicle) {
     $vehicleName = htmlspecialchars(($vehicle['brand'] ?? '') . ' ' . ($vehicle['model'] ?? ''));
     $vehicleImage = !empty($vehicle['image']) ? htmlspecialchars($vehicle['image']) : '';
     
+    // Build login URL
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $loginUrl = $protocol . $host . '/auth/login.php';
+
+    // Check for custom email template in the database
+    if ($tenantId) {
+        $customTpl = getCustomEmailTemplate($tenantId, 'booking_confirmation');
+        if ($customTpl) {
+            $sample = [
+                '{{customer_name}}'  => $customerName,
+                '{{customer_email}}' => $to,
+                '{{booking_ref}}'    => $bookingRef,
+                '{{vehicle_name}}'   => $vehicleName,
+                '{{pickup_date}}'    => $pickupDate . ' ' . $pickupTime,
+                '{{return_date}}'    => $returnDate . ' ' . $returnTime,
+                '{{total_price}}'    => $rentalAmount,
+                '{{deposit}}'        => $depositAmount,
+                '{{currency}}'       => $currencySymbol,
+                '{{company_name}}'   => $tenantName,
+                '{{company_email}}'  => $tenant['email'] ?? 'info@fleetrentalpro.com',
+                '{{login_url}}'      => $loginUrl,
+            ];
+            $renderedSubject = str_replace(array_keys($sample), array_values($sample), $customTpl['subject']);
+            $renderedBody    = str_replace(array_keys($sample), array_values($sample), $customTpl['body']);
+            return sendEmail($to, $renderedSubject, $renderedBody, $tenantName);
+        }
+    }
+
     // Build tenant logo HTML
     $logoHtml = '';
     if (!empty($tenant['logo'])) {
@@ -426,11 +553,6 @@ function sendBookingConfirmationEmail($to, $bookingData, $tenant, $vehicle) {
     } else {
         $logoHtml = '<div style="font-size: 24px; font-weight: 800; color: #000; letter-spacing: -1px;">' . $tenantName . '</div>';
     }
-    
-    // Build login URL
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $loginUrl = $protocol . $host . '/auth/login.php';
     
     $subject = "Your Booking is Confirmed - #{$bookingRef} - {$tenantName}";
     $message = "

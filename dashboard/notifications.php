@@ -63,7 +63,7 @@ function notif_alert(string $text, string $bg = '#fffbeb', string $border = '#f5
 function getDefaultEmailTemplates(): array {
     // ─ Booking Confirmation ────────────────────────────────────────────────
     $bc_content = '<p style="color:#666;font-size:14px;margin:0 0 6px;">Hello {{customer_name}},</p>'
-                . '<h1 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#111;">Your booking is confirmed ✓</h1>'
+                . '<h1 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#111;">Your booking is confirmed!</h1>'
                 . notif_table([
                     ['Booking Reference', '#{{booking_ref}}'],
                     ['Vehicle', '{{vehicle_name}}'],
@@ -137,7 +137,7 @@ function getDefaultEmailTemplates(): array {
             'icon_path'   => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
             'badge_bg'    => '#dcfce7', 'badge_color' => '#166534',
             'variables'   => ['customer_name','booking_ref','vehicle_name','pickup_date','return_date','total_price','deposit','currency','company_name','login_url'],
-            'subject'     => 'Your Booking is Confirmed — #{{booking_ref}} | {{company_name}}',
+            'subject'     => 'Your Booking is Confirmed - #{{booking_ref}} | {{company_name}}',
             'body'        => notif_wrap($bc_content),
         ],
         'contract_welcome' => [
@@ -146,7 +146,7 @@ function getDefaultEmailTemplates(): array {
             'icon_path'   => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
             'badge_bg'    => '#dbeafe', 'badge_color' => '#1e40af',
             'variables'   => ['customer_name','vehicle_name','pickup_date','contract_url','company_name'],
-            'subject'     => 'Please Sign Your Rental Contract — {{company_name}}',
+            'subject'     => 'Please Sign Your Rental Contract - {{company_name}}',
             'body'        => notif_wrap($cw_content),
         ],
         'account_created' => [
@@ -155,7 +155,7 @@ function getDefaultEmailTemplates(): array {
             'icon_path'   => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
             'badge_bg'    => '#fef3c7', 'badge_color' => '#92400e',
             'variables'   => ['customer_name','customer_email','password','booking_ref','company_name','login_url'],
-            'subject'     => 'Your Account Details — {{company_name}}',
+            'subject'     => 'Your Account Details - {{company_name}}',
             'body'        => notif_wrap($ac_content),
         ],
         'booking_cancellation' => [
@@ -164,7 +164,7 @@ function getDefaultEmailTemplates(): array {
             'icon_path'   => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
             'badge_bg'    => '#fee2e2', 'badge_color' => '#991b1b',
             'variables'   => ['customer_name','booking_ref','vehicle_name','pickup_date','return_date','company_name','company_email'],
-            'subject'     => 'Booking Cancellation — #{{booking_ref}} | {{company_name}}',
+            'subject'     => 'Booking Cancellation - #{{booking_ref}} | {{company_name}}',
             'body'        => notif_wrap($cancel_content),
         ],
         'booking_reminder' => [
@@ -173,7 +173,7 @@ function getDefaultEmailTemplates(): array {
             'icon_path'   => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
             'badge_bg'    => '#f3e8ff', 'badge_color' => '#6b21a8',
             'variables'   => ['customer_name','vehicle_name','pickup_date','return_date','company_name','login_url'],
-            'subject'     => 'Reminder: Your Rental Pickup is Tomorrow — {{company_name}}',
+            'subject'     => 'Reminder: Your Rental Pickup is Tomorrow - {{company_name}}',
             'body'        => notif_wrap($remind_content),
         ],
     ];
@@ -304,9 +304,6 @@ foreach ($default_templates as $key => $def) {
     $templates[$key]['updated_at']= $saved[$key]['updated_at'] ?? null;
 }
 
-$active_tab = $_GET['tab'] ?? 'booking_confirmation';
-if (!array_key_exists($active_tab, $templates)) $active_tab = 'booking_confirmation';
-$active = $templates[$active_tab];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -322,9 +319,14 @@ $active = $templates[$active_tab];
         .sidebar-item:hover { background: #f3f4f6; }
         .sidebar-item.active { background: #eff6ff; color: #3b82f6; }
         .sidebar-item.active svg { color: #3b82f6; }
-        #preview-iframe { border: none; width: 100%; height: 100%; }
-        .var-chip { cursor: pointer; user-select: none; }
+        .tpl-card { transition: all .15s; cursor: pointer; }
+        .tpl-card:hover { border-color: #93c5fd; }
+        .tpl-card.active { border-color: #3b82f6; background: #eff6ff; }
+        .var-chip { cursor: pointer; user-select: none; transition: all .12s; }
         .var-chip:hover { background: #dbeafe; color: #1e40af; }
+        #visual-editor { border: none; width: 100%; height: 100%; display: block; }
+        #visual-editor-wrap { position: relative; }
+        #editor-hint { pointer-events: none; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -342,174 +344,132 @@ $active = $templates[$active_tab];
     <span class="font-semibold text-sm text-gray-900">Notifications</span>
 </header>
 
-<!-- Sidebar Overlay -->
 <div id="sidebar-overlay" class="lg:hidden fixed inset-0 bg-black/50 z-30 hidden"></div>
 
-<!-- Layout -->
 <div class="flex pt-14 h-screen overflow-hidden">
-    <!-- Sidebar -->
     <aside id="sidebar" class="fixed lg:static top-14 bottom-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 lg:flex flex-shrink-0">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     </aside>
 
-    <!-- Main content -->
     <main class="flex-1 overflow-y-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
             <!-- Page header -->
-            <div class="flex items-start justify-between mb-8">
+            <div class="flex items-center justify-between mb-5">
                 <div>
-                    <h1 class="text-2xl font-extrabold text-gray-900">Notifications &amp; Emails</h1>
-                    <p class="text-sm text-gray-500 mt-1">Customise the emails your customers receive at every stage of their booking.</p>
+                    <h1 class="text-xl font-extrabold text-gray-900">Notifications &amp; Emails</h1>
+                    <p class="text-sm text-gray-500 mt-0.5">Customise the emails your customers receive. Click any text in the preview to edit it.</p>
                 </div>
-                <div class="flex items-center gap-2 text-sm text-gray-500 bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm">
-                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <?= count(array_filter($templates, fn($t) => $t['enabled'])) ?> / <?= count($templates) ?> templates enabled
-                </div>
+                <span class="text-xs text-gray-500 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span id="enabled-count"><?= count(array_filter($templates, fn($t) => $t['enabled'])) ?></span> / <?= count($templates) ?> enabled
+                </span>
             </div>
 
-            <!-- Grid: Tab list + Editor -->
-            <div class="grid lg:grid-cols-[280px_1fr] gap-6 items-start">
-
-                <!-- ── Template list ──────────────────────────────────────── -->
-                <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-100">
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Email Templates</p>
-                    </div>
-                    <?php foreach ($templates as $key => $tpl): ?>
-                    <a href="?tab=<?= $key ?>"
-                       class="flex items-start gap-3 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition group <?= $key === $active_tab ? 'bg-blue-50 border-l-4 border-l-blue-500' : '' ?>">
-                        <div class="mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 <?= $key === $active_tab ? 'bg-blue-100' : 'bg-gray-100 group-hover:bg-gray-200' ?>">
-                            <svg class="w-4 h-4 <?= $key === $active_tab ? 'text-blue-600' : 'text-gray-500' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- ── Horizontal template cards ──────────────────────────────── -->
+            <div class="flex gap-3 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
+                <?php foreach ($templates as $key => $tpl): ?>
+                <button onclick="switchTemplate('<?= $key ?>')"
+                        data-key="<?= $key ?>"
+                        class="tpl-card flex-shrink-0 w-48 text-left bg-white border-2 border-gray-200 rounded-2xl p-4 shadow-sm <?= array_key_first($templates) === $key ? 'active' : '' ?>">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-8 h-8 rounded-xl flex items-center justify-center"
+                             style="background:<?= $tpl['badge_bg'] ?>">
+                            <svg class="w-4 h-4" style="color:<?= $tpl['badge_color'] ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= htmlspecialchars($tpl['icon_path']) ?>"/>
                             </svg>
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold <?= $key === $active_tab ? 'text-blue-700' : 'text-gray-800' ?> truncate"><?= htmlspecialchars($tpl['name']) ?></p>
-                            <p class="text-xs text-gray-400 truncate mt-0.5"><?= htmlspecialchars($tpl['description']) ?></p>
-                        </div>
-                        <?php if (!$tpl['enabled']): ?>
-                        <span class="flex-shrink-0 text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">Off</span>
-                        <?php elseif ($tpl['is_custom']): ?>
-                        <span class="flex-shrink-0 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Custom</span>
-                        <?php endif; ?>
-                    </a>
-                    <?php endforeach; ?>
-                </div>
+                        <span class="text-xs font-medium px-2 py-0.5 rounded-full <?= !$tpl['enabled'] ? 'bg-gray-100 text-gray-400' : ($tpl['is_custom'] ? 'bg-indigo-100 text-indigo-700' : 'bg-green-100 text-green-700') ?>">
+                            <?= !$tpl['enabled'] ? 'Off' : ($tpl['is_custom'] ? 'Custom' : 'Default') ?>
+                        </span>
+                    </div>
+                    <p class="text-sm font-bold text-gray-900 leading-tight"><?= htmlspecialchars($tpl['name']) ?></p>
+                    <p class="text-xs text-gray-400 mt-1 leading-snug line-clamp-2"><?= htmlspecialchars($tpl['description']) ?></p>
+                </button>
+                <?php endforeach; ?>
+            </div>
 
-                <!-- ── Editor + Preview ───────────────────────────────────── -->
-                <div class="space-y-5">
+            <!-- ── Main editor: controls (left) + visual editor (right) ──── -->
+            <div class="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
 
-                    <!-- Template header -->
-                    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
-                                          style="background:<?= $active['badge_bg'] ?>;color:<?= $active['badge_color'] ?>">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= htmlspecialchars($active['icon_path']) ?>"/></svg>
-                                        <?= htmlspecialchars($active['name']) ?>
-                                    </span>
-                                    <?php if ($active['is_custom']): ?>
-                                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full font-semibold">Custom</span>
-                                    <?php endif; ?>
-                                </div>
-                                <p class="text-sm text-gray-500"><?= htmlspecialchars($active['description']) ?></p>
-                                <?php if ($active['updated_at']): ?>
-                                <p class="text-xs text-gray-400 mt-1">Last saved: <?= date('D j M Y, g:i a', strtotime($active['updated_at'])) ?></p>
-                                <?php endif; ?>
+                <!-- Left controls panel -->
+                <div class="space-y-4">
+
+                    <!-- Template info + enable toggle -->
+                    <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p id="tpl-name" class="font-bold text-gray-900 text-sm truncate"></p>
+                                <p id="tpl-desc" class="text-xs text-gray-400 mt-0.5 leading-snug"></p>
+                                <p id="tpl-updated" class="text-xs text-gray-400 mt-1 hidden"></p>
                             </div>
-                            <!-- Enable toggle -->
-                            <label class="flex items-center gap-2.5 cursor-pointer flex-shrink-0">
-                                <span class="text-sm font-medium text-gray-700">Enabled</span>
+                            <label class="flex items-center gap-2 cursor-pointer flex-shrink-0 mt-0.5">
+                                <span class="text-xs font-semibold text-gray-600">On</span>
                                 <div class="relative">
-                                    <input type="checkbox" id="enabled-toggle" class="sr-only peer" <?= $active['enabled'] ? 'checked' : '' ?>
-                                           data-key="<?= htmlspecialchars($active_tab) ?>">
-                                    <div class="w-10 h-5 bg-gray-200 peer-checked:bg-blue-500 rounded-full transition-colors"></div>
-                                    <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                                    <input type="checkbox" id="enabled-toggle" class="sr-only peer" checked>
+                                    <div class="w-9 h-5 bg-gray-200 peer-checked:bg-blue-500 rounded-full transition-colors"></div>
+                                    <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
                                 </div>
                             </label>
                         </div>
                     </div>
 
-                    <!-- Subject line -->
-                    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                        <label class="block text-sm font-semibold text-gray-800 mb-2">Subject Line</label>
+                    <!-- Subject -->
+                    <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Subject Line</label>
                         <input type="text" id="email-subject"
-                               value="<?= htmlspecialchars($active['subject']) ?>"
-                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                               placeholder="Enter email subject…">
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                               placeholder="Email subject line…">
                     </div>
 
                     <!-- Variables -->
-                    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                        <p class="text-sm font-semibold text-gray-800 mb-3">Available Variables
-                            <span class="text-xs font-normal text-gray-400 ml-1">— click to insert into body</span>
+                    <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">Insert Variable
+                            <span class="font-normal normal-case text-gray-400">— click to insert at cursor</span>
                         </p>
-                        <div class="flex flex-wrap gap-2">
-                            <?php foreach ($active['variables'] as $var): ?>
-                            <button onclick="insertVariable('{{<?= $var ?>}}')"
-                                    class="var-chip text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg font-mono transition">
-                                &#123;&#123;<?= htmlspecialchars($var) ?>&#125;&#125;
-                            </button>
-                            <?php endforeach; ?>
-                        </div>
+                        <div id="variables-list" class="flex flex-wrap gap-1.5"></div>
                     </div>
 
-                    <!-- Editor / Preview split -->
-                    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                        <!-- Tab bar -->
-                        <div class="flex items-center gap-0 border-b border-gray-200 px-6">
-                            <button onclick="switchEditorTab('editor')" id="editor-tab-btn"
-                                    class="editor-tab-btn text-sm font-semibold px-4 py-3.5 border-b-2 border-blue-500 text-blue-600 transition">
-                                HTML Editor
-                            </button>
-                            <button onclick="switchEditorTab('preview')" id="preview-tab-btn"
-                                    class="editor-tab-btn text-sm font-semibold px-4 py-3.5 border-b-2 border-transparent text-gray-500 hover:text-gray-800 transition">
-                                Preview
-                            </button>
-                            <div class="ml-auto flex items-center gap-2 py-2">
-                                <span class="text-xs text-gray-400" id="char-count">0 chars</span>
-                            </div>
-                        </div>
-
-                        <!-- Editor pane -->
-                        <div id="editor-pane" class="p-4">
-                            <textarea id="email-body" rows="22"
-                                      class="w-full border border-gray-200 rounded-xl px-4 py-3 text-xs font-mono text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 resize-y"
-                                      placeholder="Paste or write your HTML email body here…"
-                                      oninput="updatePreview(); updateCharCount()"><?= htmlspecialchars($active['body']) ?></textarea>
-                        </div>
-
-                        <!-- Preview pane -->
-                        <div id="preview-pane" class="hidden" style="height: 540px;">
-                            <iframe id="preview-iframe" title="Email Preview"></iframe>
-                        </div>
-                    </div>
-
-                    <!-- Action bar -->
-                    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <?php if ($active['is_custom']): ?>
-                            <button onclick="resetTemplate()"
-                                    class="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                Reset to Default
-                            </button>
-                            <?php endif; ?>
-                            <button onclick="openTestModal()"
-                                    class="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                Send Test Email
-                            </button>
-                        </div>
-                        <button onclick="saveTemplate()"
-                                class="flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-900 hover:bg-gray-700 text-white rounded-xl text-sm font-semibold transition shadow-sm">
+                    <!-- Actions -->
+                    <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-2.5">
+                        <button onclick="saveTemplate()" id="save-btn"
+                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-700 text-white rounded-xl text-sm font-semibold transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             Save Template
                         </button>
+                        <button onclick="openTestModal()"
+                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            Send Test Email
+                        </button>
+                        <button onclick="resetTemplate()" id="reset-btn"
+                                class="w-full hidden flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Reset to Default
+                        </button>
                     </div>
-                </div><!-- /editor column -->
+                </div>
+
+                <!-- Visual email editor (iframe with designMode) -->
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden" id="visual-editor-wrap">
+                    <!-- Browser-chrome style bar -->
+                    <div class="flex items-center gap-2.5 px-4 py-3 bg-gray-50 border-b border-gray-200">
+                        <span class="w-3 h-3 rounded-full bg-red-400 flex-shrink-0"></span>
+                        <span class="w-3 h-3 rounded-full bg-yellow-400 flex-shrink-0"></span>
+                        <span class="w-3 h-3 rounded-full bg-green-400 flex-shrink-0"></span>
+                        <div class="flex-1 flex items-center justify-center">
+                            <span class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                Click any text in the preview to edit it directly
+                            </span>
+                        </div>
+                        <span id="editor-status" class="text-xs text-gray-400 flex-shrink-0 hidden">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse mr-1"></span>editing
+                        </span>
+                    </div>
+                    <iframe id="visual-editor" title="Email Editor" style="height:620px;"></iframe>
+                </div>
+
             </div><!-- /grid -->
         </div>
     </main>
@@ -522,7 +482,7 @@ $active = $templates[$active_tab];
         <div class="flex items-center justify-between mb-5">
             <div>
                 <h3 class="font-bold text-gray-900 text-lg">Send Test Email</h3>
-                <p class="text-sm text-gray-500 mt-0.5">We'll send a preview with sample data.</p>
+                <p class="text-sm text-gray-500 mt-0.5">Sends exactly what you see in the preview, with sample data.</p>
             </div>
             <button onclick="closeTestModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -532,7 +492,7 @@ $active = $templates[$active_tab];
         <input type="email" id="test-email-input" placeholder="you@example.com"
                class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 mb-4">
         <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-5 text-xs text-blue-700">
-            <strong>Sample data</strong> will be used for all variables (e.g. customer name = "John Smith", booking ref = "00123").
+            <strong>Sample data:</strong> customer = "John Smith", booking ref = "#00123", vehicle = "BMW 5 Series".
         </div>
         <div class="flex gap-3">
             <button onclick="closeTestModal()" class="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
@@ -545,100 +505,179 @@ $active = $templates[$active_tab];
     </div>
 </div>
 
-<!-- ── Notification toast ─────────────────────────────────────────────────── -->
+<!-- Toast -->
 <div id="toast" class="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-5 py-3.5 shadow-xl translate-y-20 opacity-0 transition-all duration-300 max-w-sm">
     <div id="toast-icon" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"></div>
     <p id="toast-msg" class="text-sm font-medium text-gray-800"></p>
 </div>
 
 <script>
-const ACTIVE_KEY = <?= json_encode($active_tab) ?>;
+// All template data (pre-loaded server-side for instant JS switching)
+const ALL_TEMPLATES = <?= json_encode($templates) ?>;
+let CURRENT_KEY = Object.keys(ALL_TEMPLATES)[0];
 
-// ── Preview update ────────────────────────────────────────────────────────────
-function updatePreview() {
-    const body = document.getElementById('email-body').value;
-    const iframe = document.getElementById('preview-iframe');
+// ── Visual iframe editor ───────────────────────────────────────────────────────
+function loadVisualEditor(html) {
+    const iframe = document.getElementById('visual-editor');
     const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open(); doc.write(body); doc.close();
+    doc.open(); doc.write(html); doc.close();
+    setTimeout(() => {
+        doc.designMode = 'on';
+        doc.body.style.cursor = 'text';
+        // Show "editing" indicator when focused
+        iframe.contentWindow.addEventListener('focus', () => {
+            document.getElementById('editor-status').classList.remove('hidden');
+        }, true);
+        iframe.contentWindow.addEventListener('blur', () => {
+            document.getElementById('editor-status').classList.add('hidden');
+        }, true);
+    }, 80);
 }
 
-function updateCharCount() {
-    const len = document.getElementById('email-body').value.length;
-    document.getElementById('char-count').textContent = len.toLocaleString() + ' chars';
+function getCleanHTML() {
+    const iframe = document.getElementById('visual-editor');
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.designMode = 'off';
+    // Use body.innerHTML only — avoids browser-injected styles (cursor:text, rgb() computed values, etc.)
+    const bodyContent = doc.body ? doc.body.innerHTML : '';
+    doc.designMode = 'on';
+    // Re-wrap in a clean, minimal HTML document suitable for email clients
+    return '<!DOCTYPE html><html><head>'
+         + '<meta charset="UTF-8">'
+         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+         + '</head>'
+         + '<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Arial,sans-serif;background:#f5f5f5;">'
+         + bodyContent
+         + '</body></html>';
 }
 
-// ── Editor tabs ───────────────────────────────────────────────────────────────
-function switchEditorTab(tab) {
-    const isEditor = (tab === 'editor');
-    document.getElementById('editor-pane').classList.toggle('hidden', !isEditor);
-    document.getElementById('preview-pane').classList.toggle('hidden', isEditor);
-    if (!isEditor) updatePreview();
+// ── Switch template (no page reload) ─────────────────────────────────────────
+function switchTemplate(key) {
+    if (!ALL_TEMPLATES[key]) return;
+    CURRENT_KEY = key;
+    const tpl = ALL_TEMPLATES[key];
 
-    document.querySelectorAll('.editor-tab-btn').forEach(btn => {
-        btn.classList.remove('border-blue-500', 'text-blue-600');
-        btn.classList.add('border-transparent', 'text-gray-500');
+    // Update card active states
+    document.querySelectorAll('.tpl-card').forEach(c => {
+        c.classList.toggle('active', c.dataset.key === key);
     });
-    const active = isEditor ? document.getElementById('editor-tab-btn') : document.getElementById('preview-tab-btn');
-    active.classList.add('border-blue-500', 'text-blue-600');
-    active.classList.remove('border-transparent', 'text-gray-500');
+
+    // Update info panel
+    document.getElementById('tpl-name').textContent = tpl.name;
+    document.getElementById('tpl-desc').textContent = tpl.description;
+    const upd = document.getElementById('tpl-updated');
+    if (tpl.updated_at) {
+        upd.textContent = 'Last saved: ' + tpl.updated_at;
+        upd.classList.remove('hidden');
+    } else {
+        upd.classList.add('hidden');
+    }
+
+    // Subject
+    document.getElementById('email-subject').value = tpl.subject;
+
+    // Enable toggle
+    document.getElementById('enabled-toggle').checked = !!tpl.enabled;
+
+    // Variables
+    const vl = document.getElementById('variables-list');
+    vl.innerHTML = '';
+    (tpl.variables || []).forEach(v => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '{{' + v + '}}';
+        btn.className = 'var-chip text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg font-mono';
+        btn.onclick = () => insertVariable('{{' + v + '}}');
+        vl.appendChild(btn);
+    });
+
+    // Reset button visibility
+    document.getElementById('reset-btn').classList.toggle('hidden', !tpl.is_custom);
+    document.getElementById('reset-btn').classList.toggle('flex', !!tpl.is_custom);
+
+    // Load into visual editor
+    loadVisualEditor(tpl.body);
 }
 
-// ── Variable insertion ────────────────────────────────────────────────────────
+// ── Insert variable at iframe cursor ─────────────────────────────────────────
 function insertVariable(varText) {
-    const ta = document.getElementById('email-body');
-    const start = ta.selectionStart, end = ta.selectionEnd;
-    ta.value = ta.value.slice(0, start) + varText + ta.value.slice(end);
-    ta.selectionStart = ta.selectionEnd = start + varText.length;
-    ta.focus();
-    updateCharCount();
+    const iframe = document.getElementById('visual-editor');
+    iframe.contentWindow.focus();
+    const sel = iframe.contentWindow.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+        // No cursor — append to end of body
+        const range = iframe.contentDocument.createRange();
+        range.selectNodeContents(iframe.contentDocument.body);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+    iframe.contentDocument.execCommand('insertText', false, varText);
 }
 
 // ── Save template ─────────────────────────────────────────────────────────────
 async function saveTemplate() {
     const subject = document.getElementById('email-subject').value.trim();
-    const body    = document.getElementById('email-body').value.trim();
+    const body    = getCleanHTML();
     const enabled = document.getElementById('enabled-toggle').checked ? '1' : '0';
+    if (!subject) { showToast('Subject line is required.', 'error'); return; }
 
-    if (!subject || !body) { showToast('Subject and body are required.', 'error'); return; }
-
-    const btn = document.querySelector('button[onclick="saveTemplate()"]');
+    const btn = document.getElementById('save-btn');
     const orig = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Saving…';
 
     const fd = new FormData();
     fd.append('action', 'save');
-    fd.append('template_key', ACTIVE_KEY);
+    fd.append('template_key', CURRENT_KEY);
     fd.append('subject', subject);
     fd.append('body', body);
     fd.append('enabled', enabled);
 
-    const res = await fetch('', { method: 'POST', body: fd });
+    const res  = await fetch('', { method: 'POST', body: fd });
     const data = await res.json();
     btn.disabled = false;
     btn.innerHTML = orig;
-
     showToast(data.message, data.success ? 'success' : 'error');
+
     if (data.success) {
-        // Show "Custom" badge without reload
-        document.querySelectorAll('[data-key="' + ACTIVE_KEY + '"]').forEach(el => el.setAttribute('data-custom', '1'));
+        ALL_TEMPLATES[CURRENT_KEY].is_custom = true;
+        ALL_TEMPLATES[CURRENT_KEY].subject   = subject;
+        ALL_TEMPLATES[CURRENT_KEY].body      = body;
+        // Show reset button
+        document.getElementById('reset-btn').classList.remove('hidden');
+        document.getElementById('reset-btn').classList.add('flex');
+        // Update card badge
+        const card = document.querySelector('.tpl-card[data-key="' + CURRENT_KEY + '"]');
+        if (card) {
+            const badge = card.querySelector('span.text-xs.font-medium');
+            if (badge) { badge.textContent = 'Custom'; badge.className = 'text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700'; }
+        }
     }
 }
 
 // ── Reset to default ──────────────────────────────────────────────────────────
 async function resetTemplate() {
-    if (!confirm('Reset this template to the default? Your custom changes will be lost.')) return;
+    if (!confirm('Reset to default? Your custom changes will be lost.')) return;
     const fd = new FormData();
     fd.append('action', 'reset');
-    fd.append('template_key', ACTIVE_KEY);
-    const res = await fetch('', { method: 'POST', body: fd });
+    fd.append('template_key', CURRENT_KEY);
+    const res  = await fetch('', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.success) {
+        ALL_TEMPLATES[CURRENT_KEY].is_custom = false;
+        ALL_TEMPLATES[CURRENT_KEY].subject   = data.subject;
+        ALL_TEMPLATES[CURRENT_KEY].body      = data.body;
         document.getElementById('email-subject').value = data.subject;
-        document.getElementById('email-body').value = data.body;
-        updateCharCount();
+        loadVisualEditor(data.body);
+        document.getElementById('reset-btn').classList.add('hidden');
+        document.getElementById('reset-btn').classList.remove('flex');
+        const card = document.querySelector('.tpl-card[data-key="' + CURRENT_KEY + '"]');
+        if (card) {
+            const badge = card.querySelector('span.text-xs.font-medium');
+            if (badge) { badge.textContent = 'Default'; badge.className = 'text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700'; }
+        }
         showToast('Template reset to default.', 'success');
-        setTimeout(() => location.reload(), 1000);
     } else {
         showToast(data.message || 'Reset failed.', 'error');
     }
@@ -648,11 +687,23 @@ async function resetTemplate() {
 document.getElementById('enabled-toggle').addEventListener('change', async function () {
     const fd = new FormData();
     fd.append('action', 'toggle_enabled');
-    fd.append('template_key', this.dataset.key);
+    fd.append('template_key', CURRENT_KEY);
     fd.append('enabled', this.checked ? '1' : '0');
-    const res = await fetch('', { method: 'POST', body: fd });
+    const res  = await fetch('', { method: 'POST', body: fd });
     const data = await res.json();
-    showToast(data.success ? (this.checked ? 'Template enabled.' : 'Template disabled.') : 'Error toggling template.', data.success ? 'success' : 'error');
+    if (data.success) {
+        ALL_TEMPLATES[CURRENT_KEY].enabled = this.checked ? 1 : 0;
+        // Update card badge
+        const card = document.querySelector('.tpl-card[data-key="' + CURRENT_KEY + '"]');
+        if (card) {
+            const badge = card.querySelector('span.text-xs.font-medium');
+            if (badge && !ALL_TEMPLATES[CURRENT_KEY].is_custom) {
+                badge.textContent = this.checked ? 'Default' : 'Off';
+                badge.className = 'text-xs font-medium px-2 py-0.5 rounded-full ' + (this.checked ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400');
+            }
+        }
+    }
+    showToast(data.success ? (this.checked ? 'Template enabled.' : 'Template disabled.') : 'Error toggling.', data.success ? 'success' : 'error');
 });
 
 // ── Test modal ────────────────────────────────────────────────────────────────
@@ -662,7 +713,8 @@ function closeTestModal() { document.getElementById('test-modal').classList.add(
 async function sendTestEmail() {
     const email   = document.getElementById('test-email-input').value.trim();
     const subject = document.getElementById('email-subject').value.trim();
-    const body    = document.getElementById('email-body').value.trim();
+    // Get clean iframe body content (browser junk stripped) — exactly what recipient sees
+    const body    = getCleanHTML();
     if (!email) { showToast('Please enter a recipient email.', 'error'); return; }
 
     const btn = document.getElementById('send-test-btn');
@@ -671,12 +723,12 @@ async function sendTestEmail() {
 
     const fd = new FormData();
     fd.append('action', 'send_test');
-    fd.append('template_key', ACTIVE_KEY);
+    fd.append('template_key', CURRENT_KEY);
     fd.append('test_email', email);
     fd.append('subject', subject);
     fd.append('body', body);
 
-    const res = await fetch('', { method: 'POST', body: fd });
+    const res  = await fetch('', { method: 'POST', body: fd });
     const data = await res.json();
     btn.disabled = false;
     btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send Test';
@@ -709,7 +761,8 @@ function showToast(msg, type = 'success') {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    updateCharCount();
+    // Load first template into visual editor on page load
+    switchTemplate(CURRENT_KEY);
 
     // Mobile sidebar toggle
     const btn = document.getElementById('mobile-menu-btn');
