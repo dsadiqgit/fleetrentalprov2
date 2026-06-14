@@ -791,106 +791,94 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     </section>
 
     <?php
-    elseif ($section === 'contact' && !($content['contact_hidden'] ?? 0)): ?>
-    <!-- Contact -->
-    <section id="contact" class="py-24 bg-gray-50">
-        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
-                <div class="grid lg:grid-cols-5">
-                    <div class="lg:col-span-2 bg-gray-900 p-12 text-white flex flex-col justify-between">
+    elseif ($section === 'testimonials' && !($content['testimonials_hidden'] ?? 0)): ?>
+    <!-- Customer Reviews -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                    <?= htmlspecialchars($content['testimonial_title'] ?? 'Customer reviews')?>
+                </h2>
+                <p class="text-gray-400 text-sm max-w-xl mx-auto leading-relaxed">
+                    <?= htmlspecialchars($content['testimonial_subtitle'] ?? 'Real stories from real drivers — see why people choose us and trust us time after time.')?>
+                </p>
+            </div>
+            <div id="reviews-carousel-prev" class="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory" style="scrollbar-width:none;-ms-overflow-style:none;">
+                <style>#reviews-carousel-prev::-webkit-scrollbar{display:none}</style>
+                <?php for ($i = 1; $i <= 3; $i++):
+                    $r_img   = $content["review{$i}_image"]  ?? "https://i.pravatar.cc/100?img={$i}";
+                    $r_name  = $content["review{$i}_name"]   ?? 'Happy Customer';
+                    $r_text  = $content["review{$i}_text"]   ?? 'Great experience renting! Highly recommend to anyone looking for a reliable and affordable car rental.';
+                    $r_stars = intval($content["review{$i}_stars"] ?? 5);
+                ?>
+                <div class="flex-none w-[280px] bg-white border border-gray-100 rounded-2xl p-6 shadow-sm snap-start">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="<?= htmlspecialchars($r_img)?>" alt="<?= htmlspecialchars($r_name)?>" class="w-11 h-11 rounded-full object-cover flex-shrink-0">
                         <div>
-                            <h2 class="text-3xl font-bold mb-8">
-                                <?= htmlspecialchars($content['contact_title'] ?? 'Get in Touch')?>
-                            </h2>
-                            <div class="space-y-8">
-                                <div class="flex items-start gap-4">
-                                    <div
-                                        class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path
-                                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                                                stroke-width="2"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-6">
-                                        <div>
-                                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Phone
-                                            </p>
-                                            <p class="text-lg">
-                                                <?= htmlspecialchars($company_phone ?: ($content['contact_phone'] ?? ''))?>
-                                            </p>
-                                        </div>
-                                        <?php if ($whatsapp_enabled && !empty($whatsapp_number)): ?>
-                                        <div>
-                                            <p class="text-xs font-bold text-green-400 uppercase tracking-widest mb-1">WhatsApp</p>
-                                            <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $whatsapp_number)?>" target="_blank" rel="noopener noreferrer" class="text-lg hover:text-green-400 transition"><?= htmlspecialchars($whatsapp_number)?></a>
-                                        </div>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="flex items-start gap-4">
-                                    <div
-                                        class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path
-                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                                stroke-width="2"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Email
-                                        </p>
-                                        <p class="text-lg">
-                                            <?= htmlspecialchars($content['contact_email'] ?? '')?>
-                                        </p>
-                                    </div>
-                                </div>
+                            <h4 class="font-bold text-gray-900 text-sm"><?= htmlspecialchars($r_name)?></h4>
+                            <div class="flex text-yellow-400 gap-0.5 mt-0.5">
+                                <?php for ($s = 0; $s < $r_stars; $s++): ?>
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                                <?php endfor; ?>
                             </div>
                         </div>
                     </div>
-                    <div class="lg:col-span-3 p-12">
-                        <form class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Your
-                                    Name</label>
-                                <input type="text"
-                                    class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition"
-                                    placeholder="John Doe">
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email
-                                    Address</label>
-                                <input type="email"
-                                    class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition"
-                                    placeholder="john@example.com">
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Phone
-                                    Number</label>
-                                <input type="tel"
-                                    class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition"
-                                    placeholder="+1 (555) 000-0000">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label
-                                    class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Message</label>
-                                <textarea rows="4"
-                                    class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition"
-                                    placeholder="How can we help?"></textarea>
-                            </div>
-                            <div class="md:col-span-2">
-                                <button
-                                    class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-100">Send
-                                    Message</button>
-                            </div>
-                        </form>
-                    </div>
+                    <p class="text-gray-500 text-sm leading-relaxed"><?= htmlspecialchars($r_text)?></p>
                 </div>
+                <?php endfor; ?>
             </div>
+            <div class="flex justify-end mt-5">
+                <button id="reviews-next-prev" class="w-9 h-9 rounded-full bg-gray-900 flex items-center justify-center text-white hover:bg-gray-700 transition shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
+        <script>(function(){var c=document.getElementById('reviews-carousel-prev');var n=document.getElementById('reviews-next-prev');if(n&&c)n.addEventListener('click',function(){c.scrollBy({left:300,behavior:'smooth'});});})()</script>
+    </section>
+
+    <?php
+    elseif ($section === 'contact' && !($content['contact_hidden'] ?? 0)): ?>
+    <!-- Have a question? -->
+    <?php
+    $contact_bg      = !empty($content['hero_image']) ? $content['hero_image'] : 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1920&q=80';
+    $contact_primary = $content['primary_color'] ?? '#2563eb';
+    ?>
+    <section id="contact" class="relative py-28 overflow-hidden">
+        <div class="absolute inset-0">
+            <img src="<?= htmlspecialchars($contact_bg)?>" alt="" class="w-full h-full object-cover">
+            <div class="absolute inset-0" style="background:rgba(0,0,0,0.78)"></div>
+        </div>
+        <div class="relative z-10 max-w-md mx-auto px-6">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mb-3">
+                    <?= htmlspecialchars($content['contact_title'] ?? 'Have a question?')?>
+                </h2>
+                <p class="text-white/60 text-sm leading-relaxed">
+                    <?= htmlspecialchars($content['contact_subtitle'] ?? 'Have a question or need help with your booking? Send us a message and our team will respond as soon as possible.')?>
+                </p>
+            </div>
+            <form class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Name</label>
+                    <input type="text" placeholder="Your name" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Phone number</label>
+                    <input type="tel" placeholder="+1 XX XX XX XXX" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Email address</label>
+                    <input type="email" placeholder="yourmail@gmail.com" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Describe your request</label>
+                    <textarea rows="4" placeholder="Enter your questions here..." class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm resize-none"></textarea>
+                </div>
+                <button type="button" class="w-full flex items-center justify-between px-5 py-3.5 rounded-lg font-semibold text-white text-sm mt-1 hover:opacity-90 transition" style="background-color: <?= htmlspecialchars($contact_primary)?>;">
+                    Request a call back
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </form>
         </div>
     </section>
     <?php

@@ -126,8 +126,8 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS website_content (
     review3_text TEXT,
     review3_image VARCHAR(500) DEFAULT 'https://i.pravatar.cc/60?img=3',
     review3_stars INT DEFAULT 5,
-    contact_title VARCHAR(255) DEFAULT 'Contact Us',
-    contact_subtitle VARCHAR(255) DEFAULT 'Get in touch for bookings and inquiries',
+    contact_title VARCHAR(255) DEFAULT 'Have a question?',
+    contact_subtitle VARCHAR(500) DEFAULT 'Have a question or need help with your booking? Send us a message and our team will respond as soon as possible.',
     contact_phone VARCHAR(50) DEFAULT '+1 (555) 123-4567',
     contact_email VARCHAR(100) DEFAULT 'info@yourcompany.com',
     contact_address TEXT,
@@ -1124,154 +1124,117 @@ endif; ?>
                 </div>
             </section>
             <!-- Testimonials Section -->
-            <section class="py-24 bg-white group/section <?=($content['testimonials_hidden'] ?? 0) ? 'hidden' : ''?>" id="section_testimonials" data-section-id="testimonials">
-                <!-- Section Controls -->
+            <section class="py-20 bg-white group/section relative <?=($content['testimonials_hidden'] ?? 0) ? 'hidden' : ''?>" data-section-id="testimonials">
                 <div class="absolute top-4 right-4 z-[60] opacity-0 group-hover/section:opacity-100 transition-opacity">
                     <button onclick="toggleSection('testimonials', 1)" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg flex items-center gap-2 text-xs font-bold">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         REMOVE
                     </button>
                 </div>
-                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="text-center mb-16">
-                        <h2 class="text-4xl font-extrabold text-gray-900 mb-4">
-                            <span class="editable block w-full h-full" data-field="testimonial_title" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit title</span>
-                                <?= htmlspecialchars($content['testimonial_title'] ?? 'Our Customers')?>
-                            </span>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-10">
+                        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 editable" data-field="testimonial_title" contenteditable="false">
+                            <span class="edit-tooltip">Click to edit</span>
+                            <?= htmlspecialchars($content['testimonial_title'] ?? 'Customer reviews')?>
                         </h2>
-                        <p class="text-gray-500 text-lg max-w-2xl mx-auto">
-                            <span class="editable block w-full h-full" data-field="testimonial_subtitle" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit subtitle</span>
-                                <?= htmlspecialchars($content['testimonial_subtitle'] ?? 'Experience shared by our happy clients')?>
-                            </span>
+                        <p class="text-gray-400 text-sm max-w-xl mx-auto leading-relaxed editable" data-field="testimonial_subtitle" contenteditable="false">
+                            <span class="edit-tooltip">Click to edit</span>
+                            <?= htmlspecialchars($content['testimonial_subtitle'] ?? 'Real stories from real drivers — see why people choose us and trust us time after time.')?>
                         </p>
                     </div>
-
-                    <div class="grid md:grid-cols-3 gap-8">
-                        <?php for ($i = 1; $i <= 3; $i++): ?>
-                        <div class="bg-gray-50 p-8 rounded-[32px] border border-gray-100 hover:bg-white hover:shadow-2xl transition duration-300">
-                            <div class="flex items-center gap-4 mb-6">
-                                <div class="editable-image" data-field="review<?= $i?>_image">
-                                    <span class="edit-tooltip">Click to change avatar</span>
-                                    <img src="<?= htmlspecialchars($content["review{$i}_image"] ?? "https://i.pravatar.cc/100?img=$i")?>" class="w-14 h-14 rounded-full object-cover ring-4 ring-white shadow-lg">
+                    <div id="reviews-carousel-bld" class="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory" style="scrollbar-width:none;-ms-overflow-style:none;">
+                        <style>#reviews-carousel-bld::-webkit-scrollbar{display:none}</style>
+                        <?php for ($i = 1; $i <= 3; $i++):
+                            $r_img   = $content["review{$i}_image"]  ?? "https://i.pravatar.cc/100?img={$i}";
+                            $r_name  = $content["review{$i}_name"]   ?? 'Happy Customer';
+                            $r_role  = $content["review{$i}_role"]   ?? 'Customer';
+                            $r_text  = $content["review{$i}_text"]   ?? 'Great experience renting! Highly recommend to anyone looking for a reliable and affordable car rental.';
+                            $r_stars = intval($content["review{$i}_stars"] ?? 5);
+                        ?>
+                        <div class="flex-none w-[280px] bg-white border border-gray-100 rounded-2xl p-6 shadow-sm snap-start">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="editable-image flex-shrink-0" data-field="review<?= $i?>_image">
+                                    <span class="edit-tooltip">Click to change</span>
+                                    <img src="<?= htmlspecialchars($r_img)?>" class="w-11 h-11 rounded-full object-cover">
                                 </div>
                                 <div>
-                                    <h4 class="font-bold text-gray-900">
-                                        <span class="editable block w-full h-full" data-field="review<?= $i?>_name" contenteditable="false">
-                                            <span class="edit-tooltip">Click to edit name</span>
-                                            <?= htmlspecialchars($content["review{$i}_name"] ?? 'Happy Customer')?>
-                                        </span>
+                                    <h4 class="font-bold text-gray-900 text-sm editable" data-field="review<?= $i?>_name" contenteditable="false">
+                                        <span class="edit-tooltip">Click to edit</span><?= htmlspecialchars($r_name)?>
                                     </h4>
-                                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">
-                                        <span class="editable block w-full h-full" data-field="review<?= $i?>_role" contenteditable="false">
-                                            <span class="edit-tooltip">Click to edit role</span>
-                                            <?= htmlspecialchars($content["review{$i}_role"] ?? 'Customer')?>
-                                        </span>
-                                    </p>
+                                    <div class="flex text-yellow-400 gap-0.5 mt-0.5">
+                                        <?php for ($s = 0; $s < $r_stars; $s++): ?>
+                                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                                        <?php endfor; ?>
+                                    </div>
                                 </div>
                             </div>
-                            <p class="text-gray-600 italic leading-relaxed mb-6">
-                                " <span class="editable inline-block" data-field="review<?= $i?>_text" contenteditable="false">
-                                    <span class="edit-tooltip">Click to edit review</span>
-                                    <?= htmlspecialchars($content["review{$i}_text"] ?? 'Great experience renting with FleetRentalPro! Highly recommend.')?>
-                                </span> "
+                            <p class="text-gray-500 text-sm leading-relaxed editable" data-field="review<?= $i?>_text" contenteditable="false">
+                                <span class="edit-tooltip">Click to edit</span><?= htmlspecialchars($r_text)?>
                             </p>
-                            <div class="flex text-yellow-400 gap-1">
-                                <?php for ($s = 0; $s < ($content["review{$i}_stars"] ?? 5); $s++): ?>
-                                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"></path>
-                                </svg>
-                                <?php
-            endfor; ?>
-                            </div>
                         </div>
-                        <?php
-        endfor; ?>
+                        <?php endfor; ?>
+                    </div>
+                    <div class="flex justify-end mt-5">
+                        <button id="reviews-next-bld" class="w-9 h-9 rounded-full bg-gray-900 flex items-center justify-center text-white hover:bg-gray-700 transition shadow-md">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
                     </div>
                 </div>
+                <script>(function(){var c=document.getElementById('reviews-carousel-bld');var n=document.getElementById('reviews-next-bld');if(n&&c)n.addEventListener('click',function(){c.scrollBy({left:300,behavior:'smooth'});});})()</script>
             </section>
 
             <?php
     elseif ($section === 'contact'): ?>
-            <!-- Contact Section -->
-            <section id="contact" class="py-24 bg-gray-50 group/section <?=($content['contact_hidden'] ?? 0) ? 'hidden' : ''?>" data-section-id="contact">
-                <!-- Section Controls -->
+            <!-- Have a question? Contact Section -->
+            <?php
+            $contact_bg      = !empty($content['hero_image']) ? $content['hero_image'] : 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1920&q=80';
+            $contact_primary = $content['primary_color'] ?? '#2563eb';
+            ?>
+            <section id="contact" class="relative py-24 overflow-hidden group/section <?=($content['contact_hidden'] ?? 0) ? 'hidden' : ''?>" data-section-id="contact">
                 <div class="absolute top-4 right-4 z-[60] opacity-0 group-hover/section:opacity-100 transition-opacity">
                     <button onclick="toggleSection('contact', 1)" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg flex items-center gap-2 text-xs font-bold">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         REMOVE
                     </button>
                 </div>
-                
-                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
-                        <div class="grid lg:grid-cols-5">
-                            <div class="lg:col-span-2 bg-gray-900 p-12 text-white flex flex-col justify-between">
-                                <div>
-                                    <h2 class="text-3xl font-bold mb-8">
-                                        <span class="editable block w-full h-full" data-field="contact_title" contenteditable="false">
-                                            <span class="edit-tooltip">Click to edit title</span>
-                                            <?= htmlspecialchars($content['contact_title'] ?? 'Get in Touch')?>
-                                        </span>
-                                    </h2>
-                                    <div class="space-y-8">
-                                        <div class="flex items-start gap-4">
-                                            <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" stroke-width="2"></path></svg>
-                                            </div>
-                                            <div>
-                                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Phone</p>
-                                                <p class="text-lg editable" data-field="contact_phone" contenteditable="false">
-                                                    <span class="edit-tooltip">Click to edit phone</span>
-                                                    <?= htmlspecialchars($content['contact_phone'] ?? '+1 (555) 123-4567')?>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-start gap-4">
-                                            <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="2"></path></svg>
-                                            </div>
-                                            <div>
-                                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Email</p>
-                                                <p class="text-lg editable" data-field="contact_email" contenteditable="false">
-                                                    <span class="edit-tooltip">Click to edit email</span>
-                                                    <?= htmlspecialchars($content['contact_email'] ?? 'info@yourcompany.com')?>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="lg:col-span-3 p-12">
-                                <form class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="md:col-span-2">
-                                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Your Name</label>
-                                        <input type="text" class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition" placeholder="John Doe">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
-                                        <input type="email" class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition" placeholder="john@example.com">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Phone Number</label>
-                                        <input type="tel" class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition" placeholder="+1 (555) 000-0000">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Message</label>
-                                        <textarea rows="4" class="w-full bg-gray-50 border-0 rounded-xl px-4 py-4 focus:ring-2 focus:ring-blue-600 transition" placeholder="How can we help?"></textarea>
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <button class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-100">Send Message</button>
-                                    </div>
-                                </form>
-                            </div>
+                <div class="absolute inset-0">
+                    <img src="<?= htmlspecialchars($contact_bg)?>" alt="" class="w-full h-full object-cover">
+                    <div class="absolute inset-0" style="background:rgba(0,0,0,0.78)"></div>
+                </div>
+                <div class="relative z-10 max-w-md mx-auto px-6">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-3">
+                            <span class="editable" data-field="contact_title" contenteditable="false">
+                                <span class="edit-tooltip">Click to edit</span>
+                                <?= htmlspecialchars($content['contact_title'] ?? 'Have a question?')?>
+                            </span>
+                        </h2>
+                        <p class="text-white/60 text-sm leading-relaxed editable" data-field="contact_subtitle" contenteditable="false">
+                            <span class="edit-tooltip">Click to edit</span>
+                            <?= htmlspecialchars($content['contact_subtitle'] ?? 'Have a question or need help with your booking? Send us a message and our team will respond as soon as possible.')?>
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Name</label>
+                            <input type="text" placeholder="Your name" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 text-sm">
                         </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Phone number</label>
+                            <input type="tel" placeholder="+1 XX XX XX XXX" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Email address</label>
+                            <input type="email" placeholder="yourmail@gmail.com" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Describe your request</label>
+                            <textarea rows="4" placeholder="Enter your questions here..." class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 text-sm resize-none"></textarea>
+                        </div>
+                        <button type="button" class="w-full flex items-center justify-between px-5 py-3.5 rounded-lg font-semibold text-white text-sm mt-1" style="background-color: <?= htmlspecialchars($contact_primary)?>;">
+                            Request a call back
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -1281,54 +1244,84 @@ endif; ?>
 endforeach; ?>
 
             <!-- Footer -->
-            <footer class="bg-gray-900 text-white py-20">
-                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="grid md:grid-cols-4 gap-12 mb-16 border-b border-gray-800 pb-16">
-                        <div class="col-span-2">
-                             <div class="flex items-center space-x-3 mb-8">
-                                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/20">⚡</div>
-                                <span class="text-2xl font-black tracking-tight">
-                                    <span class="editable" data-field="company_name" contenteditable="false">
-                                        <span class="edit-tooltip">Click to edit company name</span>
-                                        <?= htmlspecialchars($content['company_name'] ?? 'FleetRentalPro')?>
-                                    </span>
+            <?php
+            $bld_phone   = $content['contact_phone'] ?? '';
+            $bld_email   = $content['contact_email'] ?? '';
+            $bld_address = $content['contact_address'] ?? '';
+            $bld_name    = $content['company_name'] ?? 'Your Company';
+            $bld_map_q   = urlencode($bld_address ?: $bld_name);
+            ?>
+            <footer class="bg-gray-50 border-t border-gray-200 pt-14 pb-8">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+                        <!-- Col 1: Logo + Newsletter + Social -->
+                        <div>
+                            <div class="flex items-center gap-3 mb-5">
+                                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-black text-xs">⚡</div>
+                                <span class="font-bold text-gray-900 text-base editable" data-field="company_name" contenteditable="false">
+                                    <span class="edit-tooltip">Click to edit</span>
+                                    <?= htmlspecialchars($bld_name)?>
                                 </span>
                             </div>
-                            <p class="text-gray-400 text-lg leading-relaxed max-w-sm">
-                                Providing premium vehicle rental services across the globe. Experience luxury, comfort, and reliability with every mile.
+                            <p class="text-sm text-gray-500 mb-2.5">Subscribe to the newsletter</p>
+                            <div class="flex gap-2 mb-6">
+                                <input type="email" placeholder="yourmail@gmail.com" class="flex-1 min-w-0 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm">
+                                <button class="flex-shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold">
+                                    Subscribe
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                </button>
+                            </div>
+                            <div class="flex gap-3">
+                                <a href="#" class="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                                </a>
+                                <a href="#" class="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                </a>
+                                <a href="#" class="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Col 2: Working hours + Contacts -->
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm mb-4">Working hours</h4>
+                            <div class="space-y-2.5 text-sm text-gray-500 mb-7">
+                                <div class="flex justify-between gap-4"><span>Monday - Friday:</span><span class="font-medium text-gray-700 whitespace-nowrap">08:00 AM - 20:00 PM</span></div>
+                                <div class="flex justify-between gap-4"><span>Saturday:</span><span class="font-medium text-gray-700 whitespace-nowrap">09:00 AM - 18:00 PM</span></div>
+                                <div class="flex justify-between gap-4"><span>Sunday:</span><span class="font-medium text-gray-700 whitespace-nowrap">10:00 AM - 16:00 PM</span></div>
+                            </div>
+                            <h4 class="font-bold text-gray-900 text-sm mb-3">Contacts</h4>
+                            <div class="space-y-1.5 text-sm text-gray-500">
+                                <p class="editable" data-field="contact_phone" contenteditable="false"><span class="edit-tooltip">Click to edit</span><?= htmlspecialchars($bld_phone ?: '+1 (555) 123-4567')?></p>
+                                <p class="editable" data-field="contact_email" contenteditable="false"><span class="edit-tooltip">Click to edit</span><?= htmlspecialchars($bld_email ?: 'info@yourcompany.com')?></p>
+                            </div>
+                        </div>
+                        <!-- Col 3: Useful links + Location -->
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm mb-4">Useful links</h4>
+                            <ul class="space-y-2.5 text-sm text-gray-500 mb-7">
+                                <li><a href="#" class="hover:text-gray-900 transition">FAQs</a></li>
+                                <li><a href="#" class="hover:text-gray-900 transition">Privacy policy</a></li>
+                                <li><a href="#" class="hover:text-gray-900 transition">Terms &amp; conditions</a></li>
+                                <li><a href="#" class="hover:text-gray-900 transition">Insurance Details</a></li>
+                                <li><a href="#" class="hover:text-gray-900 transition">Rental agreement</a></li>
+                            </ul>
+                            <h4 class="font-bold text-gray-900 text-sm mb-2">Our location:</h4>
+                            <p class="text-sm text-gray-500 editable" data-field="contact_address" contenteditable="false">
+                                <span class="edit-tooltip">Click to edit</span>
+                                <?= htmlspecialchars($bld_address ?: '123 Main Street, Your City')?>
                             </p>
                         </div>
-                        <div>
-                            <h4 class="text-sm font-bold uppercase tracking-widest text-blue-400 mb-8">Navigation</h4>
-                            <ul class="space-y-4 text-gray-500 font-medium">
-                                <li><a href="#" class="hover:text-white transition">Home</a></li>
-                                <li><a href="#vehicles" class="hover:text-white transition">Our Fleet</a></li>
-                                <li><a href="#about" class="hover:text-white transition">About Us</a></li>
-                                <li><a href="#contact" class="hover:text-white transition">Contact</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-bold uppercase tracking-widest text-blue-400 mb-8">Support</h4>
-                            <ul class="space-y-4 text-gray-500 font-medium">
-                                <li><a href="#" class="hover:text-white transition">Help Center</a></li>
-                                <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
-                                <li><a href="#" class="hover:text-white transition">Terms of Service</a></li>
-                            </ul>
+                        <!-- Col 4: Map -->
+                        <div class="rounded-xl overflow-hidden border border-gray-200" style="height:220px;">
+                            <iframe src="https://maps.google.com/maps?q=<?= $bld_map_q?>&output=embed&z=14"
+                                class="w-full h-full border-0" loading="lazy"></iframe>
                         </div>
                     </div>
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-8">
-                        <p class="text-gray-500 font-medium text-sm">
-                            &copy; <?= date('Y')?> <?= htmlspecialchars($content['company_name'] ?? 'FleetRentalPro')?>. All rights reserved.
-                        </p>
-                        <div class="flex gap-6">
-                            <?php foreach (['facebook', 'twitter', 'instagram', 'linkedin'] as $social): ?>
-                            <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white transition">
-                                <span class="sr-only"><?= ucfirst($social)?></span>
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 5.523 4.477 10 10 10s10-4.477 10-10c0-5.523-4.477-10-10-10z"/></svg>
-                            </a>
-                            <?php
-endforeach; ?>
-                        </div>
+                    <div class="border-t border-gray-200 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-400">
+                        <p>&copy; <?= date('Y')?> <?= htmlspecialchars($bld_name)?>. All rights reserved.</p>
+                        <p>Built with <span class="text-blue-500">FleetRentalPro</span></p>
                     </div>
                 </div>
             </footer>
