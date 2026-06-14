@@ -602,61 +602,67 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     $service_primary = $content['primary_color'] ?? '#2563eb';
     $service_cards = [
         [
-            'title_field' => 'service1_title',
-            'text_field' => 'service1_text',
-            'icon_field' => 'service1_icon',
-            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5-4.5v5.25c0 5.25-3.7 10.2-9 11.5-5.3-1.3-9-6.25-9-11.5V5.5L12 3l9 2.5z" /></svg>'
+            'title_field'   => 'service1_title',
+            'text_field'    => 'service1_text',
+            'icon_field'    => 'service1_icon',
+            'default_title' => 'Full Insurance Included',
+            'default_text'  => 'All our cars come with comprehensive insurance so you\'re covered for any unexpected events.',
+            'default_svg'   => '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5-4.5v5.25c0 5.25-3.7 10.2-9 11.5-5.3-1.3-9-6.25-9-11.5V5.5L12 3l9 2.5z"/></svg>'
         ],
         [
-            'title_field' => 'service2_title',
-            'text_field' => 'service2_text',
-            'icon_field' => 'service2_icon',
-            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10m-12 7h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>'
+            'title_field'   => 'service2_title',
+            'text_field'    => 'service2_text',
+            'icon_field'    => 'service2_icon',
+            'default_title' => 'Flexible Rental Periods',
+            'default_text'  => 'Rent a car for a few hours, a day, or a week — our service adapts to your schedule.',
+            'default_svg'   => '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10m-12 7h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z"/></svg>'
         ],
         [
-            'title_field' => 'service3_title',
-            'text_field' => 'service3_text',
-            'icon_field' => 'service3_icon',
-            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
-        ]
+            'title_field'   => 'service3_title',
+            'text_field'    => 'service3_text',
+            'icon_field'    => 'service3_icon',
+            'default_title' => 'Transparent Pricing',
+            'default_text'  => 'No hidden fees or surprises — what you see is what you pay. All costs clearly displayed upfront.',
+            'default_svg'   => '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+        ],
+        [
+            'title_field'   => 'service4_title',
+            'text_field'    => 'service4_text',
+            'icon_field'    => 'service4_icon',
+            'default_title' => 'Well-Maintained Fleet',
+            'default_text'  => 'Choose from our clean, reliable, and fully serviced vehicles. Every car is regularly checked to ensure safety.',
+            'default_svg'   => '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
+        ],
     ];
     ?>
-    <section id="services" class="py-24 relative overflow-hidden" style="--service-primary: <?= htmlspecialchars($service_primary, ENT_QUOTES) ?>; background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.07), transparent 45%), linear-gradient(130deg, #030a1c 0%, #061a3d 50%, #020712 100%);">
-        <div class="absolute inset-0 pointer-events-none">
-            <div class="w-72 h-72 bg-[rgba(255,255,255,0.08)] blur-[140px] rounded-full absolute -top-16 -left-10"></div>
-            <div class="w-80 h-80 bg-[rgba(37,99,235,0.25)] blur-[160px] rounded-full absolute bottom-0 right-0"></div>
-        </div>
-        <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase mb-4" style="color: var(--service-primary, #2563eb);">
-                <?= htmlspecialchars($content['services_title'] ?? 'Our Services')?>
-            </p>
-            <h2 class="text-3xl sm:text-4xl lg:text-[42px] font-bold text-white leading-tight">
-                <?= htmlspecialchars($content['services_subtitle'] ?? 'Our Premier services for your car rental needs')?>
-            </h2>
-            <p class="text-blue-100/80 text-base sm:text-lg leading-relaxed mt-6">
-                <?= htmlspecialchars($content['services_description'] ?? 'We take pride in providing top-notch solutions for a seamless rental experience you can trust')?>
-            </p>
-        </div>
-
-        <div class="relative z-10 mt-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-3 gap-6">
+    <section id="services" class="py-20" style="background-color: <?= htmlspecialchars($service_primary, ENT_QUOTES) ?>;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-14">
+                <h2 class="text-3xl sm:text-[38px] font-bold text-white leading-tight mb-4">
+                    <?= htmlspecialchars($content['services_subtitle'] ?? 'Why choose us?')?>
+                </h2>
+                <p class="text-white/70 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
+                    <?= htmlspecialchars($content['services_description'] ?? 'Experience hassle-free car rental with transparent pricing, reliable vehicles, and customer-first service you can truly trust.')?>
+                </p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <?php foreach ($service_cards as $card):
-                    $icon_value = trim($content[$card['icon_field']] ?? '');
-                    $title_value = $content[$card['title_field']] ?? 'Premium Service';
-                    $text_value = $content[$card['text_field']] ?? '';
+                    $icon_value  = trim($content[$card['icon_field']] ?? '');
+                    $title_value = $content[$card['title_field']] ?? $card['default_title'];
+                    $text_value  = $content[$card['text_field']] ?? $card['default_text'];
                 ?>
-                <div class="rounded-3xl p-8 border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_35px_60px_rgba(3,7,18,0.55)] hover:border-white/30 hover:-translate-y-1.5 transition-all duration-300">
-                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white bg-white/10 border border-white/10 shadow-[0_20px_30px_rgba(37,99,235,0.25)]">
+                <div class="rounded-2xl p-7 bg-white/10 hover:bg-white/[0.15] transition-colors duration-200">
+                    <div class="w-12 h-12 flex items-center justify-center mb-5">
                         <?php if (!empty($icon_value)): ?>
-                            <img src="<?= htmlspecialchars($icon_value)?>" alt="<?= htmlspecialchars($title_value)?> icon" class="w-10 h-10 object-contain drop-shadow-[0_8px_20px_rgba(37,99,235,0.45)]">
+                            <img src="<?= htmlspecialchars($icon_value)?>" alt="<?= htmlspecialchars($title_value)?>" class="w-10 h-10 object-contain brightness-0 invert">
                         <?php else: ?>
                             <?= $card['default_svg'] ?>
                         <?php endif; ?>
                     </div>
-                    <h3 class="text-white text-xl font-semibold mt-6">
+                    <h3 class="text-white font-bold text-[17px] leading-snug mb-3">
                         <?= htmlspecialchars($title_value)?>
                     </h3>
-                    <p class="text-blue-100/80 leading-relaxed mt-3">
+                    <p class="text-white/70 text-sm leading-relaxed">
                         <?= htmlspecialchars($text_value)?>
                     </p>
                 </div>
