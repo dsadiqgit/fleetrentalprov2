@@ -652,7 +652,7 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
             },
             return: {
                 title: 'Late Return',
-                content: 'If the Renter doesn\'t return the Vehicle on time, a late fee of <strong>$20 per hour</strong> will be charged. The Owner may report the Vehicle as stolen if it\'s not returned within <strong>24 hours after the scheduled return time</strong>.'
+                content: 'If the Renter doesn't return the Vehicle on time, a late fee of <strong>$20 per hour</strong> will be charged. The Owner may report the Vehicle as stolen if it\'s not returned within <strong>24 hours after the scheduled return time</strong>.'
             },
             termination: {
                 title: 'Termination of Agreement',

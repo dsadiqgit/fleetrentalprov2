@@ -147,6 +147,18 @@ try {
 catch (PDOException $e) { /* Column might exist */
 }
 
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN whatsapp_number VARCHAR(50) DEFAULT ''");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
+try {
+    @$pdo->exec("ALTER TABLE tenant_settings ADD COLUMN whatsapp_enabled TINYINT(1) DEFAULT 0");
+}
+catch (PDOException $e) { /* Column might exist */
+}
+
 // Update schema for users to support team member signature
 try {
     @$pdo->exec("ALTER TABLE users ADD COLUMN signature_data LONGTEXT NULL");
@@ -225,6 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $company_name = sanitize($_POST['company_name'] ?? '');
                 $company_address = sanitize($_POST['company_address'] ?? '');
                 $phone = sanitize($_POST['phone'] ?? '');
+                $whatsapp_number = sanitize($_POST['whatsapp_number'] ?? '');
+                $whatsapp_enabled = isset($_POST['whatsapp_enabled']) ? 1 : 0;
                 $company_email = sanitize($_POST['company_email'] ?? '');
                 $company_website = sanitize($_POST['company_website'] ?? '');
 
@@ -279,8 +293,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt = $pdo->prepare("UPDATE tenants SET name = ?, logo = ? WHERE id = ?");
                         $stmt->execute([$company_name, $logo_path, $_SESSION['tenant_id']]);
 
-                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ?, company_email = ?, company_website = ? WHERE tenant_id = ?");
-                        $stmt->execute([$company_address, $phone, $company_email, $company_website, $_SESSION['tenant_id']]);
+                        $stmt = $pdo->prepare("UPDATE tenant_settings SET company_address = ?, company_phone = ?, whatsapp_number = ?, whatsapp_enabled = ?, company_email = ?, company_website = ? WHERE tenant_id = ?");
+                        $stmt->execute([$company_address, $phone, $whatsapp_number, $whatsapp_enabled, $company_email, $company_website, $_SESSION['tenant_id']]);
 
                         $success = 'Company information updated successfully!';
                         if ($logo_uploaded) {
@@ -1028,10 +1042,28 @@ endif; ?>
                         </div>
                     </div>
 
-                    <!-- Company Number -->
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Company number</label>
-                        <input type="tel" name="phone" value="<?= htmlspecialchars($settings['company_phone'] ?? '')?>" maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter up to 12 digits">
+                    <!-- Company Number & WhatsApp Number -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Company number</label>
+                            <input type="tel" name="phone" value="<?= htmlspecialchars($settings['company_phone'] ?? '')?>" maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter up to 12 digits">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">WhatsApp number</label>
+                            <input type="tel" name="whatsapp_number" value="<?= htmlspecialchars($settings['whatsapp_number'] ?? '')?>" maxlength="12" pattern="[0-9]{1,12}" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter WhatsApp number">
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Toggle -->
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-5 py-4">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Enable WhatsApp chat button</p>
+                            <p class="text-xs text-gray-500 mt-0.5">Show the floating WhatsApp button on your public website.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="whatsapp_enabled" value="1" <?= !empty($settings['whatsapp_enabled']) ? 'checked' : ''?> class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
                     </div>
 
                     <!-- Company Email -->

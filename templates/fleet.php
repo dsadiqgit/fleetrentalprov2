@@ -545,7 +545,8 @@ endif; ?>
             <?php
 else: ?>
             <?php
-            $whatsapp_phone = preg_replace('/\D/', '', $tenant['company_phone'] ?? $settings['company_phone'] ?? '');
+            $wa_available = !empty($settings['whatsapp_enabled']) && !empty($settings['whatsapp_number']);
+            $whatsapp_phone = $wa_available ? preg_replace('/\D/', '', $settings['whatsapp_number']) : '';
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
             $base_url = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '');
             ?>

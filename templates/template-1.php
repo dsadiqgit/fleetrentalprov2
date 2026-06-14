@@ -10,6 +10,14 @@ $stmt = $pdo->prepare("SELECT * FROM website_content WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
 $content = $stmt->fetch();
 
+// Get tenant settings for phone / WhatsApp
+$stmt = $pdo->prepare("SELECT company_phone, whatsapp_number, whatsapp_enabled FROM tenant_settings WHERE tenant_id = ?");
+$stmt->execute([$tenant_id]);
+$ts = $stmt->fetch() ?: [];
+$company_phone = $ts['company_phone'] ?? '';
+$whatsapp_number = $ts['whatsapp_number'] ?? '';
+$whatsapp_enabled = !empty($ts['whatsapp_enabled']);
+
 // Use defaults if no content exists
 if (!$content) {
     $content = [
@@ -258,7 +266,8 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
             <!-- Carousel -->
             <div id="fleet-carousel" class="flex gap-5 overflow-x-auto pb-2" style="-ms-overflow-style:none;scrollbar-width:none;">
                 <?php
-                $whatsapp_phone = preg_replace('/\D/', '', $tenant['company_phone'] ?? $content['contact_phone'] ?? '');
+                $wa_available = $whatsapp_enabled && !empty($whatsapp_number);
+                $wa_number = $wa_available ? preg_replace('/\D/', '', $whatsapp_number) : '';
                 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
                 $base_url = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '');
                 foreach ($featured_vehicles as $vehicle):
@@ -318,9 +327,9 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                                 <span class="text-sm text-gray-400">/day</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <?php if (!empty($whatsapp_phone)): ?>
+                                <?php if (!empty($wa_number)): ?>
                                 <button type="button"
-                                    onclick="event.preventDefault(); event.stopPropagation(); window.open('https://wa.me/<?= $whatsapp_phone ?>?text=<?= rawurlencode('I would like to enquire about the ' . $vehicle['brand'] . ' ' . $vehicle['model'] . ' - ' . $base_url . '/templates/vehicle-details.php?id=' . $vehicle['id']) ?>', '_blank');"
+                                    onclick="event.preventDefault(); event.stopPropagation(); window.open('https://wa.me/<?= $wa_number ?>?text=<?= rawurlencode('I would like to enquire about the ' . $vehicle['brand'] . ' ' . $vehicle['model'] . ' - ' . $base_url . '/templates/vehicle-details.php?id=' . $vehicle['id']) ?>', '_blank');"
                                     class="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center hover:opacity-90 transition-opacity shrink-0"
                                     title="Enquire on WhatsApp">
                                     <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -425,6 +434,68 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                     <p class="text-gray-400 leading-relaxed editable" data-field="service3_text">
                         <?= htmlspecialchars($content['service3_text'] ?? 'We understand that the journey does not always run smoothly. Therefore, our customer support team is ready to help you 24/7.')?>
                     </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQs Section -->
+    <section class="bg-gray-50 py-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-14">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+                    Frequently Asked <span class="text-[var(--primary-color,#2563eb)]">Questions</span>
+                </h2>
+                <p class="mt-4 text-gray-500 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
+                    Everything you need to know about renting with us. Can't find what you\'re looking for? Reach out to our team.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-5 gap-10 items-start">
+                <!-- Accordion -->
+                <div class="lg:col-span-3 space-y-4">
+                    <?php
+                    $faq_items = [
+                        ['q' => 'What documents do I need to rent a car?', 'a' => 'You will need a valid driving licence, proof of address, and a credit or debit card in the driver\'s name. International drivers may need an IDP.'],
+                        ['q' => 'Can I modify or cancel my booking?', 'a' => 'Yes. You can cancel or modify your booking free of charge up to 24 hours before the scheduled pick-up time.'],
+                        ['q' => 'Is insurance included in the rental price?', 'a' => 'Third-party insurance is included as standard. Comprehensive and excess-waiver options are available at checkout.'],
+                        ['q' => 'What is the fuel policy?', 'a' => 'All vehicles are supplied with a full tank and should be returned with a full tank to avoid refuelling charges.'],
+                        ['q' => 'Do you offer delivery and collection?', 'a' => 'Yes. We can deliver to your home, hotel, or airport. Charges vary by distance and are shown during checkout.'],
+                    ];
+                    foreach ($faq_items as $i => $faq):
+                    ?>
+                    <div class="faq-item bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-sm">
+                        <button type="button" onclick="toggleFaq(<?= $i ?>)" class="faq-trigger w-full flex items-center justify-between px-6 py-5 text-left focus:outline-none">
+                            <span class="font-semibold text-gray-900 text-sm sm:text-base pr-4"><?= htmlspecialchars($faq['q']) ?></span>
+                            <svg id="faq-icon-<?= $i ?>" class="w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="faq-body-<?= $i ?>" class="faq-body hidden px-6 pb-5">
+                            <p class="text-gray-500 text-sm leading-relaxed"><?= htmlspecialchars($faq['a']) ?></p>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Contact Card -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white border border-gray-200 rounded-2xl p-8 text-center sticky top-24">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"></path>
+                                <circle cx="9" cy="10" r="1.5"></circle>
+                                <circle cx="15" cy="10" r="1.5"></circle>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Can't find answer to your question?</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                            Didn't find what you were looking for? Our team is ready to help and will respond as quickly as possible with clear, helpful answers tailored to your needs.
+                        </p>
+                        <a href="<?= $tenant_home ?>#contact" class="inline-flex items-center justify-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30">
+                            Get in Touch
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -548,12 +619,20 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                                                 stroke-width="2"></path>
                                         </svg>
                                     </div>
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Phone
-                                        </p>
-                                        <p class="text-lg">
-                                            <?= htmlspecialchars($content['contact_phone'] ?? '')?>
-                                        </p>
+                                    <div class="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Phone
+                                            </p>
+                                            <p class="text-lg">
+                                                <?= htmlspecialchars($company_phone ?: ($content['contact_phone'] ?? ''))?>
+                                            </p>
+                                        </div>
+                                        <?php if ($whatsapp_enabled && !empty($whatsapp_number)): ?>
+                                        <div>
+                                            <p class="text-xs font-bold text-green-400 uppercase tracking-widest mb-1">WhatsApp</p>
+                                            <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $whatsapp_number)?>" target="_blank" rel="noopener noreferrer" class="text-lg hover:text-green-400 transition"><?= htmlspecialchars($whatsapp_number)?></a>
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-4">

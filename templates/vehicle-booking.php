@@ -374,14 +374,18 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                         <div class="flex items-center gap-2">
                             <?php
                             $raw_phone = $settings['company_phone'] ?? '';
-                            $clean_phone = preg_replace('/[^0-9]/', '', $raw_phone);
+                            $wa_num = $settings['whatsapp_number'] ?? '';
+                            $wa_enabled = !empty($settings['whatsapp_enabled']);
+                            $clean_wa = preg_replace('/[^0-9]/', '', $wa_num);
                             ?>
-                            <?php if (!empty($clean_phone)): ?>
-                            <a href="https://wa.me/<?= htmlspecialchars($clean_phone) ?>" target="_blank" class="p-2.5 bg-gray-100 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors flex items-center justify-center text-gray-500" title="Chat on WhatsApp">
+                            <?php if ($wa_enabled && !empty($clean_wa)): ?>
+                            <a href="https://wa.me/<?= htmlspecialchars($clean_wa) ?>" target="_blank" class="p-2.5 bg-gray-100 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors flex items-center justify-center text-gray-500" title="Chat on WhatsApp">
                                 <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M12.004 2C6.51 2 2.014 6.509 2.014 12c0 2.18.7 4.21 1.89 5.87L2.5 22l4.25-1.38c1.61 1.07 3.53 1.69 5.59 1.69 5.494 0 9.99-4.509 9.99-10s-4.496-10-9.99-10zm5.82 14.16c-.25.7-1.46 1.36-2.02 1.42-.49.05-1.12.06-1.81-.16-.43-.14-.98-.35-1.57-.61-2.52-1.1-4.14-3.66-4.27-3.83-.13-.17-.99-1.32-.99-2.52 0-1.2.62-1.79.84-2.03.22-.24.49-.3.66-.3.17 0 .34.01.49.01.16 0 .37-.06.58.46.22.53.75 1.83.81 1.95.07.12.11.27.03.43-.08.17-.16.27-.27.4-.11.13-.24.3-.34.4-.11.12-.23.25-.1.46.13.21.58.96 1.25 1.57.86.77 1.58 1.01 1.8 1.12.22.1.35.09.48-.06.13-.15.56-.65.71-.88.15-.22.3-.19.51-.11.21.08 1.34.63 1.57.74.23.11.38.16.44.25.06.09.06.54-.19 1.24z"/>
                                 </svg>
                             </a>
+                            <?php endif; ?>
+                            <?php if (!empty($raw_phone)): ?>
                             <a href="tel:<?= htmlspecialchars($raw_phone) ?>" class="p-2.5 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors flex items-center justify-center text-gray-500" title="Call Us">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
