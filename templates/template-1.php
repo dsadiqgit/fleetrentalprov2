@@ -45,7 +45,7 @@ if (!$content) {
 $sections_order_json = $content['sections_order'] ?? '[]';
 $sections_order = json_decode($sections_order_json, true);
 if (empty($sections_order)) {
-    $sections_order = ["hero", "vehicles", "services", "about", "testimonials", "contact"];
+    $sections_order = ["hero", "vehicles", "how_it_works", "services", "about", "testimonials", "contact"];
 }
 
 // Ensure 'services' is in the order for existing tenants
@@ -55,6 +55,15 @@ if (!in_array('services', $sections_order)) {
         array_splice($sections_order, $v_index + 1, 0, 'services');
     } else {
         $sections_order[] = 'services';
+    }
+}
+// Ensure 'how_it_works' is in the order for existing tenants
+if (!in_array('how_it_works', $sections_order)) {
+    $s_index = array_search('services', $sections_order);
+    if ($s_index !== false) {
+        array_splice($sections_order, $s_index, 0, 'how_it_works');
+    } else {
+        array_splice($sections_order, 2, 0, 'how_it_works');
     }
 }
 
@@ -369,6 +378,54 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
         if(n)n.addEventListener('click',function(){c.scrollBy({left:300,behavior:'smooth'});});
     })();
     </script>
+
+    <?php elseif ($section === 'how_it_works' && !($content['how_it_works_hidden'] ?? 0)): ?>
+    <!-- How It Works Section -->
+    <?php
+    $hiw_primary = $content['primary_color'] ?? '#2563eb';
+    $hiw_img     = !empty($content['how_it_works_image']) ? $content['how_it_works_image'] : 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=800&q=80';
+    $hiw_steps   = [
+        ['num' => 1, 'title' => $content['step1_title'] ?? 'Choose your vehicle',
+         'text'  => $content['step1_text'] ?? 'Browse our fleet and pick the car that suits your needs. Use filters to quickly find the perfect vehicle.'],
+        ['num' => 2, 'title' => $content['step2_title'] ?? 'Enter your contact details',
+         'text'  => $content['step2_text'] ?? 'Provide your personal information and rental details: full name, phone number, email address (optional), pick-up/drop-off location and date/time.'],
+        ['num' => 3, 'title' => $content['step3_title'] ?? 'Confirm details & payment',
+         'text'  => $content['step3_text'] ?? 'Choose your payment method (credit/debit card, online payment) and agree to the rental terms.'],
+        ['num' => 4, 'title' => $content['step4_title'] ?? 'Booking confirmation',
+         'text'  => $content['step4_text'] ?? 'Your booking is complete! You now have your car reserved and can contact us anytime if you need to make changes.'],
+    ];
+    ?>
+    <section id="how_it_works" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-14 items-center">
+                <div class="rounded-2xl overflow-hidden shadow-xl aspect-[4/3]">
+                    <img src="<?= htmlspecialchars($hiw_img)?>" alt="How it works" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                        <?= htmlspecialchars($content['how_it_works_title'] ?? 'How it works?')?>
+                    </h2>
+                    <p class="text-gray-500 text-base mb-10">
+                        <?= htmlspecialchars($content['how_it_works_subtitle'] ?? 'From choosing your car to hitting the road — our simple, step-by-step process makes booking fast, clear, and stress-free.')?>
+                    </p>
+                    <div class="relative space-y-8">
+                        <div class="absolute left-4 top-0 bottom-0 w-px bg-gray-200"></div>
+                        <?php foreach ($hiw_steps as $step): ?>
+                        <div class="flex gap-4 items-start">
+                            <div class="relative z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md" style="background-color: <?= htmlspecialchars($hiw_primary)?>;">
+                                <?= $step['num']?>
+                            </div>
+                            <div class="pt-1">
+                                <h3 class="font-bold text-gray-900 text-base mb-1"><?= htmlspecialchars($step['title'])?></h3>
+                                <p class="text-gray-500 text-sm leading-relaxed"><?= htmlspecialchars($step['text'])?></p>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <?php elseif ($section === 'services' && !($content['services_hidden'] ?? 0)): ?>
     <!-- Services Section -->

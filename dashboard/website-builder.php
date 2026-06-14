@@ -145,6 +145,18 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS website_content (
     stat_vehicles_label VARCHAR(100) DEFAULT 'Vehicles Available',
     stat_support_label VARCHAR(100) DEFAULT 'Customer Support',
     hero_button_text VARCHAR(100) DEFAULT 'Rent a Car',
+    how_it_works_hidden TINYINT(1) DEFAULT 0,
+    how_it_works_title VARCHAR(255) DEFAULT 'How it works?',
+    how_it_works_subtitle TEXT,
+    how_it_works_image VARCHAR(500) DEFAULT 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=800&q=80',
+    step1_title VARCHAR(255) DEFAULT 'Choose your vehicle',
+    step1_text TEXT,
+    step2_title VARCHAR(255) DEFAULT 'Enter your contact details',
+    step2_text TEXT,
+    step3_title VARCHAR(255) DEFAULT 'Confirm details & payment',
+    step3_text TEXT,
+    step4_title VARCHAR(255) DEFAULT 'Booking confirmation',
+    step4_text TEXT,
     services_title VARCHAR(255) DEFAULT 'Our Services',
     services_subtitle VARCHAR(255) DEFAULT 'Our Premier services for your car rental needs',
     services_description TEXT,
@@ -188,6 +200,18 @@ try {
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service3_title VARCHAR(255) DEFAULT '24/7 Support'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service3_text TEXT");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service3_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png'");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS how_it_works_hidden TINYINT(1) DEFAULT 0");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS how_it_works_title VARCHAR(255) DEFAULT 'How it works?'");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS how_it_works_subtitle TEXT");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS how_it_works_image VARCHAR(500) DEFAULT 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=800&q=80'");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step1_title VARCHAR(255) DEFAULT 'Choose your vehicle'");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step1_text TEXT");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step2_title VARCHAR(255) DEFAULT 'Enter your contact details'");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step2_text TEXT");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step3_title VARCHAR(255) DEFAULT 'Confirm details & payment'");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step3_text TEXT");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step4_title VARCHAR(255) DEFAULT 'Booking confirmation'");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS step4_text TEXT");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service4_title VARCHAR(255) DEFAULT 'Well-Maintained Fleet'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service4_text TEXT");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service4_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/3208/3208707.png'");
@@ -262,6 +286,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             'font_family', 'header_color', 'primary_color', 'secondary_color', 'text_color', 'background_color',
             'hero_hidden', 'vehicles_hidden', 'about_hidden', 'testimonials_hidden', 'contact_hidden',
             'stat_vehicles_label', 'stat_support_label', 'hero_button_text',
+            'how_it_works_hidden', 'how_it_works_title', 'how_it_works_subtitle', 'how_it_works_image',
+            'step1_title', 'step1_text', 'step2_title', 'step2_text',
+            'step3_title', 'step3_text', 'step4_title', 'step4_text',
             'services_title', 'services_subtitle', 'services_description',
             'service1_title', 'service1_text', 'service1_icon',
             'service2_title', 'service2_text', 'service2_icon',
@@ -591,10 +618,10 @@ $tenant_url = (ROOT_DOMAIN === 'localhost')
     <!-- Website Content -->
     <div class="builder-content" id="builderBody">
         <?php
-$sections_order_json = $content['sections_order'] ?? '["hero", "vehicles", "services", "about", "testimonials", "contact"]';
+$sections_order_json = $content['sections_order'] ?? '["hero", "vehicles", "how_it_works", "services", "about", "testimonials", "contact"]';
 $sections_order = json_decode($sections_order_json, true);
 if (!$sections_order || !is_array($sections_order)) {
-    $sections_order = ["hero", "vehicles", "services", "about", "testimonials", "contact"];
+    $sections_order = ["hero", "vehicles", "how_it_works", "services", "about", "testimonials", "contact"];
 }
 
 // Ensure 'services' is in the order for existing tenants
@@ -604,6 +631,15 @@ if (!in_array('services', $sections_order)) {
         array_splice($sections_order, $v_index + 1, 0, 'services');
     } else {
         $sections_order[] = 'services';
+    }
+}
+// Ensure 'how_it_works' is in the order for existing tenants
+if (!in_array('how_it_works', $sections_order)) {
+    $s_index = array_search('services', $sections_order);
+    if ($s_index !== false) {
+        array_splice($sections_order, $s_index, 0, 'how_it_works');
+    } else {
+        array_splice($sections_order, 2, 0, 'how_it_works');
     }
 }
 
@@ -870,6 +906,78 @@ endif; ?>
                 </div>
             </section>
             
+            <?php
+    elseif ($section === 'how_it_works'): ?>
+            <?php
+            $hiw_primary = $content['primary_color'] ?? '#2563eb';
+            $hiw_steps = [
+                ['num' => 1, 'title_field' => 'step1_title', 'text_field' => 'step1_text',
+                 'default_title' => 'Choose your vehicle',
+                 'default_text'  => 'Browse our fleet and pick the car that suits your needs. Use filters to quickly find the perfect vehicle.'],
+                ['num' => 2, 'title_field' => 'step2_title', 'text_field' => 'step2_text',
+                 'default_title' => 'Enter your contact details',
+                 'default_text'  => 'Provide your personal information and rental details: full name, phone number, email address (optional), pick-up/drop-off location and date/time.'],
+                ['num' => 3, 'title_field' => 'step3_title', 'text_field' => 'step3_text',
+                 'default_title' => 'Confirm details & payment',
+                 'default_text'  => 'Choose your payment method (credit/debit card, online payment) and agree to the rental terms.'],
+                ['num' => 4, 'title_field' => 'step4_title', 'text_field' => 'step4_text',
+                 'default_title' => 'Booking confirmation',
+                 'default_text'  => 'Your booking is complete! You now have your car reserved and can contact us anytime if you need to make changes.'],
+            ];
+            $hiw_img = $content['how_it_works_image'] ?? 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=800&q=80';
+            ?>
+            <section id="how_it_works" class="py-20 bg-white group/section relative <?=($content['how_it_works_hidden'] ?? 0) ? 'hidden' : ''?>" data-section-id="how_it_works">
+                <div class="absolute top-4 right-4 z-[60] opacity-0 group-hover/section:opacity-100 transition-opacity flex gap-3">
+                    <button onclick="toggleSection('how_it_works', 1)" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg flex items-center gap-2 text-xs font-bold">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        REMOVE
+                    </button>
+                </div>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid lg:grid-cols-2 gap-14 items-center">
+                        <!-- Left: Image -->
+                        <div class="editable-image relative rounded-2xl overflow-hidden shadow-xl aspect-[4/3]" data-field="how_it_works_image">
+                            <span class="edit-tooltip">Click to change image</span>
+                            <img src="<?= htmlspecialchars($hiw_img)?>" alt="How it works" class="w-full h-full object-cover">
+                        </div>
+                        <!-- Right: Steps -->
+                        <div>
+                            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 editable" data-field="how_it_works_title" contenteditable="false">
+                                <span class="edit-tooltip">Click to edit</span>
+                                <?= htmlspecialchars($content['how_it_works_title'] ?? 'How it works?')?>
+                            </h2>
+                            <p class="text-gray-500 text-base mb-10 editable" data-field="how_it_works_subtitle" contenteditable="false">
+                                <span class="edit-tooltip">Click to edit</span>
+                                <?= htmlspecialchars($content['how_it_works_subtitle'] ?? 'From choosing your car to hitting the road — our simple, step-by-step process makes booking fast, clear, and stress-free.')?>
+                            </p>
+                            <div class="relative space-y-8">
+                                <div class="absolute left-4 top-0 bottom-0 w-px bg-gray-200"></div>
+                                <?php foreach ($hiw_steps as $step):
+                                    $s_title = $content[$step['title_field']] ?? $step['default_title'];
+                                    $s_text  = $content[$step['text_field']]  ?? $step['default_text'];
+                                ?>
+                                <div class="flex gap-4 items-start">
+                                    <div class="relative z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md" style="background-color: <?= htmlspecialchars($hiw_primary)?>;">
+                                        <?= $step['num']?>
+                                    </div>
+                                    <div class="pt-1">
+                                        <h3 class="font-bold text-gray-900 text-base mb-1 editable" data-field="<?= $step['title_field']?>" contenteditable="false">
+                                            <span class="edit-tooltip">Click to edit</span>
+                                            <?= htmlspecialchars($s_title)?>
+                                        </h3>
+                                        <p class="text-gray-500 text-sm leading-relaxed editable" data-field="<?= $step['text_field']?>" contenteditable="false">
+                                            <span class="edit-tooltip">Click to edit</span>
+                                            <?= htmlspecialchars($s_text)?>
+                                        </p>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <?php
     elseif ($section === 'services'): ?>
             <?php
@@ -1435,6 +1543,11 @@ endif; ?>
                         <input type="checkbox" <?=($content['vehicles_hidden'] ?? 0) ? '' : 'checked'?>
                         onchange="toggleSection('vehicles', !this.checked)" class="w-4 h-4 text-blue-600 rounded">
                         <span class="text-sm font-medium text-gray-700">Vehicles Section</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                        <input type="checkbox" <?=($content['how_it_works_hidden'] ?? 0) ? '' : 'checked'?>
+                        onchange="toggleSection('how_it_works', !this.checked)" class="w-4 h-4 text-blue-600 rounded">
+                        <span class="text-sm font-medium text-gray-700">How It Works Section</span>
                     </label>
                     <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
                         <input type="checkbox" <?=($content['about_hidden'] ?? 0) ? '' : 'checked'?>
