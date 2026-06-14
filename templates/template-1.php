@@ -372,69 +372,69 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
 
     <?php elseif ($section === 'services' && !($content['services_hidden'] ?? 0)): ?>
     <!-- Services Section -->
-    <section id="services" class="py-24 bg-[#0F1219]">
-        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-8 items-start mb-16">
-                <div>
-                    <span class="text-blue-500 font-bold tracking-widest text-sm uppercase mb-4 block editable" data-field="services_title">
-                        <?= htmlspecialchars($content['services_title'] ?? 'Our Services')?>
-                    </span>
-                    <h2 class="text-[40px] leading-[1.2] font-bold text-white max-w-xl editable" data-field="services_subtitle">
-                        <?= htmlspecialchars($content['services_subtitle'] ?? 'Our Premier services for your car rental needs')?>
-                    </h2>
-                </div>
-                <div class="lg:pt-8">
-                    <p class="text-gray-400 text-lg leading-relaxed max-w-xl editable" data-field="services_description">
-                        <?= htmlspecialchars($content['services_description'] ?? 'We take pride in providing top-notch solutions! Our premier services ensure a seamless & simple car rental experience. offering cars that suit your preferences')?>
-                    </p>
-                </div>
-            </div>
+    <?php
+    $service_primary = $content['primary_color'] ?? '#2563eb';
+    $service_cards = [
+        [
+            'title_field' => 'service1_title',
+            'text_field' => 'service1_text',
+            'icon_field' => 'service1_icon',
+            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5-4.5v5.25c0 5.25-3.7 10.2-9 11.5-5.3-1.3-9-6.25-9-11.5V5.5L12 3l9 2.5z" /></svg>'
+        ],
+        [
+            'title_field' => 'service2_title',
+            'text_field' => 'service2_text',
+            'icon_field' => 'service2_icon',
+            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10m-12 7h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>'
+        ],
+        [
+            'title_field' => 'service3_title',
+            'text_field' => 'service3_text',
+            'icon_field' => 'service3_icon',
+            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+        ]
+    ];
+    ?>
+    <section id="services" class="py-24 relative overflow-hidden" style="--service-primary: <?= htmlspecialchars($service_primary, ENT_QUOTES) ?>; background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.07), transparent 45%), linear-gradient(130deg, #030a1c 0%, #061a3d 50%, #020712 100%);">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="w-72 h-72 bg-[rgba(255,255,255,0.08)] blur-[140px] rounded-full absolute -top-16 -left-10"></div>
+            <div class="w-80 h-80 bg-[rgba(37,99,235,0.25)] blur-[160px] rounded-full absolute bottom-0 right-0"></div>
+        </div>
+        <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase mb-4" style="color: var(--service-primary, #2563eb);">
+                <?= htmlspecialchars($content['services_title'] ?? 'Our Services')?>
+            </p>
+            <h2 class="text-3xl sm:text-4xl lg:text-[42px] font-bold text-white leading-tight">
+                <?= htmlspecialchars($content['services_subtitle'] ?? 'Our Premier services for your car rental needs')?>
+            </h2>
+            <p class="text-blue-100/80 text-base sm:text-lg leading-relaxed mt-6">
+                <?= htmlspecialchars($content['services_description'] ?? 'We take pride in providing top-notch solutions for a seamless rental experience you can trust')?>
+            </p>
+        </div>
 
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Service 1 -->
-                <div class="bg-[#1A1F29] p-10 rounded-[32px] border border-white/5 hover:border-blue-500/30 transition-all duration-300 group/card">
-                    <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-8 ring-8 ring-white/[0.02]">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                        </svg>
+        <div class="relative z-10 mt-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-6">
+                <?php foreach ($service_cards as $card):
+                    $icon_value = trim($content[$card['icon_field']] ?? '');
+                    $title_value = $content[$card['title_field']] ?? 'Premium Service';
+                    $text_value = $content[$card['text_field']] ?? '';
+                ?>
+                <div class="rounded-3xl p-8 border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_35px_60px_rgba(3,7,18,0.55)] hover:border-white/30 hover:-translate-y-1.5 transition-all duration-300">
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white bg-white/10 border border-white/10 shadow-[0_20px_30px_rgba(37,99,235,0.25)]">
+                        <?php if (!empty($icon_value)): ?>
+                            <img src="<?= htmlspecialchars($icon_value)?>" alt="<?= htmlspecialchars($title_value)?> icon" class="w-10 h-10 object-contain drop-shadow-[0_8px_20px_rgba(37,99,235,0.45)]">
+                        <?php else: ?>
+                            <?= $card['default_svg'] ?>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-4 editable" data-field="service1_title">
-                        <?= htmlspecialchars($content['service1_title'] ?? 'Well-Maintained Car')?>
+                    <h3 class="text-white text-xl font-semibold mt-6">
+                        <?= htmlspecialchars($title_value)?>
                     </h3>
-                    <p class="text-gray-400 leading-relaxed editable" data-field="service1_text">
-                        <?= htmlspecialchars($content['service1_text'] ?? 'Enjoy your trip in peace and comfort with our car rental which offers a well-maintained fleet, prioritize the health and safety of our vehicles')?>
+                    <p class="text-blue-100/80 leading-relaxed mt-3">
+                        <?= htmlspecialchars($text_value)?>
                     </p>
                 </div>
-
-                <!-- Service 2 -->
-                <div class="bg-[#1A1F29] p-10 rounded-[32px] border border-white/5 hover:border-blue-500/30 transition-all duration-300 group/card">
-                    <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-8 ring-8 ring-white/[0.02]">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-4 editable" data-field="service2_title">
-                        <?= htmlspecialchars($content['service2_title'] ?? 'Secure Payments')?>
-                    </h3>
-                    <p class="text-gray-400 leading-relaxed editable" data-field="service2_text">
-                        <?= htmlspecialchars($content['service2_text'] ?? 'With a safe and reliable payment system, you can continue your journey with peace of mind, without worrying about transaction security.')?>
-                    </p>
-                </div>
-
-                <!-- Service 3 -->
-                <div class="bg-[#1A1F29] p-10 rounded-[32px] border border-white/5 hover:border-blue-500/30 transition-all duration-300 group/card">
-                    <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-8 ring-8 ring-white/[0.02]">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-4 editable" data-field="service3_title">
-                        <?= htmlspecialchars($content['service3_title'] ?? '24/7 Support')?>
-                    </h3>
-                    <p class="text-gray-400 leading-relaxed editable" data-field="service3_text">
-                        <?= htmlspecialchars($content['service3_text'] ?? 'We understand that the journey does not always run smoothly. Therefore, our customer support team is ready to help you 24/7.')?>
-                    </p>
-                </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>

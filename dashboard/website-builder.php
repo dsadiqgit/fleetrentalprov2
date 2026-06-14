@@ -150,10 +150,13 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS website_content (
     services_description TEXT,
     service1_title VARCHAR(255) DEFAULT 'Well-Maintained Car',
     service1_text TEXT,
+    service1_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/942/942748.png',
     service2_title VARCHAR(255) DEFAULT 'Secure Payments',
     service2_text TEXT,
+    service2_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
     service3_title VARCHAR(255) DEFAULT '24/7 Support',
     service3_text TEXT,
+    service3_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
     services_hidden TINYINT(1) DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY unique_tenant (tenant_id),
@@ -175,10 +178,13 @@ try {
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS services_description TEXT");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service1_title VARCHAR(255) DEFAULT 'Well-Maintained Car'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service1_text TEXT");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service1_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/942/942748.png'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service2_title VARCHAR(255) DEFAULT 'Secure Payments'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service2_text TEXT");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service2_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service3_title VARCHAR(255) DEFAULT '24/7 Support'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service3_text TEXT");
+    $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS service3_icon VARCHAR(500) DEFAULT 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png'");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS services_hidden TINYINT(1) DEFAULT 0");
     $pdo->exec("ALTER TABLE website_content ADD COLUMN IF NOT EXISTS sections_order TEXT NULL");
 }
@@ -251,9 +257,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             'hero_hidden', 'vehicles_hidden', 'about_hidden', 'testimonials_hidden', 'contact_hidden',
             'stat_vehicles_label', 'stat_support_label', 'hero_button_text',
             'services_title', 'services_subtitle', 'services_description',
-            'service1_title', 'service1_text',
-            'service2_title', 'service2_text',
-            'service3_title', 'service3_text',
+            'service1_title', 'service1_text', 'service1_icon',
+            'service2_title', 'service2_text', 'service2_icon',
+            'service3_title', 'service3_text', 'service3_icon',
             'services_hidden'
         ];
 
@@ -859,89 +865,81 @@ endif; ?>
             
             <?php
     elseif ($section === 'services'): ?>
-            <!-- Services Section -->
-            <section id="services" class="py-24 bg-[#0F1219] group/section <?=($content['services_hidden'] ?? 0) ? 'hidden' : ''?>" data-section-id="services">
-                <!-- Section Controls -->
-                <div class="absolute top-4 right-4 z-[60] opacity-0 group-hover/section:opacity-100 transition-opacity">
+            <?php
+            $service_primary = $content['primary_color'] ?? '#2563eb';
+            $service_cards = [
+                [
+                    'title_field' => 'service1_title',
+                    'text_field' => 'service1_text',
+                    'icon_field' => 'service1_icon',
+                    'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5-4.5v5.25c0 5.25-3.7 10.2-9 11.5-5.3-1.3-9-6.25-9-11.5V5.5L12 3l9 2.5z" /></svg>'
+                ],
+                [
+                    'title_field' => 'service2_title',
+                    'text_field' => 'service2_text',
+                    'icon_field' => 'service2_icon',
+                    'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10m-12 7h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>'
+                ],
+                [
+                    'title_field' => 'service3_title',
+                    'text_field' => 'service3_text',
+                    'icon_field' => 'service3_icon',
+                    'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+                ]
+            ];
+            ?>
+            <section id="services" class="py-24 relative overflow-hidden group/section <?=($content['services_hidden'] ?? 0) ? 'hidden' : ''?>" data-section-id="services" style="background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.07), transparent 45%), linear-gradient(130deg, #030a1c 0%, #061a3d 50%, #020712 100%);">
+                <div class="absolute top-4 right-4 z-[60] opacity-0 group-hover/section:opacity-100 transition-opacity flex gap-3">
                     <button onclick="toggleSection('services', 1)" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg flex items-center gap-2 text-xs font-bold">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         REMOVE
                     </button>
                 </div>
+                <div class="absolute inset-0 pointer-events-none">
+                    <div class="w-72 h-72 bg-[rgba(255,255,255,0.08)] blur-[140px] rounded-full absolute -top-16 -left-10"></div>
+                    <div class="w-80 h-80 bg-[rgba(37,99,235,0.25)] blur-[160px] rounded-full absolute bottom-0 right-0"></div>
+                </div>
+                <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <p class="text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase mb-4 editable" data-field="services_title" contenteditable="false" style="color: <?= htmlspecialchars($service_primary)?>;">
+                        <span class="edit-tooltip">Click to edit</span>
+                        <?= htmlspecialchars($content['services_title'] ?? 'Our Services')?>
+                    </p>
+                    <h2 class="text-3xl sm:text-4xl lg:text-[42px] font-bold text-white leading-tight editable" data-field="services_subtitle" contenteditable="false">
+                        <span class="edit-tooltip">Click to edit subtitle</span>
+                        <?= htmlspecialchars($content['services_subtitle'] ?? 'Our Premier services for your car rental needs')?>
+                    </h2>
+                    <p class="text-blue-100/80 text-base sm:text-lg leading-relaxed mt-6 editable" data-field="services_description" contenteditable="false">
+                        <span class="edit-tooltip">Click to edit description</span>
+                        <?= htmlspecialchars($content['services_description'] ?? 'We take pride in providing top-notch solutions for a seamless rental experience you can trust')?>
+                    </p>
+                </div>
 
-                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="grid lg:grid-cols-2 gap-8 items-start mb-16">
-                        <div>
-                            <span class="text-blue-500 font-bold tracking-widest text-sm uppercase mb-4 block editable" data-field="services_title" contenteditable="false">
+                <div class="relative z-10 mt-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <?php foreach ($service_cards as $card):
+                            $icon_value = trim($content[$card['icon_field']] ?? '');
+                            $title_value = $content[$card['title_field']] ?? 'Premium Service';
+                            $text_value = $content[$card['text_field']] ?? '';
+                        ?>
+                        <div class="rounded-3xl p-8 border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_35px_60px_rgba(3,7,18,0.55)] hover:border-white/30 hover:-translate-y-1.5 transition-all duration-300">
+                            <button type="button" class="icon-editable w-16 h-16 rounded-2xl flex items-center justify-center text-white bg-white/10 border border-white/10 shadow-[0_20px_30px_rgba(37,99,235,0.25)] relative" data-field="<?= $card['icon_field']?>">
+                                <?php if (!empty($icon_value)): ?>
+                                    <img src="<?= htmlspecialchars($icon_value)?>" alt="<?= htmlspecialchars($title_value)?> icon" class="w-10 h-10 object-contain drop-shadow-[0_8px_20px_rgba(37,99,235,0.45)] pointer-events-none">
+                                <?php else: ?>
+                                    <?= $card['default_svg'] ?>
+                                <?php endif; ?>
+                                <span class="edit-tooltip">Choose FlatIcon</span>
+                            </button>
+                            <h3 class="text-white text-xl font-semibold mt-6 editable" data-field="<?= $card['title_field']?>" contenteditable="false">
                                 <span class="edit-tooltip">Click to edit</span>
-                                <?= htmlspecialchars($content['services_title'] ?? 'Our Services')?>
-                            </span>
-                            <h2 class="text-[40px] leading-[1.2] font-bold text-white max-w-xl editable" data-field="services_subtitle" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit subtitle</span>
-                                <?= htmlspecialchars($content['services_subtitle'] ?? 'Our Premier services for your car rental needs')?>
-                            </h2>
-                        </div>
-                        <div class="lg:pt-8">
-                            <p class="text-gray-400 text-lg leading-relaxed max-w-xl editable" data-field="services_description" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit description</span>
-                                <?= htmlspecialchars($content['services_description'] ?? 'We take pride in providing top-notch solutions! Our premier services ensure a seamless & simple car rental experience. offering cars that suit your preferences')?>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="grid md:grid-cols-3 gap-8">
-                        <!-- Service 1 -->
-                        <div class="bg-[#1A1F29] p-10 rounded-[32px] border border-white/5 hover:border-blue-500/30 transition-all duration-300 group/card">
-                            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-8 ring-8 ring-white/[0.02]">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-4 editable" data-field="service1_title" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit</span>
-                                <?= htmlspecialchars($content['service1_title'] ?? 'Well-Maintained Car')?>
+                                <?= htmlspecialchars($title_value)?>
                             </h3>
-                            <p class="text-gray-400 leading-relaxed editable" data-field="service1_text" contenteditable="false">
+                            <p class="text-blue-100/80 leading-relaxed mt-3 editable" data-field="<?= $card['text_field']?>" contenteditable="false">
                                 <span class="edit-tooltip">Click to edit text</span>
-                                <?= htmlspecialchars($content['service1_text'] ?? 'Enjoy your trip in peace and comfort with our car rental which offers a well-maintained fleet, prioritize the health and safety of our vehicles')?>
+                                <?= htmlspecialchars($text_value)?>
                             </p>
                         </div>
-
-                        <!-- Service 2 -->
-                        <div class="bg-[#1A1F29] p-10 rounded-[32px] border border-white/5 hover:border-blue-500/30 transition-all duration-300 group/card">
-                            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-8 ring-8 ring-white/[0.02]">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-4 editable" data-field="service2_title" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit</span>
-                                <?= htmlspecialchars($content['service2_title'] ?? 'Secure Payments')?>
-                            </h3>
-                            <p class="text-gray-400 leading-relaxed editable" data-field="service2_text" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit text</span>
-                                <?= htmlspecialchars($content['service2_text'] ?? 'With a safe and reliable payment system, you can continue your journey with peace of mind, without worrying about transaction security.')?>
-                            </p>
-                        </div>
-
-                        <!-- Service 3 -->
-                        <div class="bg-[#1A1F29] p-10 rounded-[32px] border border-white/5 hover:border-blue-500/30 transition-all duration-300 group/card">
-                            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-8 ring-8 ring-white/[0.02]">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-4 editable" data-field="service3_title" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit</span>
-                                <?= htmlspecialchars($content['service3_title'] ?? '24/7 Support')?>
-                            </h3>
-                            <p class="text-gray-400 leading-relaxed editable" data-field="service3_text" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit text</span>
-                                <?= htmlspecialchars($content['service3_text'] ?? 'We understand that the journey does not always run smoothly. Therefore, our customer support team is ready to help you 24/7.')?>
-                            </p>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </section>
@@ -1223,6 +1221,50 @@ endforeach; ?>
     <!-- Loader Overlay -->
     <div class="loader-overlay" id="loaderOverlay">
         <div class="loader"></div>
+    </div>
+
+    <!-- Icon Picker Modal -->
+    <div id="iconPickerModal" class="fixed inset-0 bg-black/60 z-[9999] items-center justify-center px-4 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Choose an Icon</h3>
+                    <p class="text-sm text-gray-500">Paste a FlatIcon URL or pick one of our curated icons</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeIconModal()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 overflow-y-auto">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 block mb-2">FlatIcon URL</label>
+                    <div class="flex gap-3">
+                        <input type="url" id="iconUrlInput" class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://cdn-icons-png.flaticon.com/...">
+                        <button type="button" class="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold" onclick="applyIconUrl()">Use</button>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-sm font-semibold text-gray-700">Curated Icons</p>
+                        <a href="https://www.flaticon.com" target="_blank" class="text-xs font-semibold text-blue-600 hover:underline">Browse more on FlatIcon</a>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3" id="iconSelectionGrid"></div>
+                </div>
+                <div id="iconPreview" class="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4 flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center">
+                        <img src="" alt="Icon preview" class="w-10 h-10 object-contain opacity-0" id="iconPreviewImg">
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">Selected Icon</p>
+                        <p class="text-xs text-gray-500" id="iconPreviewText">No icon selected yet</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5 border-t border-gray-100 flex justify-end gap-3">
+                <button type="button" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-semibold" onclick="closeIconModal()">Cancel</button>
+                <button type="button" class="px-5 py-2 bg-blue-600 text-white rounded-xl font-semibold" onclick="confirmIconSelection()">Save Icon</button>
+            </div>
+        </div>
     </div>
 
     <!-- Error Modal -->
@@ -1579,6 +1621,7 @@ endforeach; ?>
                         showSaveIndicator();
                     }
                 });
+
         }
 
         function saveSectionOrder() {
@@ -1695,6 +1738,112 @@ endforeach; ?>
                 window.location.reload();
             }, 500);
         }
+
+        let activeIconField = null;
+        let tempIconUrl = '';
+        const curatedIcons = [
+            'https://cdn-icons-png.flaticon.com/512/942/942748.png',
+            'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+            'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
+            'https://cdn-icons-png.flaticon.com/512/3208/3208707.png',
+            'https://cdn-icons-png.flaticon.com/512/5951/5951955.png',
+            'https://cdn-icons-png.flaticon.com/512/1048/1048345.png',
+            'https://cdn-icons-png.flaticon.com/512/942/942793.png',
+            'https://cdn-icons-png.flaticon.com/512/3209/3209077.png'
+        ];
+
+        function initIconPicker() {
+            const grid = document.getElementById('iconSelectionGrid');
+            if (!grid) return;
+            curatedIcons.forEach(icon => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'p-3 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow flex items-center justify-center transition-all';
+                btn.innerHTML = `<img src="${icon}" class="w-10 h-10 object-contain" alt="Icon">`;
+                btn.onclick = () => selectTempIcon(icon);
+                grid.appendChild(btn);
+            });
+        }
+
+        function openIconModal(field, currentUrl) {
+            activeIconField = field;
+            tempIconUrl = currentUrl || '';
+            document.getElementById('iconUrlInput').value = tempIconUrl;
+            updateIconPreview();
+            document.getElementById('iconPickerModal').classList.remove('hidden');
+            document.getElementById('iconPickerModal').classList.add('flex');
+        }
+
+        function closeIconModal() {
+            document.getElementById('iconPickerModal').classList.add('hidden');
+            document.getElementById('iconPickerModal').classList.remove('flex');
+            activeIconField = null;
+            tempIconUrl = '';
+            document.getElementById('iconUrlInput').value = '';
+            updateIconPreview();
+        }
+
+        function selectTempIcon(url) {
+            tempIconUrl = url;
+            document.getElementById('iconUrlInput').value = url;
+            updateIconPreview();
+        }
+
+        function applyIconUrl() {
+            const url = document.getElementById('iconUrlInput').value.trim();
+            if (!url) {
+                showErrorModal('Please provide a FlatIcon image URL.');
+                return;
+            }
+            tempIconUrl = url;
+            updateIconPreview();
+        }
+
+        function updateIconPreview() {
+            const img = document.getElementById('iconPreviewImg');
+            const text = document.getElementById('iconPreviewText');
+            if (tempIconUrl) {
+                img.src = tempIconUrl;
+                img.classList.remove('opacity-0');
+                text.textContent = tempIconUrl;
+            } else {
+                img.src = '';
+                img.classList.add('opacity-0');
+                text.textContent = 'No icon selected yet';
+            }
+        }
+
+        function confirmIconSelection() {
+            if (!activeIconField || !tempIconUrl) {
+                showErrorModal('Please select an icon before saving.');
+                return;
+            }
+            saveField(activeIconField, tempIconUrl).then(() => {
+                const btn = document.querySelector(`button.icon-editable[data-field="${activeIconField}"]`);
+                if (btn) {
+                    let img = btn.querySelector('img');
+                    if (!img) {
+                        img = document.createElement('img');
+                        img.className = 'w-10 h-10 object-contain drop-shadow-[0_8px_20px_rgba(37,99,235,0.45)] pointer-events-none';
+                        btn.innerHTML = '';
+                        btn.appendChild(img);
+                    }
+                    img.src = tempIconUrl;
+                }
+                closeIconModal();
+                showSaveIndicator();
+            });
+        }
+
+        document.querySelectorAll('.icon-editable').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const field = btn.getAttribute('data-field');
+                const img = btn.querySelector('img');
+                const currentUrl = img ? img.src : '';
+                openIconModal(field, currentUrl);
+            });
+        });
 
         // Text editing
         document.querySelectorAll('.editable').forEach(element => {
@@ -2183,6 +2332,8 @@ endforeach; ?>
             document.addEventListener('click', () => {
                 document.querySelectorAll('.time-options-list').forEach(l => l.classList.add('hidden'));
             });
+
+            initIconPicker();
         });
 
         // Helper to sync side panel settings with the visual preview

@@ -598,73 +598,69 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
     </script>
 
     <?php elseif ($section === 'services' && !($content['services_hidden'] ?? 0)): ?>
-    <!-- Services Section -->
-    <section id="services" class="py-20 bg-white">
-        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Section Header -->
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold text-gray-900 mb-3 tracking-tight">Our Car Rental Services</h2>
-                <p class="text-gray-500 font-medium text-base">Why choose our car rental service</p>
-            </div>
+    <?php
+    $service_primary = $content['primary_color'] ?? '#2563eb';
+    $service_cards = [
+        [
+            'title_field' => 'service1_title',
+            'text_field' => 'service1_text',
+            'icon_field' => 'service1_icon',
+            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5-4.5v5.25c0 5.25-3.7 10.2-9 11.5-5.3-1.3-9-6.25-9-11.5V5.5L12 3l9 2.5z" /></svg>'
+        ],
+        [
+            'title_field' => 'service2_title',
+            'text_field' => 'service2_text',
+            'icon_field' => 'service2_icon',
+            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10m-12 7h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>'
+        ],
+        [
+            'title_field' => 'service3_title',
+            'text_field' => 'service3_text',
+            'icon_field' => 'service3_icon',
+            'default_svg' => '<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+        ]
+    ];
+    ?>
+    <section id="services" class="py-24 relative overflow-hidden" style="--service-primary: <?= htmlspecialchars($service_primary, ENT_QUOTES) ?>; background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.07), transparent 45%), linear-gradient(130deg, #030a1c 0%, #061a3d 50%, #020712 100%);">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="w-72 h-72 bg-[rgba(255,255,255,0.08)] blur-[140px] rounded-full absolute -top-16 -left-10"></div>
+            <div class="w-80 h-80 bg-[rgba(37,99,235,0.25)] blur-[160px] rounded-full absolute bottom-0 right-0"></div>
+        </div>
+        <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase mb-4" style="color: var(--service-primary, #2563eb);">
+                <?= htmlspecialchars($content['services_title'] ?? 'Our Services')?>
+            </p>
+            <h2 class="text-3xl sm:text-4xl lg:text-[42px] font-bold text-white leading-tight">
+                <?= htmlspecialchars($content['services_subtitle'] ?? 'Our Premier services for your car rental needs')?>
+            </h2>
+            <p class="text-blue-100/80 text-base sm:text-lg leading-relaxed mt-6">
+                <?= htmlspecialchars($content['services_description'] ?? 'We take pride in providing top-notch solutions for a seamless rental experience you can trust')?>
+            </p>
+        </div>
 
-            <!-- 4-Card Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Card 1: Luxury Car Rentals -->
-                <div class="bg-[#FCFCFC] border border-gray-100 rounded-2xl p-8 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-14 h-14 bg-[#FAF7F0] rounded-full flex items-center justify-center mb-6">
-                        <!-- Car Outline Icon in Gold -->
-                        <svg class="w-6 h-6 text-[#C5A880]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.375 0 01-1.125-1.375v-1.5a3.375 3.375 0 013.375-3.375H18.75a3.375 3.375 0 013.375 3.375v1.5a1.125 1.125 0 01-1.125 1.375H18.75m-3-1.5a1.5 1.5 0 00-3 0m3 0a1.5 1.5 0 01-3 0m3 0h3m-9 1.5h3"></path>
-                        </svg>
+        <div class="relative z-10 mt-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-6">
+                <?php foreach ($service_cards as $card):
+                    $icon_value = trim($content[$card['icon_field']] ?? '');
+                    $title_value = $content[$card['title_field']] ?? 'Premium Service';
+                    $text_value = $content[$card['text_field']] ?? '';
+                ?>
+                <div class="rounded-3xl p-8 border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_35px_60px_rgba(3,7,18,0.55)] hover:border-white/30 hover:-translate-y-1.5 transition-all duration-300">
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white bg-white/10 border border-white/10 shadow-[0_20px_30px_rgba(37,99,235,0.25)]">
+                        <?php if (!empty($icon_value)): ?>
+                            <img src="<?= htmlspecialchars($icon_value)?>" alt="<?= htmlspecialchars($title_value)?> icon" class="w-10 h-10 object-contain drop-shadow-[0_8px_20px_rgba(37,99,235,0.45)]">
+                        <?php else: ?>
+                            <?= $card['default_svg'] ?>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Luxury Car Rentals</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed font-medium">
-                        Experience premium comfort and style with our luxury car collection including Mercedes, BMW, Audi, and more.
+                    <h3 class="text-white text-xl font-semibold mt-6">
+                        <?= htmlspecialchars($title_value)?>
+                    </h3>
+                    <p class="text-blue-100/80 leading-relaxed mt-3">
+                        <?= htmlspecialchars($text_value)?>
                     </p>
                 </div>
-
-                <!-- Card 2: Sports Car Rentals -->
-                <div class="bg-[#FCFCFC] border border-gray-100 rounded-2xl p-8 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-14 h-14 bg-[#FAF7F0] rounded-full flex items-center justify-center mb-6">
-                        <!-- Sports Car / Speed Outline Icon in Gold -->
-                        <svg class="w-6 h-6 text-[#C5A880]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.3 12h.01M12 12h.01M8.7 12h.01M12 4.5V3M12 21v-1.5m9-7.5h-1.5M3 12H1.5M5.636 5.636l1.06 1.06m8.485 8.485l1.06 1.06m-10.606 0l1.06-1.06m8.485-8.485l1.06-1.06M12 15a3 3 0 100-6 3 3 0 000 6z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Sports Car Rentals</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed font-medium">
-                        Feel the thrill with our sports car fleet featuring Ferrari, Lamborghini, McLaren, and Porsche models.
-                    </p>
-                </div>
-
-                <!-- Card 3: Free Delivery Service -->
-                <div class="bg-[#FCFCFC] border border-gray-100 rounded-2xl p-8 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-14 h-14 bg-[#FAF7F0] rounded-full flex items-center justify-center mb-6">
-                        <!-- Map Pin Outline Icon in Gold -->
-                        <svg class="w-6 h-6 text-[#C5A880]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-3-3 3 3 0 013 3z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Free Delivery Service</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed font-medium">
-                        Enjoy complimentary delivery and pickup service anywhere in Dubai and across the UAE for your convenience.
-                    </p>
-                </div>
-
-                <!-- Card 4: Fully Insured Vehicles -->
-                <div class="bg-[#FCFCFC] border border-gray-100 rounded-2xl p-8 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-14 h-14 bg-[#FAF7F0] rounded-full flex items-center justify-center mb-6">
-                        <!-- Shield Outline Icon in Gold -->
-                        <svg class="w-6 h-6 text-[#C5A880]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.955 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Fully Insured Vehicles</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed font-medium">
-                        All our rental cars come with comprehensive insurance coverage for complete peace of mind during your rental period.
-                    </p>
-                </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>
