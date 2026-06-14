@@ -1531,9 +1531,9 @@ endif; ?>
         '24/7 Breakdown assistance',
         'Registration Fee / Road Tax',
         'Unlimited miles',
-        'Booking option: Best price - Free cancellation and rebooking within 24h.'
+        'Free cancellation and rebooking within 24h.'
     ];
-    if (!$show_edit_form && empty($saved_overview)) {
+    if (empty($saved_overview)) {
         $saved_overview = $default_overview;
     }
 ?>

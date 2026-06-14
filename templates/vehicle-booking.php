@@ -531,8 +531,17 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                                 $overview_items = $decoded_overview;
                             }
                         }
+                        // Default fallback for vehicles without stored data
+                        if (empty($overview_items)) {
+                            $overview_items = [
+                                'Third party insurance',
+                                '24/7 Breakdown assistance',
+                                'Registration Fee / Road Tax',
+                                'Unlimited miles',
+                                'Free cancellation and rebooking within 24h.'
+                            ];
+                        }
                         ?>
-                        <?php if (!empty($overview_items)): ?>
                         <div class="space-y-3">
                             <?php foreach ($overview_items as $item): ?>
                             <div class="flex items-center gap-3 text-sm text-gray-700">
@@ -543,9 +552,6 @@ $_SESSION['booking_data']['vehicle_id'] = $vehicle_id;
                             </div>
                             <?php endforeach; ?>
                         </div>
-                        <?php else: ?>
-                        <p class="text-gray-600">No booking overview items available.</p>
-                        <?php endif; ?>
                     </div>
                 </div>
 
