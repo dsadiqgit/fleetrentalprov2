@@ -573,41 +573,6 @@ catch (PDOException $e) {
 
                     </div>
 
-                    <!-- Booking Stats Cards -->
-                    <div class="mt-12 pt-8 border-t border-gray-100">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Fleet Overview</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <!-- Available -->
-                            <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Available</p>
-                                <p class="text-4xl font-light text-green-600 mb-2"><?= number_format($available_count) ?></p>
-                                <p class="text-[11px] text-gray-400">0 vs yesterday · 0 vs last week</p>
-                            </div>
-                            <!-- Rented -->
-                            <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Rented</p>
-                                <p class="text-4xl font-light text-blue-600 mb-2"><?= number_format($rented_count) ?></p>
-                                <p class="text-[11px] text-gray-400">0 vs yesterday · 0 vs last week</p>
-                            </div>
-                            <!-- Maintenance -->
-                            <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Maintenance</p>
-                                <p class="text-4xl font-light text-orange-500 mb-2"><?= number_format($maintenance_count) ?></p>
-                                <p class="text-[11px] text-gray-400">0 vs yesterday · 0 vs last week</p>
-                            </div>
-                        </div>
-
-                        <!-- Upcoming Bookings Badges -->
-                        <div class="flex flex-wrap gap-2 mt-4">
-                            <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
-                                Next 24h booked: <?= number_format($next_24h_booked) ?>
-                            </span>
-                            <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
-                                Next 7d booked: <?= number_format($next_7d_booked) ?>
-                            </span>
-                        </div>
-                    </div>
-
                     <!-- Help Center Button -->
                     <div class="mt-12 pt-6 border-t border-gray-100 flex justify-start">
                         <a href="/documentation" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-full text-xs font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition uppercase tracking-wider bg-white shadow-sm">
@@ -620,6 +585,41 @@ catch (PDOException $e) {
 
                 </div>
 
+            </div>
+
+            <!-- Fleet Overview (Separate Section below onboarding) -->
+            <div class="p-6 sm:p-8 lg:px-12 lg:py-10 bg-gray-50 border-t border-gray-200">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Fleet Overview</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Available -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Available</p>
+                        <p class="text-4xl font-light text-green-600 mb-2"><?= number_format($available_count) ?></p>
+                        <p class="text-[11px] text-gray-400">0 vs yesterday · 0 vs last week</p>
+                    </div>
+                    <!-- Rented -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Rented</p>
+                        <p class="text-4xl font-light text-blue-600 mb-2"><?= number_format($rented_count) ?></p>
+                        <p class="text-[11px] text-gray-400">0 vs yesterday · 0 vs last week</p>
+                    </div>
+                    <!-- Maintenance -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Maintenance</p>
+                        <p class="text-4xl font-light text-orange-500 mb-2"><?= number_format($maintenance_count) ?></p>
+                        <p class="text-[11px] text-gray-400">0 vs yesterday · 0 vs last week</p>
+                    </div>
+                </div>
+
+                <!-- Upcoming Bookings Badges -->
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
+                        Next 24h booked: <?= number_format($next_24h_booked) ?>
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
+                        Next 7d booked: <?= number_format($next_7d_booked) ?>
+                    </span>
+                </div>
             </div>
         </main>
     </div>
