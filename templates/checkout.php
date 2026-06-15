@@ -38,6 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $vehicle_id = $_GET['vehicle_id'] ?? $_GET['id'] ?? null;
 if (!$vehicle_id) die('Vehicle not found');
 
+// Handle Stripe checkout cancellation — clear the pending session data
+// (No DB booking exists yet; it is only created after Stripe confirms payment)
+if (isset($_GET['cancelled']) && $_GET['cancelled'] == '1') {
+    unset($_SESSION['stripe_pending_booking']);
+    unset($_SESSION['checkout_step']);
+    unset($_SESSION['didit_session_id']);
+}
+
 $stmt = $pdo->prepare("SELECT * FROM vehicles WHERE id = ? AND tenant_id = ?");
 $stmt->execute([$vehicle_id, $tenant_id]);
 $vehicle = $stmt->fetch();

@@ -5,32 +5,19 @@ $tenant_id = getTenantId();
 $tenant = getTenant();
 $pdo = getDB();
 
-// Get booking ID from URL
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header('Location: /templates/fleet.php');
-    exit;
-}
+$booking = null;
+$booking_id = null;
 
-$booking_id = intval($_GET['id']);
-
-// Get booking details
-$stmt = $pdo->prepare("
-    SELECT b.*, v.brand, v.model, v.year, v.category, v.images
-    FROM bookings b
-    LEFT JOIN vehicles v ON b.vehicle_id = v.id
-    WHERE b.id = ? AND b.tenant_id = ?
-");
-$stmt->execute([$booking_id, $tenant_id]);
-$booking = $stmt->fetch();
-
-// Handle Stripe Redirect success
-if (isset($_GET['redirect_status']) && $_GET['redirect_status'] === 'succeeded' && $booking && $booking['payment_status'] !== 'paid') {
+// =============================================
+// CARD PAYMENT FLOW: Create booking AFTER Stripe confirms payment
+// =============================================
+if (isset($_GET['redirect_status']) && $_GET['redirect_status'] === 'succeeded') {
     $verified = false;
     $session_id = $_GET['session_id'] ?? null;
+    $pending = $_SESSION['stripe_pending_booking'] ?? null;
     
-    if ($session_id) {
+    if ($session_id && $pending) {
         try {
-            // Get Stripe settings
             $stmt_st = $pdo->prepare("SELECT stripe_secret_key FROM tenant_settings WHERE tenant_id = ?");
             $stmt_st->execute([$tenant_id]);
             $stripe_settings = $stmt_st->fetch();
@@ -43,106 +30,240 @@ if (isset($_GET['redirect_status']) && $_GET['redirect_status'] === 'succeeded' 
                     $verified = true;
                 }
             } else {
-                // If stripe is unconfigured on local sandbox, bypass for developer testing
-                $verified = true;
+                $verified = true; // local sandbox fallback
             }
         } catch (Exception $e) {
             error_log("Stripe confirmation verification failed: " . $e->getMessage());
-            // Fallback for local sandbox environments
             if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
                 $verified = true;
             }
         }
-    } else {
-        // Fallback for testing redirects without session_id on localhost
-        if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
-            $verified = true;
-        }
+    } elseif (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
+        $verified = true; // localhost fallback
     }
     
-    if ($verified) {
-        $updateStmt = $pdo->prepare("UPDATE bookings SET status = 'confirmed', payment_status = 'paid' WHERE id = ? AND tenant_id = ?");
-        $updateStmt->execute([$booking_id, $tenant_id]);
+    if ($verified && $pending) {
+        $bd = $pending['booking_data'];
         
-        // Refresh booking data
-        $stmt->execute([$booking_id, $tenant_id]);
-        $booking = $stmt->fetch();
-        
-        // Retrieve deferred credentials and trigger emails
         try {
-            require_once __DIR__ . '/../includes/email.php';
+            // 1) CREATE BOOKING
+            $insertStmt = $pdo->prepare("
+                INSERT INTO bookings (
+                    tenant_id, vehicle_id, customer_name, customer_email, customer_phone,
+                    customer_license, pickup_date, return_date, pickup_time, return_time,
+                    total_days, price_per_day, total_price, security_deposit, status,
+                    payment_status, stripe_payment_id, notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', 'paid', ?, ?, NOW())
+            ");
+            $insertStmt->execute([
+                $tenant_id,
+                $bd['vehicle_id'],
+                $bd['customer_name'],
+                $bd['customer_email'],
+                $bd['customer_phone'] ?? null,
+                $bd['customer_license'] ?? null,
+                $bd['pickup_date'],
+                $bd['return_date'],
+                $bd['pickup_time'] ?? '10:00',
+                $bd['return_time'] ?? '10:00',
+                $bd['total_days'],
+                $bd['price_per_day'],
+                $pending['total_price'],
+                $pending['security_deposit'],
+                $session_id,
+                $bd['notes'] ?? ''
+            ]);
+            $booking_id = $pdo->lastInsertId();
             
-            // Get tenant settings for deposit/currency
-            $stmt_ts = $pdo->prepare("SELECT currency FROM tenant_settings WHERE tenant_id = ?");
-            $stmt_ts->execute([$tenant_id]);
-            $tenant_sett = $stmt_ts->fetch();
+            // Fetch the newly created booking with vehicle info for display
+            $stmtBk = $pdo->prepare("
+                SELECT b.*, v.brand, v.model, v.year, v.category, v.images
+                FROM bookings b
+                LEFT JOIN vehicles v ON b.vehicle_id = v.id
+                WHERE b.id = ? AND b.tenant_id = ?
+            ");
+            $stmtBk->execute([$booking_id, $tenant_id]);
+            $booking = $stmtBk->fetch();
             
-            // Send booking confirmation email
-            $emailBookingData = [
-                'id' => $booking_id,
-                'customer_name' => $booking['customer_name'],
-                'pickup_date' => $booking['pickup_date'],
-                'pickup_time' => $booking['pickup_time'] ?? '10:00',
-                'return_date' => $booking['return_date'],
-                'return_time' => $booking['return_time'] ?? '10:00',
-                'total_price' => $booking['total_price'],
-                'security_deposit' => $booking['security_deposit'],
-                'currency' => $tenant_sett['currency'] ?? 'gbp'
-            ];
+            // 2) CREATE CUSTOMER ACCOUNT
+            $customerAccountCreated = false;
+            $customerPassword = null;
+            try {
+                require_once __DIR__ . '/../includes/functions.php';
+                if (!empty($bd['customer_email'])) {
+                    $stmt = $pdo->prepare("SELECT id, password FROM users WHERE email = ? AND tenant_id = ?");
+                    $stmt->execute([$bd['customer_email'], $tenant_id]);
+                    $existingUser = $stmt->fetch();
+                    
+                    if (!$existingUser) {
+                        $customerPassword = substr(bin2hex(random_bytes(5)), 0, 8);
+                        $hashedPassword = hashPassword($customerPassword);
+                        $stmt = $pdo->prepare("
+                            INSERT INTO users (tenant_id, role, email, password, full_name, phone, created_at)
+                            VALUES (?, 'customer', ?, ?, ?, ?, NOW())
+                        ");
+                        $stmt->execute([
+                            $tenant_id,
+                            $bd['customer_email'],
+                            $hashedPassword,
+                            $bd['customer_name'],
+                            $bd['customer_phone'] ?? null
+                        ]);
+                        $customerAccountCreated = true;
+                    } elseif (empty($existingUser['password'])) {
+                        $customerPassword = substr(bin2hex(random_bytes(5)), 0, 8);
+                        $hashedPassword = hashPassword($customerPassword);
+                        $pdo->prepare("UPDATE users SET password = ?, full_name = COALESCE(NULLIF(full_name, ''), ?), phone = COALESCE(NULLIF(phone, ''), ?) WHERE id = ?")
+                            ->execute([$hashedPassword, $bd['customer_name'], $bd['customer_phone'] ?? null, $existingUser['id']]);
+                        $customerAccountCreated = true;
+                    }
+                }
+            } catch (Exception $accountError) {
+                error_log("Customer account creation error (non-fatal): " . $accountError->getMessage());
+            }
             
-            sendBookingConfirmationEmail(
-                $booking['customer_email'],
-                $emailBookingData,
-                $tenant,
-                $booking
-            );
+            // 3) CREATE CONTRACT
+            $signingToken = bin2hex(random_bytes(32));
+            try {
+                $columnsToAdd = [
+                    'contract_status' => "ENUM('pending', 'signed') DEFAULT 'pending'",
+                    'signature_typed' => 'VARCHAR(255) NULL',
+                    'signed_pdf_path' => 'VARCHAR(500) NULL',
+                    'signing_token' => 'VARCHAR(64) NULL',
+                ];
+                foreach ($columnsToAdd as $col => $definition) {
+                    $checkCol = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'contracts' AND COLUMN_NAME = ?");
+                    $checkCol->execute([$col]);
+                    if ($checkCol->fetchColumn() == 0) {
+                        $pdo->exec("ALTER TABLE contracts ADD COLUMN {$col} {$definition}");
+                    }
+                }
+                
+                $tmplStmt = $pdo->prepare("SELECT * FROM contract_templates WHERE tenant_id = ? AND is_default = 1 LIMIT 1");
+                $tmplStmt->execute([$tenant_id]);
+                $defaultTemplate = $tmplStmt->fetch();
+                if (!$defaultTemplate) {
+                    $tmplStmt = $pdo->prepare("SELECT * FROM contract_templates WHERE tenant_id = ? ORDER BY created_at ASC LIMIT 1");
+                    $tmplStmt->execute([$tenant_id]);
+                    $defaultTemplate = $tmplStmt->fetch();
+                }
+                
+                $contractContent = $defaultTemplate ? $defaultTemplate['content'] : 'Default rental agreement for booking #' . $booking_id;
+                $templateId = $defaultTemplate ? $defaultTemplate['id'] : null;
+                
+                $inlineSignature = $_SESSION['contract_signature'] ?? null;
+                $inlineSignedAt  = $_SESSION['contract_signed_at'] ?? null;
+                $contractStatus  = $inlineSignature ? 'signed' : 'pending';
+                
+                $contractStmt = $pdo->prepare("
+                    INSERT INTO contracts (tenant_id, booking_id, template_id, content, contract_status, signing_token, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, NOW())
+                ");
+                $contractStmt->execute([$tenant_id, $booking_id, $templateId, $contractContent, $contractStatus, $signingToken]);
+                $newContractId = $pdo->lastInsertId();
+                
+                if ($inlineSignature && $newContractId) {
+                    try {
+                        $signatureImagePath = null;
+                        if (strpos($inlineSignature, 'data:image/') === 0) {
+                            $sigDir = __DIR__ . '/../uploads/signatures';
+                            if (!is_dir($sigDir)) mkdir($sigDir, 0755, true);
+                            $imgData = explode(',', $inlineSignature, 2);
+                            if (count($imgData) === 2) {
+                                $decoded = base64_decode($imgData[1]);
+                                $sigFilename = 'sig_' . $booking_id . '_' . time() . '.png';
+                                $signatureImagePath = $sigDir . '/' . $sigFilename;
+                                file_put_contents($signatureImagePath, $decoded);
+                            }
+                        }
+                        $pdo->prepare("UPDATE contracts SET signed = 1, signed_at = ?, signature_typed = ? WHERE id = ?")
+                            ->execute([$inlineSignedAt, $signatureImagePath ?? $inlineSignature, $newContractId]);
+                    } catch (Exception $signEx) {
+                        error_log("Could not save contract signature: " . $signEx->getMessage());
+                    }
+                    unset($_SESSION['contract_signature'], $_SESSION['contract_signed_at']);
+                }
+            } catch (Exception $contractError) {
+                error_log("Contract creation error (non-fatal): " . $contractError->getMessage());
+            }
             
-            // Fetch contract to check status & get token
-            $contractStmt = $pdo->prepare("SELECT * FROM contracts WHERE booking_id = ? AND tenant_id = ? LIMIT 1");
-            $contractStmt->execute([$booking_id, $tenant_id]);
-            $contract = $contractStmt->fetch();
-            
-            if ($contract) {
+            // 4) SEND EMAILS
+            try {
+                require_once __DIR__ . '/../includes/email.php';
+                
+                $emailBookingData = [
+                    'id' => $booking_id,
+                    'customer_name' => $bd['customer_name'],
+                    'pickup_date' => $bd['pickup_date'],
+                    'pickup_time' => $bd['pickup_time'] ?? '10:00',
+                    'return_date' => $bd['return_date'],
+                    'return_time' => $bd['return_time'] ?? '10:00',
+                    'total_price' => $pending['total_price'],
+                    'security_deposit' => $pending['security_deposit'],
+                    'currency' => $pending['stripe_settings']['currency'] ?? 'gbp'
+                ];
+                
+                sendBookingConfirmationEmail(
+                    $bd['customer_email'],
+                    $emailBookingData,
+                    $tenant,
+                    ['brand' => $pending['vehicle']['brand'], 'model' => $pending['vehicle']['model']]
+                );
+                
                 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
                 $host = $_SERVER['HTTP_HOST'];
-                $contractUrl = $protocol . $host . '/templates/contract-sign.php?booking_id=' . $booking_id . '&token=' . $contract['signing_token'];
+                $contractUrl = $protocol . $host . '/templates/contract-sign.php?booking_id=' . $booking_id . '&token=' . $signingToken;
                 
-                // Only send signing email if not already signed inline
-                if ($contract['contract_status'] !== 'signed') {
-                    sendContractWelcomeEmail(
-                        $booking['customer_email'],
-                        $booking['customer_name'],
-                        $contractUrl,
-                        $tenant
+                sendContractWelcomeEmail(
+                    $bd['customer_email'],
+                    $bd['customer_name'],
+                    $contractUrl,
+                    $tenant
+                );
+                
+                if ($customerAccountCreated && $customerPassword) {
+                    sendCustomerAccountEmail(
+                        $bd['customer_email'],
+                        $bd['customer_name'],
+                        $customerPassword,
+                        $tenant,
+                        $booking_id
                     );
                 }
+            } catch (Exception $e) {
+                error_log("Error in post-payment email dispatch: " . $e->getMessage());
             }
             
-            // Check if newly created customer account credentials exist in session
-            $customerAccountCreated = $_SESSION['customer_account_created'] ?? false;
-            $customerPassword = $_SESSION['generated_customer_password'] ?? null;
-            
-            if ($customerAccountCreated && $customerPassword) {
-                sendCustomerAccountEmail(
-                    $booking['customer_email'],
-                    $booking['customer_name'],
-                    $customerPassword,
-                    $tenant,
-                    $booking_id
-                );
-            }
-            
-            // Clear checkout session parameters now that payment is confirmed
+            // Clear all session data now that payment is confirmed
             unset($_SESSION['booking_data']);
             unset($_SESSION['checkout_step']);
             unset($_SESSION['didit_session_id']);
-            unset($_SESSION['customer_account_created']);
-            unset($_SESSION['generated_customer_password']);
+            unset($_SESSION['stripe_pending_booking']);
             
         } catch (Exception $e) {
-            error_log("Error in post-payment email dispatch: " . $e->getMessage());
+            error_log("Failed to create booking after Stripe confirmation: " . $e->getMessage());
+            header('Location: /templates/fleet.php');
+            exit;
         }
+    } else {
+        header('Location: /templates/fleet.php');
+        exit;
     }
+}
+
+// =============================================
+// CASH PAYMENT FLOW: Booking already exists in DB
+// =============================================
+if (!$booking && isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $booking_id = intval($_GET['id']);
+    $stmt = $pdo->prepare("
+        SELECT b.*, v.brand, v.model, v.year, v.category, v.images
+        FROM bookings b
+        LEFT JOIN vehicles v ON b.vehicle_id = v.id
+        WHERE b.id = ? AND b.tenant_id = ?
+    ");
+    $stmt->execute([$booking_id, $tenant_id]);
+    $booking = $stmt->fetch();
 }
 
 if (!$booking) {

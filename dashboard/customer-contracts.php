@@ -39,6 +39,7 @@ $stmt = $pdo->prepare("
     JOIN bookings b ON c.booking_id = b.id
     LEFT JOIN vehicles v ON b.vehicle_id = v.id
     WHERE c.tenant_id = ? AND b.customer_email = ?
+    AND NOT (b.status = 'pending' AND b.payment_status = 'unpaid')
     ORDER BY c.created_at DESC
 ");
 $stmt->execute([$tenant_id, $user_email]);

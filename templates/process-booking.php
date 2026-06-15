@@ -179,15 +179,14 @@ try {
     }
 
     // Check for overlapping bookings on the same vehicle
+    // Exclude abandoned card-payment bookings (pending + unpaid) so they don't block dates
     $stmt = $pdo->prepare("
         SELECT id, pickup_date, return_date 
         FROM bookings 
         WHERE vehicle_id = ? 
         AND tenant_id = ? 
-        AND (
-            status NOT IN ('cancelled', 'completed', 'pending') 
-            OR (status = 'pending' AND created_at >= NOW() - INTERVAL 15 MINUTE)
-        )
+        AND status NOT IN ('cancelled', 'completed')
+        AND NOT (status = 'pending' AND payment_status = 'unpaid')
         AND (
             (pickup_date <= ? AND return_date >= ?) OR
             (pickup_date <= ? AND return_date >= ?) OR
@@ -307,38 +306,11 @@ try {
     // Determine initial status and payment status
     $initial_status = ($payment_method === 'card') ? 'pending' : 'confirmed';
     $payment_status = 'unpaid';
-    // Stripe elements no longer used; Stripe Checkout Session URL will be generated after booking is created.
+    $booking_id = null;
     
-    // Insert or Update booking
-    if ($booking_id) {
-        $stmt = $pdo->prepare("
-            UPDATE bookings SET 
-                customer_name = ?, customer_email = ?, customer_phone = ?,
-                customer_license = ?, pickup_date = ?, return_date = ?, 
-                pickup_time = ?, return_time = ?, total_days = ?, 
-                price_per_day = ?, total_price = ?, security_deposit = ?,
-                stripe_payment_id = ?, notes = ?
-            WHERE id = ? AND tenant_id = ?
-        ");
-        $stmt->execute([
-            $booking_data['customer_name'],
-            $booking_data['customer_email'],
-            $booking_data['customer_phone'] ?? null,
-            $booking_data['customer_license'] ?? null,
-            $booking_data['pickup_date'],
-            $booking_data['return_date'],
-            $booking_data['pickup_time'] ?? '10:00',
-            $booking_data['return_time'] ?? '10:00',
-            $booking_data['total_days'],
-            $booking_data['price_per_day'],
-            $total_price,
-            $security_deposit,
-            null,
-            $booking_data['notes'] ?? '',
-            $booking_id,
-            $tenant_id
-        ]);
-    } else {
+    // For cash payments, create the booking immediately
+    // For card payments, defer ALL DB writes until Stripe confirms payment
+    if ($payment_method !== 'card') {
         $stmt = $pdo->prepare("
             INSERT INTO bookings (
                 tenant_id, vehicle_id, customer_name, customer_email, customer_phone,
@@ -363,7 +335,7 @@ try {
             $booking_data['price_per_day'],
             $total_price,
             $security_deposit,
-            'pending',
+            'confirmed',
             $payment_status,
             null,
             $booking_data['notes'] ?? ''
@@ -472,159 +444,159 @@ try {
     
     // =============================================
     // CUSTOMER ACCOUNT: Create customer profile so they can log in
+    // (Deferred for card payments until after Stripe confirms payment)
     // =============================================
     $customerAccountCreated = false;
     $customerPassword = null;
-    try {
-        require_once __DIR__ . '/../includes/functions.php';
-        
-        if (!empty($booking_data['customer_email'])) {
-            // Check if customer already has an account
-            $stmt = $pdo->prepare("SELECT id, password FROM users WHERE email = ? AND tenant_id = ?");
-            $stmt->execute([$booking_data['customer_email'], $tenant_id]);
-            $existingUser = $stmt->fetch();
+    if ($payment_method !== 'card') {
+        try {
+            require_once __DIR__ . '/../includes/functions.php';
             
-            if (!$existingUser) {
-                // Generate a random 8-character password
-                $customerPassword = substr(bin2hex(random_bytes(5)), 0, 8);
-                $hashedPassword = hashPassword($customerPassword);
+            if (!empty($booking_data['customer_email'])) {
+                // Check if customer already has an account
+                $stmt = $pdo->prepare("SELECT id, password FROM users WHERE email = ? AND tenant_id = ?");
+                $stmt->execute([$booking_data['customer_email'], $tenant_id]);
+                $existingUser = $stmt->fetch();
                 
-                $stmt = $pdo->prepare("
-                    INSERT INTO users (tenant_id, role, email, password, full_name, phone, created_at)
-                    VALUES (?, 'customer', ?, ?, ?, ?, NOW())
-                ");
-                $stmt->execute([
-                    $tenant_id,
-                    $booking_data['customer_email'],
-                    $hashedPassword,
-                    $booking_data['customer_name'],
-                    $booking_data['customer_phone'] ?? null
-                ]);
-                $customerAccountCreated = true;
-                error_log("Customer account created for: {$booking_data['customer_email']}");
-            } elseif (empty($existingUser['password'])) {
-                // Existing user has no password (created by verification flow) — set one
-                $customerPassword = substr(bin2hex(random_bytes(5)), 0, 8);
-                $hashedPassword = hashPassword($customerPassword);
-                
-                $stmt = $pdo->prepare("UPDATE users SET password = ?, full_name = COALESCE(NULLIF(full_name, ''), ?), phone = COALESCE(NULLIF(phone, ''), ?) WHERE id = ?");
-                $stmt->execute([
-                    $hashedPassword,
-                    $booking_data['customer_name'],
-                    $booking_data['customer_phone'] ?? null,
-                    $existingUser['id']
-                ]);
-                $customerAccountCreated = true;
-                error_log("Customer account password set for: {$booking_data['customer_email']}");
+                if (!$existingUser) {
+                    // Generate a random 8-character password
+                    $customerPassword = substr(bin2hex(random_bytes(5)), 0, 8);
+                    $hashedPassword = hashPassword($customerPassword);
+                    
+                    $stmt = $pdo->prepare("
+                        INSERT INTO users (tenant_id, role, email, password, full_name, phone, created_at)
+                        VALUES (?, 'customer', ?, ?, ?, ?, NOW())
+                    ");
+                    $stmt->execute([
+                        $tenant_id,
+                        $booking_data['customer_email'],
+                        $hashedPassword,
+                        $booking_data['customer_name'],
+                        $booking_data['customer_phone'] ?? null
+                    ]);
+                    $customerAccountCreated = true;
+                    error_log("Customer account created for: {$booking_data['customer_email']}");
+                } elseif (empty($existingUser['password'])) {
+                    // Existing user has no password (created by verification flow) — set one
+                    $customerPassword = substr(bin2hex(random_bytes(5)), 0, 8);
+                    $hashedPassword = hashPassword($customerPassword);
+                    
+                    $stmt = $pdo->prepare("UPDATE users SET password = ?, full_name = COALESCE(NULLIF(full_name, ''), ?), phone = COALESCE(NULLIF(phone, ''), ?) WHERE id = ?");
+                    $stmt->execute([
+                        $hashedPassword,
+                        $booking_data['customer_name'],
+                        $booking_data['customer_phone'] ?? null,
+                        $existingUser['id']
+                    ]);
+                    $customerAccountCreated = true;
+                    error_log("Customer account password set for: {$booking_data['customer_email']}");
+                }
             }
+        } catch (Exception $accountError) {
+            error_log("Customer account creation error (non-fatal): " . $accountError->getMessage());
         }
-    } catch (Exception $accountError) {
-        error_log("Customer account creation error (non-fatal): " . $accountError->getMessage());
     }
     // =============================================
     
     // =============================================
     // CONTRACT ONBOARDING: Create contract & send welcome email
+    // (Deferred for card payments until after Stripe confirms payment)
     // =============================================
-    try {
-        // Ensure contracts table has the new columns (MySQL-compatible)
-        $columnsToAdd = [
-            'contract_status' => "ENUM('pending', 'signed') DEFAULT 'pending'",
-            'signature_typed' => 'VARCHAR(255) NULL',
-            'signed_pdf_path' => 'VARCHAR(500) NULL',
-            'signing_token' => 'VARCHAR(64) NULL',
-        ];
-        
-        foreach ($columnsToAdd as $col => $definition) {
-            $checkCol = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'contracts' AND COLUMN_NAME = ?");
-            $checkCol->execute([$col]);
-            if ($checkCol->fetchColumn() == 0) {
-                $pdo->exec("ALTER TABLE contracts ADD COLUMN {$col} {$definition}");
+    if ($payment_method !== 'card') {
+        try {
+            // Ensure contracts table has the new columns (MySQL-compatible)
+            $columnsToAdd = [
+                'contract_status' => "ENUM('pending', 'signed') DEFAULT 'pending'",
+                'signature_typed' => 'VARCHAR(255) NULL',
+                'signed_pdf_path' => 'VARCHAR(500) NULL',
+                'signing_token' => 'VARCHAR(64) NULL',
+            ];
+            
+            foreach ($columnsToAdd as $col => $definition) {
+                $checkCol = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'contracts' AND COLUMN_NAME = ?");
+                $checkCol->execute([$col]);
+                if ($checkCol->fetchColumn() == 0) {
+                    $pdo->exec("ALTER TABLE contracts ADD COLUMN {$col} {$definition}");
+                }
             }
-        }
-        
-        // Get tenant's default contract template
-        $tmplStmt = $pdo->prepare("SELECT * FROM contract_templates WHERE tenant_id = ? AND is_default = 1 LIMIT 1");
-        $tmplStmt->execute([$tenant_id]);
-        $defaultTemplate = $tmplStmt->fetch();
-        
-        // Fallback to any published template
-        if (!$defaultTemplate) {
-            $tmplStmt = $pdo->prepare("SELECT * FROM contract_templates WHERE tenant_id = ? ORDER BY created_at ASC LIMIT 1");
+            
+            // Get tenant's default contract template
+            $tmplStmt = $pdo->prepare("SELECT * FROM contract_templates WHERE tenant_id = ? AND is_default = 1 LIMIT 1");
             $tmplStmt->execute([$tenant_id]);
             $defaultTemplate = $tmplStmt->fetch();
-        }
-        
-        $contractContent = $defaultTemplate ? $defaultTemplate['content'] : 'Default rental agreement for booking #' . $booking_id;
-        $templateId = $defaultTemplate ? $defaultTemplate['id'] : null;
-        
-        // Generate unique signing token
-        $signingToken = bin2hex(random_bytes(32));
-        
-        // Determine if customer already signed inline via the checkout agreement step
-        $inlineSignature = $_SESSION['contract_signature'] ?? null;
-        $inlineSignedAt  = $_SESSION['contract_signed_at'] ?? null;
-        $contractStatus  = $inlineSignature ? 'signed' : 'pending';
-        $signedAtValue   = $inlineSignature ? $inlineSignedAt : null;
-
-        // Create contract record
-        $contractStmt = $pdo->prepare("
-            INSERT INTO contracts (tenant_id, booking_id, template_id, content, contract_status, signing_token, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, NOW())
-        ");
-        $contractStmt->execute([$tenant_id, $booking_id, $templateId, $contractContent, $contractStatus, $signingToken]);
-        $newContractId = $pdo->lastInsertId();
-
-        // If signed inline, update signed = 1, signed_at, and save signature image properly
-        if ($inlineSignature && $newContractId) {
-            try {
-                // If it is a base64 image data url, save it to uploads folder
-                $signatureImagePath = null;
-                if (strpos($inlineSignature, 'data:image/') === 0) {
-                    $sigDir = __DIR__ . '/../uploads/signatures';
-                    if (!is_dir($sigDir)) mkdir($sigDir, 0755, true);
-                    
-                    $imgData = explode(',', $inlineSignature, 2);
-                    if (count($imgData) === 2) {
-                        $decoded = base64_decode($imgData[1]);
-                        $sigFilename = 'sig_' . $booking_id . '_' . time() . '.png';
-                        $signatureImagePath = $sigDir . '/' . $sigFilename;
-                        file_put_contents($signatureImagePath, $decoded);
-                    }
-                }
-                
-                $updateSigned = $pdo->prepare("
-                    UPDATE contracts 
-                    SET signed = 1, 
-                        signed_at = ?, 
-                        signature_typed = ? 
-                    WHERE id = ?
-                ");
-                $updateSigned->execute([
-                    $signedAtValue, 
-                    $signatureImagePath ?? $inlineSignature, 
-                    $newContractId
-                ]);
-            } catch (Exception $signEx) {
-                error_log("Could not save contract signature: " . $signEx->getMessage());
+            
+            // Fallback to any published template
+            if (!$defaultTemplate) {
+                $tmplStmt = $pdo->prepare("SELECT * FROM contract_templates WHERE tenant_id = ? ORDER BY created_at ASC LIMIT 1");
+                $tmplStmt->execute([$tenant_id]);
+                $defaultTemplate = $tmplStmt->fetch();
             }
-            // Clear session signature after use
-            unset($_SESSION['contract_signature'], $_SESSION['contract_signed_at']);
-        }
-        
-        // Send welcome & sign email
-        require_once __DIR__ . '/../includes/email.php';
-        
-        // Get tenant info for branding
-        $tenantStmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
-        $tenantStmt->execute([$tenant_id]);
-        $tenantInfo = $tenantStmt->fetch();
-        
-        // Store credentials / generated details in session if card payment, so booking-confirmation.php can send them later!
-        if ($payment_method === 'card') {
-            $_SESSION['customer_account_created'] = $customerAccountCreated;
-            $_SESSION['generated_customer_password'] = $customerPassword;
-        } else {
+            
+            $contractContent = $defaultTemplate ? $defaultTemplate['content'] : 'Default rental agreement for booking #' . $booking_id;
+            $templateId = $defaultTemplate ? $defaultTemplate['id'] : null;
+            
+            // Generate unique signing token
+            $signingToken = bin2hex(random_bytes(32));
+            
+            // Determine if customer already signed inline via the checkout agreement step
+            $inlineSignature = $_SESSION['contract_signature'] ?? null;
+            $inlineSignedAt  = $_SESSION['contract_signed_at'] ?? null;
+            $contractStatus  = $inlineSignature ? 'signed' : 'pending';
+            $signedAtValue   = $inlineSignature ? $inlineSignedAt : null;
+
+            // Create contract record
+            $contractStmt = $pdo->prepare("
+                INSERT INTO contracts (tenant_id, booking_id, template_id, content, contract_status, signing_token, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, NOW())
+            ");
+            $contractStmt->execute([$tenant_id, $booking_id, $templateId, $contractContent, $contractStatus, $signingToken]);
+            $newContractId = $pdo->lastInsertId();
+
+            // If signed inline, update signed = 1, signed_at, and save signature image properly
+            if ($inlineSignature && $newContractId) {
+                try {
+                    // If it is a base64 image data url, save it to uploads folder
+                    $signatureImagePath = null;
+                    if (strpos($inlineSignature, 'data:image/') === 0) {
+                        $sigDir = __DIR__ . '/../uploads/signatures';
+                        if (!is_dir($sigDir)) mkdir($sigDir, 0755, true);
+                        
+                        $imgData = explode(',', $inlineSignature, 2);
+                        if (count($imgData) === 2) {
+                            $decoded = base64_decode($imgData[1]);
+                            $sigFilename = 'sig_' . $booking_id . '_' . time() . '.png';
+                            $signatureImagePath = $sigDir . '/' . $sigFilename;
+                            file_put_contents($signatureImagePath, $decoded);
+                        }
+                    }
+                    
+                    $updateSigned = $pdo->prepare("
+                        UPDATE contracts 
+                        SET signed = 1, 
+                            signed_at = ?, 
+                            signature_typed = ? 
+                        WHERE id = ?
+                    ");
+                    $updateSigned->execute([
+                        $signedAtValue, 
+                        $signatureImagePath ?? $inlineSignature, 
+                        $newContractId
+                    ]);
+                } catch (Exception $signEx) {
+                    error_log("Could not save contract signature: " . $signEx->getMessage());
+                }
+                // Clear session signature after use
+                unset($_SESSION['contract_signature'], $_SESSION['contract_signed_at']);
+            }
+            
+            // Send welcome & sign email
+            require_once __DIR__ . '/../includes/email.php';
+            
+            // Get tenant info for branding
+            $tenantStmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
+            $tenantStmt->execute([$tenant_id]);
+            $tenantInfo = $tenantStmt->fetch();
+            
             // Send welcome & credentials email immediately for cash payments
             if ($tenantInfo && !empty($booking_data['customer_email'])) {
                 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
@@ -651,12 +623,12 @@ try {
                     error_log("Account credentials email sent to {$booking_data['customer_email']}: " . ($res2 ? 'SUCCESS' : 'FAILED'));
                 }
             }
+            
+            error_log("Contract created for booking #{$booking_id} with token: {$signingToken}");
+        } catch (Exception $contractError) {
+            // Don't fail the booking if contract creation fails
+            error_log("Contract creation error (non-fatal): " . $contractError->getMessage());
         }
-        
-        error_log("Contract created for booking #{$booking_id} with token: {$signingToken}");
-    } catch (Exception $contractError) {
-        // Don't fail the booking if contract creation fails
-        error_log("Contract creation error (non-fatal): " . $contractError->getMessage());
     }
     // =============================================
     
@@ -678,7 +650,8 @@ try {
             $dynamic_base_url = $protocol . "://" . $host . $base_dir;
             
             // Define SUCCESS and CANCEL urls
-            $success_url = $dynamic_base_url . '/templates/booking-confirmation.php?id=' . $booking_id . '&redirect_status=succeeded&session_id={CHECKOUT_SESSION_ID}';
+            // No booking_id yet — it will be created only after Stripe confirms payment
+            $success_url = $dynamic_base_url . '/templates/booking-confirmation.php?redirect_status=succeeded&session_id={CHECKOUT_SESSION_ID}';
             $cancel_url = $dynamic_base_url . '/templates/checkout.php?vehicle_id=' . $booking_data['vehicle_id'] . '&cancelled=1';
             
             // Format pickup and drop-off dates & times nicely for Stripe invoice description
@@ -693,6 +666,27 @@ try {
             
             $item_description = "Pick-up: " . $pickup_f . " at " . $pickup_t_f . " | " .
                                "Drop-off: " . $return_f . " at " . $return_t_f;
+            
+            // Store ALL booking data in session so we can create the DB records after Stripe confirms payment
+            $tempRef = bin2hex(random_bytes(8));
+            $_SESSION['stripe_pending_booking'] = [
+                'temp_ref' => $tempRef,
+                'booking_data' => $booking_data,
+                'total_price' => $total_price,
+                'security_deposit' => $security_deposit,
+                'matched_package_name' => $matched_package_name,
+                'vehicle' => [
+                    'id' => $vehicle['id'],
+                    'brand' => $vehicle['brand'],
+                    'model' => $vehicle['model'],
+                ],
+                'stripe_settings' => [
+                    'currency' => $stripe_settings['currency'] ?? 'gbp',
+                    'deposit_amount' => $stripe_settings['deposit_amount'] ?? 0,
+                    'deposit_payment_mode' => $stripe_settings['deposit_payment_mode'] ?? 'collection',
+                ],
+                'created_at' => time(),
+            ];
             
             // Create Stripe Checkout Session
             $stripe_session = \Stripe\Checkout\Session::create([
@@ -714,17 +708,14 @@ try {
                 'customer_email' => $booking_data['customer_email'],
                 'metadata' => [
                     'tenant_id' => $tenant_id,
-                    'booking_id' => $booking_id,
+                    'temp_ref' => $tempRef,
                 ]
             ]);
             
             $redirect_url = $stripe_session->url;
             
-            // Update the booking with the checkout session ID
-            $update_stmt = $pdo->prepare("UPDATE bookings SET stripe_payment_id = ? WHERE id = ? AND tenant_id = ?");
-            $update_stmt->execute([$stripe_session->id, $booking_id, $tenant_id]);
-            
         } catch (Exception $stripeEx) {
+            unset($_SESSION['stripe_pending_booking']);
             echo json_encode(['success' => false, 'message' => 'Stripe Checkout Session initialization failed: ' . $stripeEx->getMessage()]);
             exit;
         }
@@ -735,12 +726,13 @@ try {
         unset($_SESSION['booking_data']);
         unset($_SESSION['checkout_step']);
         unset($_SESSION['didit_session_id']);
+        unset($_SESSION['stripe_pending_booking']);
     }
     
     echo json_encode([
         'success' => true,
         'booking_id' => $booking_id,
-        'message' => 'Booking initialized',
+        'message' => $redirect_url ? 'Proceeding to secure payment' : 'Booking confirmed',
         'account_created' => $customerAccountCreated,
         'redirect_url' => $redirect_url,
         'status' => $initial_status
