@@ -427,8 +427,8 @@ $rental_days = ($pickup_ts && $return_ts) ? max(1, (int)round(($return_ts - $pic
         <!-- ══════════════ SIDEBAR ══════════════ -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-24">
-                <img src="<?= htmlspecialchars($vehicle_image) ?>" alt="<?= htmlspecialchars($vehicle['name']) ?>" class="w-full h-40 object-cover rounded-xl mb-4">
-                <h3 class="font-bold text-gray-900 text-base"><?= htmlspecialchars($vehicle['name']) ?></h3>
+                <img src="<?= htmlspecialchars($vehicle_image) ?>" alt="<?= htmlspecialchars(($vehicle['brand'] ?? '') . ' ' . ($vehicle['model'] ?? '')) ?>" class="w-full h-40 object-cover rounded-xl mb-4">
+                <h3 class="font-bold text-gray-900 text-base"><?= htmlspecialchars(($vehicle['brand'] ?? '') . ' ' . ($vehicle['model'] ?? '')) ?></h3>
                 <p class="text-sm text-gray-500 mb-4"><?= htmlspecialchars($vehicle['year'] . ' · ' . ucfirst($vehicle['category'] ?? '')) ?></p>
 
                 <div class="border-t border-gray-100 pt-4 space-y-2 text-sm">

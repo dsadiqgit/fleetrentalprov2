@@ -67,7 +67,9 @@ $error_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'update_profile') {
-        $full_name = sanitize($_POST['full_name'] ?? '');
+        $first_name = sanitize($_POST['first_name'] ?? '');
+        $last_name = sanitize($_POST['last_name'] ?? '');
+        $full_name = trim($first_name . ' ' . $last_name);
         $phone = sanitize($_POST['phone'] ?? '');
         $address_line1 = sanitize($_POST['address_line1'] ?? '');
         $address_line2 = sanitize($_POST['address_line2'] ?? '');
@@ -137,6 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Parse full name into first and last name
+$name_parts = explode(' ', $user['full_name'] ?? '', 2);
+$user_first_name = $name_parts[0] ?? '';
+$user_last_name = $name_parts[1] ?? '';
 
 $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
 ?>
@@ -219,10 +226,17 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                     <form method="POST" class="space-y-4">
                         <input type="hidden" name="action" value="update_profile">
                         
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                            <input type="text" name="full_name" value="<?= htmlspecialchars($user['full_name'] ?? '') ?>" required
-                                   class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">First Name</label>
+                                <input type="text" name="first_name" value="<?= htmlspecialchars($user_first_name) ?>" required
+                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Last Name</label>
+                                <input type="text" name="last_name" value="<?= htmlspecialchars($user_last_name) ?>" required
+                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                            </div>
                         </div>
 
                         <div>

@@ -36,6 +36,45 @@ $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? AND tenant_id = ?");
 $stmt->execute([$user_id, $tenant_id]);
 $user = $stmt->fetch();
 
+$success_msg = '';
+$error_msg = '';
+
+// Handle Booking Cancellation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cancel_booking') {
+    $cancel_booking_id = intval($_POST['booking_id'] ?? 0);
+    if ($cancel_booking_id > 0) {
+        // Validate booking belongs to the customer and is eligible for cancellation
+        $stmt_check = $pdo->prepare("SELECT status FROM bookings WHERE id = ? AND tenant_id = ? AND customer_email = ?");
+        $stmt_check->execute([$cancel_booking_id, $tenant_id, $user_email]);
+        $booking_status = $stmt_check->fetchColumn();
+        
+        if (!$booking_status) {
+            $error_msg = "Booking not found or access denied.";
+        } elseif (!in_array($booking_status, ['pending', 'confirmed'])) {
+            $error_msg = "This booking cannot be cancelled because its status is already '{$booking_status}'.";
+        } else {
+            try {
+                $pdo->beginTransaction();
+                
+                // Update booking status to cancelled
+                $stmt_cancel = $pdo->prepare("UPDATE bookings SET status = 'cancelled', updated_at = NOW() WHERE id = ?");
+                $stmt_cancel->execute([$cancel_booking_id]);
+                
+                // Update associated contract status to cancelled if exists
+                $stmt_contract = $pdo->prepare("UPDATE contracts SET contract_status = 'cancelled', updated_at = NOW() WHERE booking_id = ?");
+                $stmt_contract->execute([$cancel_booking_id]);
+                
+                $pdo->commit();
+                $success_msg = "Booking #REF-" . str_pad($cancel_booking_id, 5, '0', STR_PAD_LEFT) . " has been successfully cancelled.";
+                
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                $error_msg = "Failed to cancel booking. Please try again or contact support.";
+            }
+        }
+    }
+}
+
 // Get customer bookings with vehicle and contract info
 $stmt = $pdo->prepare("
     SELECT b.*, 
@@ -97,7 +136,7 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
             <!-- Welcome Header -->
             <div class="max-w-6xl mb-12">
                 <h1 class="text-4xl font-semibold text-gray-900 tracking-tight">Bonjour, <?= htmlspecialchars(explode(' ', $user['full_name'] ?? 'Customer')[0]) ?>!</h1>
-                <p class="text-gray-500 mt-2 text-lg font-medium">Here are your active fleet reservations.</p>
+                <p class="text-gray-500 mt-2 text-lg font-medium">Here are your fleet reservations and active rentals.</p>
             </div>
 
             <!-- Stats Overview -->
@@ -107,32 +146,32 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
             $pendingContracts = count(array_filter($bookings, function($b) { return $b['contract_id'] && $b['contract_status'] !== 'signed'; }));
             ?>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-6xl">
-                <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all">
+                <div class="bg-white p-6 sm:p-8 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div>
                         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-1">Total Orders</p>
                         <h3 class="text-3xl font-semibold text-gray-900"><?= $totalBookings ?></h3>
                     </div>
-                    <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                    <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-105">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                 </div>
 
-                <div class="bg-[#1a1f2b] p-8 rounded-[2rem] shadow-2xl flex items-center justify-between text-white group">
+                <div class="bg-[#1e293b] p-6 sm:p-8 rounded-[2rem] shadow-lg flex items-center justify-between text-white group hover:scale-[1.01] transition-all">
                     <div>
                         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-1">Active Rentals</p>
                         <h3 class="text-3xl font-semibold"><?= $activeBookings ?></h3>
                     </div>
-                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 transition-transform group-hover:scale-110">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 transition-transform group-hover:scale-105">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                 </div>
 
-                <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all">
+                <div class="bg-white p-6 sm:p-8 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div>
                         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-1">Pending Sign</p>
                         <h3 class="text-3xl font-semibold text-gray-900"><?= $pendingContracts ?></h3>
                     </div>
-                    <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 transition-transform group-hover:scale-110">
+                    <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 transition-transform group-hover:scale-105">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
                 </div>
@@ -165,78 +204,91 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                             }
                             
                             $statusColors = [
-                                'confirmed' => 'bg-blue-50 text-blue-700',
-                                'active' => 'bg-green-50 text-green-700',
-                                'completed' => 'bg-gray-100 text-gray-600',
-                                'cancelled' => 'bg-red-50 text-red-600',
-                                'pending' => 'bg-amber-50 text-amber-700',
+                                'confirmed' => 'bg-blue-50 text-blue-700 border-blue-100',
+                                'active' => 'bg-green-50 text-green-700 border-green-100',
+                                'completed' => 'bg-gray-50 text-gray-600 border-gray-100',
+                                'cancelled' => 'bg-red-50 text-red-600 border-red-100',
+                                'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
                             ];
-                            $statusClass = $statusColors[$booking['status']] ?? 'bg-gray-100 text-gray-600';
+                            $statusClass = $statusColors[$booking['status']] ?? 'bg-gray-100 text-gray-600 border-gray-200';
                         ?>
-                        <div class="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm hover:shadow-2xl transition-all group overflow-hidden relative">
-                            <div class="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-indigo-50/0 group-hover:from-blue-50/50 group-hover:to-indigo-50/50 transition-all duration-500 -z-10"></div>
-                            
-                            <div class="flex flex-col md:flex-row md:items-center gap-10">
-                                <div class="w-full md:w-56 h-40 rounded-[2rem] overflow-hidden bg-gray-50 flex-shrink-0 relative">
+                        <div class="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                            <div class="flex flex-col md:flex-row md:items-center gap-6 sm:gap-10">
+                                
+                                <!-- Vehicle Image -->
+                                <div class="w-full md:w-56 h-40 rounded-2xl overflow-hidden bg-gray-50 flex-shrink-0 relative">
                                     <?php if ($vehicleImage): ?>
-                                        <img src="<?= htmlspecialchars($vehicleImage) ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                                        <img src="<?= htmlspecialchars($vehicleImage) ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                                     <?php else: ?>
                                         <div class="w-full h-full flex items-center justify-center text-gray-200">
                                             <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                         </div>
                                     <?php endif; ?>
                                     <div class="absolute top-4 left-4">
-                                        <span class="px-4 py-1.5 rounded-2xl text-[10px] font-semibold uppercase tracking-widest bg-white/90 backdrop-blur-md shadow-xl text-gray-900 border border-gray-100"><?= $bookingRef ?></span>
+                                        <span class="px-3 py-1 rounded-xl text-[10px] font-semibold uppercase tracking-wider bg-white/95 backdrop-blur-md shadow-sm text-gray-900 border border-gray-100"><?= $bookingRef ?></span>
                                     </div>
                                 </div>
         
+                                <!-- Vehicle and Booking Details -->
                                 <div class="flex-1">
-                                    <div class="flex flex-wrap items-center gap-4 mb-3">
-                                        <span class="px-4 py-1.5 rounded-2xl text-[10px] font-semibold uppercase tracking-[0.1em] <?= $statusClass ?> shadow-sm shadow-current/5"><?= $booking['status'] ?></span>
-                                        <div class="flex items-center gap-2 text-gray-400">
+                                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                                        <span class="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border <?= $statusClass ?>"><?= $booking['status'] ?></span>
+                                        <div class="flex items-center gap-1.5 text-gray-400">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            <span class="text-xs font-semibold uppercase tracking-tight"><?= date('M j, Y', strtotime($booking['created_at'])) ?></span>
+                                            <span class="text-xs font-medium uppercase tracking-tight"><?= date('M j, Y', strtotime($booking['created_at'])) ?></span>
                                         </div>
                                     </div>
-                                    <h3 class="text-3xl font-semibold text-gray-900 leading-tight mb-6"><?= htmlspecialchars($vehicleName ?: 'Vehicle Rental') ?></h3>
+                                    
+                                    <h3 class="text-2xl font-semibold text-gray-900 leading-tight mb-4"><?= htmlspecialchars($vehicleName ?: 'Vehicle Rental') ?></h3>
+                                    
                                     <div class="flex flex-wrap items-center gap-y-4">
-                                        <div class="flex items-center gap-8">
+                                        <div class="flex items-center gap-6 sm:gap-8">
                                             <div>
-                                                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Pick-up</p>
-                                                <p class="text-base font-semibold text-gray-900"><?= date('D, M j', strtotime($booking['pickup_date'])) ?></p>
+                                                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Pick-up</p>
+                                                <p class="text-sm font-semibold text-gray-800"><?= date('D, M j, Y', strtotime($booking['pickup_date'])) ?> at <?= date('h:ia', strtotime($booking['pickup_time'] ?? '10:00')) ?></p>
                                             </div>
-                                            <div class="w-12 h-0.5 bg-gray-100 rounded-full"></div>
+                                            <div class="w-8 h-px bg-gray-200"></div>
                                             <div>
-                                                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Return</p>
-                                                <p class="text-base font-semibold text-gray-900"><?= date('D, M j', strtotime($booking['return_date'])) ?></p>
+                                                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Return</p>
+                                                <p class="text-sm font-semibold text-gray-800"><?= date('D, M j, Y', strtotime($booking['return_date'])) ?> at <?= date('h:ia', strtotime($booking['return_time'] ?? '10:00')) ?></p>
                                             </div>
                                         </div>
-                                        <div class="ml-auto flex items-center gap-3 bg-gray-50 px-6 py-3 rounded-[1.5rem] border border-gray-100">
+                                        <div class="md:ml-auto flex items-center gap-3 bg-gray-50 px-5 py-2.5 rounded-2xl border border-gray-100">
                                             <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Total cost</span>
-                                            <span class="text-2xl font-semibold text-gray-900">£<?= number_format($booking['total_price'], 2) ?></span>
+                                            <span class="text-xl font-semibold text-gray-900">£<?= number_format($booking['total_price'], 2) ?></span>
                                         </div>
                                     </div>
                                 </div>
         
-                                <div class="flex flex-row md:flex-col items-stretch gap-4 w-full md:w-56 pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-gray-100 md:pl-10">
+                                <!-- Actions Block -->
+                                <div class="flex flex-row md:flex-col items-stretch gap-3 w-full md:w-52 pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-gray-100 md:pl-8">
                                     <?php if ($booking['contract_id']): ?>
                                         <?php if ($booking['contract_status'] === 'signed'): ?>
                                             <button onclick="viewContract(<?= $booking['id'] ?>, '<?= htmlspecialchars($booking['signing_token']) ?>')" 
-                                                    class="flex-1 flex items-center justify-center gap-2 px-8 py-5 text-xs font-semibold uppercase tracking-widest text-gray-700 bg-gray-50 border border-gray-200 rounded-[1.5rem] hover:bg-gray-100 transition-all">
+                                                    class="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-700 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all">
                                                 View Agreement
                                             </button>
                                             <a href="/api/download-contract.php?booking_id=<?= $booking['id'] ?>" target="_blank"
-                                               class="flex-1 flex items-center justify-center gap-2 px-8 py-5 text-xs font-semibold uppercase tracking-widest text-white rounded-[1.5rem] shadow-2xl shadow-blue-200 transition-all active:scale-95" style="background: linear-gradient(135deg, <?= $primaryColor ?>, #1e40af)">
+                                               class="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-white rounded-xl shadow-md shadow-blue-100 hover:opacity-95 transition-all active:scale-95" style="background: linear-gradient(135deg, <?= $primaryColor ?>, #1e40af)">
                                                 PDF Copy
                                             </a>
-                                        <?php else: ?>
+                                        <?php elseif ($booking['status'] !== 'cancelled'): ?>
                                             <a href="/templates/contract-sign.php?booking_id=<?= $booking['id'] ?>&token=<?= htmlspecialchars($booking['signing_token']) ?>" 
-                                               class="w-full flex items-center justify-center gap-2 px-8 py-6 text-xs font-semibold uppercase tracking-[0.2em] text-white rounded-[1.5rem] shadow-2xl shadow-amber-200 transform hover:-translate-y-1 transition-all active:scale-95 animate-pulse" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
+                                               class="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-white rounded-xl shadow-md shadow-amber-100 hover:opacity-95 transition-all active:scale-95" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
                                                 Sign Contract
                                             </a>
                                         <?php endif; ?>
                                     <?php endif; ?>
+
+                                    <!-- Cancellation Button -->
+                                    <?php if (in_array($booking['status'], ['pending', 'confirmed'])): ?>
+                                        <button onclick="triggerCancelBooking(<?= $booking['id'] ?>)" 
+                                                class="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all">
+                                            Cancel Booking
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
+
                             </div>
                         </div>
                         <?php endforeach; ?>
@@ -245,6 +297,19 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
             </div>
         </main>
     </div>
+
+    <!-- Notification Trigger for Backend Messages -->
+    <?php if ($success_msg || $error_msg): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                showNotificationModal(
+                    "<?= $success_msg ? 'Success' : 'Error' ?>",
+                    "<?= htmlspecialchars($success_msg ?: $error_msg) ?>",
+                    "<?= $success_msg ? 'success' : 'error' ?>"
+                );
+            });
+        </script>
+    <?php endif; ?>
 
     <!-- Mobile Menu Script -->
     <script>
@@ -261,21 +326,59 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
         overlay?.addEventListener('click', toggleMenu);
     </script>
 
+    <!-- Custom Modal for Notifications / Errors -->
+    <div id="notificationModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 text-center transform transition-all duration-300 scale-95 opacity-0" id="notificationModalBox">
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" id="notificationIconBox">
+                <!-- Dynamic SVG will be injected here -->
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2" id="notificationTitle">Notification</h3>
+            <p class="text-gray-500 text-sm mb-6" id="notificationText">Message goes here.</p>
+            <button onclick="closeNotificationModal()" class="w-full py-3 bg-gray-900 hover:bg-black text-white text-sm font-semibold rounded-xl transition-all shadow-sm">
+                Okay
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal for Cancellation -->
+    <div id="confirmCancelModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 text-center transform transition-all duration-300 scale-95 opacity-0" id="confirmCancelBox">
+            <div class="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Cancel Reservation?</h3>
+            <p class="text-gray-500 text-sm mb-6">Are you sure you want to cancel this booking? This action is permanent and cannot be undone.</p>
+            
+            <form method="POST" id="cancelForm" class="grid grid-cols-2 gap-3">
+                <input type="hidden" name="action" value="cancel_booking">
+                <input type="hidden" name="booking_id" id="cancelBookingId" value="">
+                <button type="button" onclick="closeCancelModal()" class="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-all">
+                    No, Keep It
+                </button>
+                <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-red-100">
+                    Yes, Cancel
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Contract Viewer Modal -->
     <div id="contractModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">Rental Contract</h3>
-                    <p class="text-sm text-gray-500" id="contractModalSubtitle"></p>
+                    <h3 class="text-lg font-semibold text-gray-900">Rental Agreement</h3>
+                    <p class="text-xs text-gray-400 mt-0.5" id="contractModalSubtitle"></p>
                 </div>
-                <button onclick="closeContractModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <button onclick="closeContractModal()" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors">
                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <!-- Modal Content -->
-            <div class="flex-1 overflow-y-auto p-6" id="contractModalContent">
+            <div class="flex-1 overflow-y-auto p-6 text-sm leading-relaxed text-gray-700" id="contractModalContent">
                 <div class="text-center py-12 text-gray-400">
                     <svg class="animate-spin h-8 w-8 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -285,14 +388,75 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                 </div>
             </div>
             <!-- Modal Footer -->
-            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div id="contractSignedInfo" class="text-sm text-gray-500"></div>
-                <button onclick="closeContractModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Close</button>
+            <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div id="contractSignedInfo" class="text-xs text-gray-500 font-medium"></div>
+                <button onclick="closeContractModal()" class="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Close</button>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script>
+    // Custom Notification Modal
+    function showNotificationModal(title, text, type) {
+        const modal = document.getElementById('notificationModal');
+        const box = document.getElementById('notificationModalBox');
+        const titleEl = document.getElementById('notificationTitle');
+        const textEl = document.getElementById('notificationText');
+        const iconEl = document.getElementById('notificationIconBox');
+
+        titleEl.textContent = title;
+        textEl.textContent = text;
+
+        if (type === 'success') {
+            iconEl.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-green-50 text-green-600";
+            iconEl.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+        } else {
+            iconEl.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-red-50 text-red-600";
+            iconEl.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+        }
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            box.classList.remove('scale-95', 'opacity-0');
+            box.classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+
+    function closeNotificationModal() {
+        const modal = document.getElementById('notificationModal');
+        const box = document.getElementById('notificationModalBox');
+        box.classList.remove('scale-100', 'opacity-100');
+        box.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+
+    // Cancellation Flow
+    function triggerCancelBooking(bookingId) {
+        document.getElementById('cancelBookingId').value = bookingId;
+        const modal = document.getElementById('confirmCancelModal');
+        const box = document.getElementById('confirmCancelBox');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            box.classList.remove('scale-95', 'opacity-0');
+            box.classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+
+    function closeCancelModal() {
+        const modal = document.getElementById('confirmCancelModal');
+        const box = document.getElementById('confirmCancelBox');
+        box.classList.remove('scale-100', 'opacity-100');
+        box.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+
+    // Contract Viewer
     function viewContract(bookingId, token) {
         const modal = document.getElementById('contractModal');
         const content = document.getElementById('contractModalContent');
@@ -322,11 +486,11 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                     if (data.contract.contract_status === 'signed' && data.contract.signature_image_url) {
                         html += `
                             <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #e5e7eb;">
-                                <p style="font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Digital Signature</p>
+                                <p style="font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Digital Signature</p>
                                 <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center;">
                                     <img src="${data.contract.signature_image_url}" alt="Signature" style="max-width: 280px; max-height: 120px; margin: 0 auto; display: block;">
                                 </div>
-                                ${data.contract.signed_at ? '<p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Signed on ' + new Date(data.contract.signed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</p>' : ''}
+                                ${data.contract.signed_at ? '<p style="font-size: 11px; color: #9ca3af; margin-top: 8px;">Signed on ' + new Date(data.contract.signed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</p>' : ''}
                             </div>
                         `;
                     }
@@ -363,6 +527,5 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
         if (e.key === 'Escape') closeContractModal();
     });
     </script>
-    <?php include __DIR__ . '/../includes/onboarding-widget.php'; ?>
 </body>
 </html>

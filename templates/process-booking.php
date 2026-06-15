@@ -184,7 +184,10 @@ try {
         FROM bookings 
         WHERE vehicle_id = ? 
         AND tenant_id = ? 
-        AND status NOT IN ('cancelled', 'completed')
+        AND (
+            status NOT IN ('cancelled', 'completed', 'pending') 
+            OR (status = 'pending' AND created_at >= NOW() - INTERVAL 15 MINUTE)
+        )
         AND (
             (pickup_date <= ? AND return_date >= ?) OR
             (pickup_date <= ? AND return_date >= ?) OR
@@ -415,44 +418,46 @@ try {
         }
     }
 
-    // Send booking confirmation email
-    try {
-        require_once __DIR__ . '/../includes/email.php';
-        
-        // Get tenant info
-        $tenantStmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
-        $tenantStmt->execute([$tenant_id]);
-        $tenantInfo = $tenantStmt->fetch();
-        
-        // Get vehicle info
-        $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles WHERE id = ? AND tenant_id = ?");
-        $vehicleStmt->execute([$booking_data['vehicle_id'], $tenant_id]);
-        $vehicleInfo = $vehicleStmt->fetch();
-        
-        if ($tenantInfo && $vehicleInfo && !empty($booking_data['customer_email'])) {
-            // Build booking data array for email
-            $emailBookingData = [
-                'id' => $booking_id,
-                'customer_name' => $booking_data['customer_name'],
-                'pickup_date' => $booking_data['pickup_date'],
-                'pickup_time' => $booking_data['pickup_time'] ?? '10:00',
-                'return_date' => $booking_data['return_date'],
-                'return_time' => $booking_data['return_time'] ?? '10:00',
-                'total_price' => $total_price,
-                'security_deposit' => $security_deposit,
-                'currency' => $stripe_settings['currency'] ?? 'gbp'
-            ];
+    // Send booking confirmation email (deferred to booking-confirmation.php if card payment)
+    if ($payment_method !== 'card') {
+        try {
+            require_once __DIR__ . '/../includes/email.php';
             
-            $emailSent = sendBookingConfirmationEmail(
-                $booking_data['customer_email'],
-                $emailBookingData,
-                $tenantInfo,
-                $vehicleInfo
-            );
-            error_log("Booking confirmation email to {$booking_data['customer_email']}: " . ($emailSent ? 'SUCCESS' : 'FAILED'));
+            // Get tenant info
+            $tenantStmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
+            $tenantStmt->execute([$tenant_id]);
+            $tenantInfo = $tenantStmt->fetch();
+            
+            // Get vehicle info
+            $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles WHERE id = ? AND tenant_id = ?");
+            $vehicleStmt->execute([$booking_data['vehicle_id'], $tenant_id]);
+            $vehicleInfo = $vehicleStmt->fetch();
+            
+            if ($tenantInfo && $vehicleInfo && !empty($booking_data['customer_email'])) {
+                // Build booking data array for email
+                $emailBookingData = [
+                    'id' => $booking_id,
+                    'customer_name' => $booking_data['customer_name'],
+                    'pickup_date' => $booking_data['pickup_date'],
+                    'pickup_time' => $booking_data['pickup_time'] ?? '10:00',
+                    'return_date' => $booking_data['return_date'],
+                    'return_time' => $booking_data['return_time'] ?? '10:00',
+                    'total_price' => $total_price,
+                    'security_deposit' => $security_deposit,
+                    'currency' => $stripe_settings['currency'] ?? 'gbp'
+                ];
+                
+                $emailSent = sendBookingConfirmationEmail(
+                    $booking_data['customer_email'],
+                    $emailBookingData,
+                    $tenantInfo,
+                    $vehicleInfo
+                );
+                error_log("Booking confirmation email to {$booking_data['customer_email']}: " . ($emailSent ? 'SUCCESS' : 'FAILED'));
+            }
+        } catch (Exception $emailError) {
+            error_log("Booking confirmation email error (non-fatal): " . $emailError->getMessage());
         }
-    } catch (Exception $emailError) {
-        error_log("Booking confirmation email error (non-fatal): " . $emailError->getMessage());
     }
 
     // If only intent requested, return now (but with booking_id)
@@ -570,13 +575,38 @@ try {
         $contractStmt->execute([$tenant_id, $booking_id, $templateId, $contractContent, $contractStatus, $signingToken]);
         $newContractId = $pdo->lastInsertId();
 
-        // If signed inline, update the signed_at column (if it exists) and save signature
+        // If signed inline, update signed = 1, signed_at, and save signature image properly
         if ($inlineSignature && $newContractId) {
             try {
-                $updateSigned = $pdo->prepare("UPDATE contracts SET signed_at = ? WHERE id = ?");
-                $updateSigned->execute([$signedAtValue, $newContractId]);
+                // If it is a base64 image data url, save it to uploads folder
+                $signatureImagePath = null;
+                if (strpos($inlineSignature, 'data:image/') === 0) {
+                    $sigDir = __DIR__ . '/../uploads/signatures';
+                    if (!is_dir($sigDir)) mkdir($sigDir, 0755, true);
+                    
+                    $imgData = explode(',', $inlineSignature, 2);
+                    if (count($imgData) === 2) {
+                        $decoded = base64_decode($imgData[1]);
+                        $sigFilename = 'sig_' . $booking_id . '_' . time() . '.png';
+                        $signatureImagePath = $sigDir . '/' . $sigFilename;
+                        file_put_contents($signatureImagePath, $decoded);
+                    }
+                }
+                
+                $updateSigned = $pdo->prepare("
+                    UPDATE contracts 
+                    SET signed = 1, 
+                        signed_at = ?, 
+                        signature_typed = ? 
+                    WHERE id = ?
+                ");
+                $updateSigned->execute([
+                    $signedAtValue, 
+                    $signatureImagePath ?? $inlineSignature, 
+                    $newContractId
+                ]);
             } catch (Exception $signEx) {
-                error_log("Could not set signed_at (column may not exist): " . $signEx->getMessage());
+                error_log("Could not save contract signature: " . $signEx->getMessage());
             }
             // Clear session signature after use
             unset($_SESSION['contract_signature'], $_SESSION['contract_signed_at']);
@@ -590,33 +620,36 @@ try {
         $tenantStmt->execute([$tenant_id]);
         $tenantInfo = $tenantStmt->fetch();
         
-        if ($tenantInfo && !empty($booking_data['customer_email'])) {
-            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-            $host = $_SERVER['HTTP_HOST'];
-            $contractUrl = $protocol . $host . '/templates/contract-sign.php?booking_id=' . $booking_id . '&token=' . $signingToken;
-            
-            $res1 = sendContractWelcomeEmail(
-                $booking_data['customer_email'],
-                $booking_data['customer_name'],
-                $contractUrl,
-                $tenantInfo
-            );
-            error_log("Contract welcome email sent to {$booking_data['customer_email']}: " . ($res1 ? 'SUCCESS' : 'FAILED'));
-            
-            // Send customer account credentials email
-            if ($customerAccountCreated && $customerPassword && $tenantInfo) {
-                $res2 = sendCustomerAccountEmail(
+        // Store credentials / generated details in session if card payment, so booking-confirmation.php can send them later!
+        if ($payment_method === 'card') {
+            $_SESSION['customer_account_created'] = $customerAccountCreated;
+            $_SESSION['generated_customer_password'] = $customerPassword;
+        } else {
+            // Send welcome & credentials email immediately for cash payments
+            if ($tenantInfo && !empty($booking_data['customer_email'])) {
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+                $host = $_SERVER['HTTP_HOST'];
+                $contractUrl = $protocol . $host . '/templates/contract-sign.php?booking_id=' . $booking_id . '&token=' . $signingToken;
+                
+                $res1 = sendContractWelcomeEmail(
                     $booking_data['customer_email'],
                     $booking_data['customer_name'],
-                    $customerPassword,
-                    $tenantInfo,
-                    $booking_id
+                    $contractUrl,
+                    $tenantInfo
                 );
-                error_log("Account credentials email sent to {$booking_data['customer_email']}: " . ($res2 ? 'SUCCESS' : 'FAILED'));
-            } else if (!$customerAccountCreated && $tenantInfo) {
-                // If account already existed, send a simple login reminder
-                // You could implement sendLoginReminderEmail here
-                error_log("Customer already has account, skipping credentials email.");
+                error_log("Contract welcome email sent to {$booking_data['customer_email']}: " . ($res1 ? 'SUCCESS' : 'FAILED'));
+                
+                // Send customer account credentials email
+                if ($customerAccountCreated && $customerPassword && $tenantInfo) {
+                    $res2 = sendCustomerAccountEmail(
+                        $booking_data['customer_email'],
+                        $booking_data['customer_name'],
+                        $customerPassword,
+                        $tenantInfo,
+                        $booking_id
+                    );
+                    error_log("Account credentials email sent to {$booking_data['customer_email']}: " . ($res2 ? 'SUCCESS' : 'FAILED'));
+                }
             }
         }
         

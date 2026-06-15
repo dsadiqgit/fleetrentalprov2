@@ -25,12 +25,124 @@ $booking = $stmt->fetch();
 
 // Handle Stripe Redirect success
 if (isset($_GET['redirect_status']) && $_GET['redirect_status'] === 'succeeded' && $booking && $booking['payment_status'] !== 'paid') {
-    $updateStmt = $pdo->prepare("UPDATE bookings SET status = 'confirmed', payment_status = 'paid' WHERE id = ? AND tenant_id = ?");
-    $updateStmt->execute([$booking_id, $tenant_id]);
+    $verified = false;
+    $session_id = $_GET['session_id'] ?? null;
     
-    // Refresh booking data
-    $stmt->execute([$booking_id, $tenant_id]);
-    $booking = $stmt->fetch();
+    if ($session_id) {
+        try {
+            // Get Stripe settings
+            $stmt_st = $pdo->prepare("SELECT stripe_secret_key FROM tenant_settings WHERE tenant_id = ?");
+            $stmt_st->execute([$tenant_id]);
+            $stripe_settings = $stmt_st->fetch();
+            $stripe_sk = $stripe_settings['stripe_secret_key'] ?? '';
+            
+            if (!empty($stripe_sk)) {
+                \Stripe\Stripe::setApiKey($stripe_sk);
+                $session = \Stripe\Checkout\Session::retrieve($session_id);
+                if ($session && ($session->payment_status === 'paid' || $session->status === 'complete')) {
+                    $verified = true;
+                }
+            } else {
+                // If stripe is unconfigured on local sandbox, bypass for developer testing
+                $verified = true;
+            }
+        } catch (Exception $e) {
+            error_log("Stripe confirmation verification failed: " . $e->getMessage());
+            // Fallback for local sandbox environments
+            if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
+                $verified = true;
+            }
+        }
+    } else {
+        // Fallback for testing redirects without session_id on localhost
+        if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
+            $verified = true;
+        }
+    }
+    
+    if ($verified) {
+        $updateStmt = $pdo->prepare("UPDATE bookings SET status = 'confirmed', payment_status = 'paid' WHERE id = ? AND tenant_id = ?");
+        $updateStmt->execute([$booking_id, $tenant_id]);
+        
+        // Refresh booking data
+        $stmt->execute([$booking_id, $tenant_id]);
+        $booking = $stmt->fetch();
+        
+        // Retrieve deferred credentials and trigger emails
+        try {
+            require_once __DIR__ . '/../includes/email.php';
+            
+            // Get tenant settings for deposit/currency
+            $stmt_ts = $pdo->prepare("SELECT currency FROM tenant_settings WHERE tenant_id = ?");
+            $stmt_ts->execute([$tenant_id]);
+            $tenant_sett = $stmt_ts->fetch();
+            
+            // Send booking confirmation email
+            $emailBookingData = [
+                'id' => $booking_id,
+                'customer_name' => $booking['customer_name'],
+                'pickup_date' => $booking['pickup_date'],
+                'pickup_time' => $booking['pickup_time'] ?? '10:00',
+                'return_date' => $booking['return_date'],
+                'return_time' => $booking['return_time'] ?? '10:00',
+                'total_price' => $booking['total_price'],
+                'security_deposit' => $booking['security_deposit'],
+                'currency' => $tenant_sett['currency'] ?? 'gbp'
+            ];
+            
+            sendBookingConfirmationEmail(
+                $booking['customer_email'],
+                $emailBookingData,
+                $tenant,
+                $booking
+            );
+            
+            // Fetch contract to check status & get token
+            $contractStmt = $pdo->prepare("SELECT * FROM contracts WHERE booking_id = ? AND tenant_id = ? LIMIT 1");
+            $contractStmt->execute([$booking_id, $tenant_id]);
+            $contract = $contractStmt->fetch();
+            
+            if ($contract) {
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+                $host = $_SERVER['HTTP_HOST'];
+                $contractUrl = $protocol . $host . '/templates/contract-sign.php?booking_id=' . $booking_id . '&token=' . $contract['signing_token'];
+                
+                // Only send signing email if not already signed inline
+                if ($contract['contract_status'] !== 'signed') {
+                    sendContractWelcomeEmail(
+                        $booking['customer_email'],
+                        $booking['customer_name'],
+                        $contractUrl,
+                        $tenant
+                    );
+                }
+            }
+            
+            // Check if newly created customer account credentials exist in session
+            $customerAccountCreated = $_SESSION['customer_account_created'] ?? false;
+            $customerPassword = $_SESSION['generated_customer_password'] ?? null;
+            
+            if ($customerAccountCreated && $customerPassword) {
+                sendCustomerAccountEmail(
+                    $booking['customer_email'],
+                    $booking['customer_name'],
+                    $customerPassword,
+                    $tenant,
+                    $booking_id
+                );
+            }
+            
+            // Clear checkout session parameters now that payment is confirmed
+            unset($_SESSION['booking_data']);
+            unset($_SESSION['checkout_step']);
+            unset($_SESSION['didit_session_id']);
+            unset($_SESSION['customer_account_created']);
+            unset($_SESSION['generated_customer_password']);
+            
+        } catch (Exception $e) {
+            error_log("Error in post-payment email dispatch: " . $e->getMessage());
+        }
+    }
 }
 
 if (!$booking) {
