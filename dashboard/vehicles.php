@@ -1458,63 +1458,13 @@ endif; ?>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
-                                <select name="seats" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg">
-                                    <?php $selected_seats = (int) field_raw('seats', 5); ?>
-                                    <option value="2" <?= $selected_seats === 2 ? 'selected' : ''?>>2 seats</option>
-                                    <option value="4" <?= $selected_seats === 4 ? 'selected' : ''?>>4 seats</option>
-                                    <option value="5" <?= $selected_seats === 5 ? 'selected' : ''?>>5 seats</option>
-                                    <option value="7" <?= $selected_seats === 7 ? 'selected' : ''?>>7 seats</option>
-                                    <option value="8" <?= $selected_seats >= 8 ? 'selected' : ''?>>8+ seats</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Doors</label>
-                                <input type="number" name="doors" value="<?= field_value('doors', '5')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Exterior Colour</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Colour</label>
                                 <input type="text" name="exterior_color" value="<?= field_value('exterior_color', 'Blue')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Interior Colour</label>
-                                <input type="text" name="interior_color" value="<?= field_value('interior_color', 'Brown')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Engine Capacity (L)</label>
                                 <input type="text" name="engine_capacity" value="<?= field_value('engine_capacity', '1.6')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            </div>
-                            <div class="col-span-2">
-                                <?php
-    $saved_features = [];
-    $raw_features = field_raw('vehicle_features', '');
-    if (!empty($raw_features)) {
-        $saved_features = json_decode($raw_features, true) ?? [];
-    } elseif ($show_edit_form && !empty($edit_vehicle['vehicle_features'])) {
-        $saved_features = json_decode($edit_vehicle['vehicle_features'], true) ?? [];
-    }
-?>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Features</label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="featureInput" placeholder="Add feature (e.g. Air Con, GPS, Bluetooth)..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm text-gray-700">
-                                    <button type="button" onclick="addFeature()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div id="featuresContainer" class="flex flex-wrap gap-2 mt-3">
-                                    <?php foreach ($saved_features as $feat): ?>
-                                    <span class="feature-tag inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                        <?= htmlspecialchars($feat)?>
-                                        <button type="button" onclick="removeFeatureTag(this)" class="ml-1 text-blue-500 hover:text-blue-800 font-bold leading-none">&times;</button>
-                                    </span>
-                                    <?php
-    endforeach; ?>
-                                </div>
-                                <input type="hidden" name="vehicle_features" id="vehicle_features_input" value="<?= htmlspecialchars(json_encode($saved_features))?>">
                             </div>
                             <div class="col-span-2">
                                 <?php
@@ -3557,49 +3507,6 @@ endif; ?>
                         window.initCustomSelects();
                     }
                 }
-            }
-
-            // Vehicle Features Tag Input
-            const featureInput = document.getElementById('featureInput');
-            const featuresHiddenInput = document.getElementById('vehicle_features_input');
-            const featuresContainer = document.getElementById('featuresContainer');
-
-            function syncFeatureTags() {
-                const tags = Array.from(document.querySelectorAll('#featuresContainer .feature-tag'))
-                    .map(tag => tag.childNodes[0].textContent.trim());
-                if (featuresHiddenInput) featuresHiddenInput.value = JSON.stringify(tags);
-            }
-
-            window.removeFeatureTag = function(btn) {
-                btn.parentElement.remove();
-                syncFeatureTags();
-            };
-
-            function addFeatureTag(val) {
-                val = val.replace(/,/g, '').trim();
-                if (!val) return;
-                const tag = document.createElement('span');
-                tag.className = 'feature-tag inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium';
-                tag.innerHTML = val + '<button type="button" onclick="removeFeatureTag(this)" class="ml-1 text-blue-500 hover:text-blue-800 font-bold leading-none">&times;</button>';
-                featuresContainer.appendChild(tag);
-                syncFeatureTags();
-            }
-
-            window.addFeature = function() {
-                if (featureInput && featureInput.value.trim()) {
-                    addFeatureTag(featureInput.value);
-                    featureInput.value = '';
-                    featureInput.focus();
-                }
-            };
-
-            if (featureInput) {
-                featureInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        window.addFeature();
-                    }
-                });
             }
 
             // Booking Overview Repeater
