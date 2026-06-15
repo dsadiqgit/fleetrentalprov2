@@ -605,6 +605,11 @@ if (!in_array($schedule_view, ['day', 'week', 'month'])) {
     $schedule_view = 'day';
 }
 
+$view_mode = $_GET['view_mode'] ?? 'card';
+if (!in_array($view_mode, ['card', 'list', 'table', 'calendar'])) {
+    $view_mode = 'card';
+}
+
 if ($schedule_view === 'month') {
     $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 month'));
     $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 month'));
@@ -941,58 +946,147 @@ endif; ?>
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
             <?php if (!$show_add_form && !$show_edit_form): ?>
-            <!-- Vehicle Schedule View -->
-            <div class="space-y-6">
-                <!-- Schedule Header -->
+            <!-- Vehicle Listings -->
+            <div class="space-y-6" id="vehicle-listings">
+                <!-- Header -->
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest">Listings</h2>
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold"><?= $filteredVehicleCount ?></span>
+                    </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="relative">
-                            <input type="text" name="vehicle_search" value="<?= htmlspecialchars($vehicle_search)?>" placeholder="Search vehicles" class="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" onkeydown="if(event.key==='Enter'){ window.location='/dashboard/vehicles.php?vehicle_search='+encodeURIComponent(this.value); }">
+                            <input type="text" name="vehicle_search" value="<?= htmlspecialchars($vehicle_search) ?>" placeholder="Search vehicles" class="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" onkeydown="if(event.key==='Enter'){ window.location='/dashboard/vehicles.php?view_mode=<?= $view_mode ?>&vehicle_search='+encodeURIComponent(this.value); }">
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"></path>
                             </svg>
                         </div>
-                        <button class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-gray-300">
+                        <button class="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 12.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 019 17v-4.586L3.293 6.707A1 1 0 013 6V4z"></path>
                             </svg>
-                            Filters
+                            Filter
                         </button>
-                        <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2">
-                            <button onclick="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= $prevScheduleDate?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="p-1 text-gray-500 hover:text-gray-900">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                            <button id="scheduleDateBtn" class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                <?php if ($schedule_view === 'month'): ?>
-                                    <?= date('F Y', strtotime($selected_schedule_date)) ?>
-                                <?php elseif ($schedule_view === 'week'): ?>
-                                    <?= date('M j', strtotime($week_days[0])) ?> – <?= date('M j, Y', strtotime($week_days[6])) ?>
-                                <?php else: ?>
-                                    <?= date('F j, Y', strtotime($selected_schedule_date)) ?>
-                                <?php endif; ?>
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                            </button>
-                            <input type="text" id="scheduleDateInput" value="<?= htmlspecialchars($selected_schedule_date)?>" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" tabindex="-1">
-                            <button onclick="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= $nextScheduleDate?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="p-1 text-gray-500 hover:text-gray-900">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                            <div class="w-px h-5 bg-gray-200 mx-1"></div>
-                            <button onclick="window.location='/dashboard/vehicles.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= date('Y-m-d') ?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="text-xs font-semibold text-blue-600 hover:text-blue-800 px-1">Today</button>
+                        <div class="flex items-center border border-gray-200 rounded-lg bg-white overflow-visible">
+                            <!-- Card View Toggle -->
+                            <div class="relative group">
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
+                                    <div class="bg-[#2e2e2e] text-white text-[11px] font-semibold px-2.5 py-1.5 rounded shadow-lg whitespace-nowrap leading-none">
+                                        Card View
+                                    </div>
+                                    <div class="w-1.5 h-1.5 bg-[#2e2e2e] rotate-45 -mt-[3px]"></div>
+                                </div>
+                                <a href="/dashboard/vehicles.php?view_mode=card&vehicle_search=<?= urlencode($vehicle_search) ?>" class="p-2.5 hover:bg-gray-50 transition flex items-center justify-center <?= $view_mode === 'card' ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-400' ?>">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                        <rect x="3" y="5" width="4" height="4" rx="0.5" />
+                                        <rect x="10" y="5" width="4" height="4" rx="0.5" />
+                                        <rect x="17" y="5" width="4" height="4" rx="0.5" />
+                                        <rect x="3" y="13" width="4" height="4" rx="0.5" />
+                                        <rect x="10" y="13" width="4" height="4" rx="0.5" />
+                                        <rect x="17" y="13" width="4" height="4" rx="0.5" />
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- List View Toggle -->
+                            <div class="relative group">
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
+                                    <div class="bg-[#2e2e2e] text-white text-[11px] font-semibold px-2.5 py-1.5 rounded shadow-lg whitespace-nowrap leading-none">
+                                        List View
+                                    </div>
+                                    <div class="w-1.5 h-1.5 bg-[#2e2e2e] rotate-45 -mt-[3px]"></div>
+                                </div>
+                                <a href="/dashboard/vehicles.php?view_mode=list&vehicle_search=<?= urlencode($vehicle_search) ?>" class="p-2.5 hover:bg-gray-50 transition flex items-center justify-center <?= $view_mode === 'list' ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-400' ?>">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                        <rect x="3" y="5" width="4" height="3" rx="0.5" />
+                                        <rect x="9" y="6" width="12" height="1.5" rx="0.5" />
+                                        <rect x="3" y="11" width="4" height="3" rx="0.5" />
+                                        <rect x="9" y="12" width="12" height="1.5" rx="0.5" />
+                                        <rect x="3" y="17" width="4" height="3" rx="0.5" />
+                                        <rect x="9" y="18" width="12" height="1.5" rx="0.5" />
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- Table View Toggle -->
+                            <div class="relative group">
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
+                                    <div class="bg-[#2e2e2e] text-white text-[11px] font-semibold px-2.5 py-1.5 rounded shadow-lg whitespace-nowrap leading-none">
+                                        Table View
+                                    </div>
+                                    <div class="w-1.5 h-1.5 bg-[#2e2e2e] rotate-45 -mt-[3px]"></div>
+                                </div>
+                                <a href="/dashboard/vehicles.php?view_mode=table&vehicle_search=<?= urlencode($vehicle_search) ?>" class="p-2.5 hover:bg-gray-50 transition flex items-center justify-center <?= $view_mode === 'table' ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-400' ?>">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                        <rect x="3" y="5" width="8" height="6" rx="0.5" />
+                                        <rect x="13" y="5" width="8" height="6" rx="0.5" />
+                                        <rect x="3" y="13" width="8" height="6" rx="0.5" />
+                                        <rect x="13" y="13" width="8" height="6" rx="0.5" />
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- Calendar View Toggle -->
+                            <div class="relative group">
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
+                                    <div class="bg-[#2e2e2e] text-white text-[11px] font-semibold px-2.5 py-1.5 rounded shadow-lg whitespace-nowrap leading-none">
+                                        Calendar View
+                                    </div>
+                                    <div class="w-1.5 h-1.5 bg-[#2e2e2e] rotate-45 -mt-[3px]"></div>
+                                </div>
+                                <a href="/dashboard/vehicles.php?view_mode=calendar&schedule_view=week&vehicle_search=<?= urlencode($vehicle_search) ?>" class="p-2.5 hover:bg-gray-50 transition flex items-center justify-center <?= $view_mode === 'calendar' ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-400' ?>">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <rect x="3" y="4" width="18" height="16" rx="2" />
+                                        <line x1="3" y1="9" x2="21" y2="9" />
+                                        <line x1="7" y1="2" x2="7" y2="6" stroke-linecap="round" />
+                                        <line x1="17" y1="2" x2="17" y2="6" stroke-linecap="round" />
+                                        <rect x="6" y="12" width="2" height="2" fill="currentColor" stroke="none" rx="0.3" />
+                                        <rect x="11" y="12" width="2" height="2" fill="currentColor" stroke="none" rx="0.3" />
+                                        <rect x="16" y="12" width="2" height="2" fill="currentColor" stroke="none" rx="0.3" />
+                                    </svg>
+                                </a>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2 border border-gray-200 rounded-lg p-1 bg-white text-sm">
-                            <a href="/dashboard/vehicles.php?schedule_view=day&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
-                               class="px-3 py-1 rounded-md <?= $schedule_view === 'day' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Day</a>
-                            <a href="/dashboard/vehicles.php?schedule_view=week&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
-                               class="px-3 py-1 rounded-md <?= $schedule_view === 'week' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Week</a>
-                            <a href="/dashboard/vehicles.php?schedule_view=month&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
-                               class="px-3 py-1 rounded-md <?= $schedule_view === 'month' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Month</a>
-                        </div>
+                    </div>
+                </div>
+
+                <?php if ($view_mode === 'calendar'): ?>
+                <!-- Calendar Sub-Header -->
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2">
+                        <button onclick="window.location='/dashboard/vehicles.php?view_mode=calendar&schedule_view=<?= $schedule_view ?>&schedule_date=<?= $prevScheduleDate ?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="p-1 text-gray-500 hover:text-gray-900">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <button id="scheduleDateBtn" class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <?php if ($schedule_view === 'month'): ?>
+                                <?= date('F Y', strtotime($selected_schedule_date)) ?>
+                            <?php elseif ($schedule_view === 'week'): ?>
+                                <?= date('M j', strtotime($week_days[0])) ?> – <?= date('M j, Y', strtotime($week_days[6])) ?>
+                            <?php else: ?>
+                                <?= date('F j, Y', strtotime($selected_schedule_date)) ?>
+                            <?php endif; ?>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                        <input type="text" id="scheduleDateInput" value="<?= htmlspecialchars($selected_schedule_date) ?>" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" tabindex="-1">
+                        <button onclick="window.location='/dashboard/vehicles.php?view_mode=calendar&schedule_view=<?= $schedule_view ?>&schedule_date=<?= $nextScheduleDate ?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="p-1 text-gray-500 hover:text-gray-900">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                        <div class="w-px h-5 bg-gray-200 mx-1"></div>
+                        <button onclick="window.location='/dashboard/vehicles.php?view_mode=calendar&schedule_view=<?= $schedule_view ?>&schedule_date=<?= date('Y-m-d') ?>&vehicle_search=<?= urlencode($vehicle_search) ?>'" class="text-xs font-semibold text-blue-600 hover:text-blue-800 px-1">Today</button>
+                    </div>
+                    <div class="flex items-center gap-2 border border-gray-200 rounded-lg p-1 bg-white text-sm">
+                        <a href="/dashboard/vehicles.php?view_mode=calendar&schedule_view=day&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
+                           class="px-3 py-1 rounded-md <?= $schedule_view === 'day' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Day</a>
+                        <a href="/dashboard/vehicles.php?view_mode=calendar&schedule_view=week&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
+                           class="px-3 py-1 rounded-md <?= $schedule_view === 'week' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Week</a>
+                        <a href="/dashboard/vehicles.php?view_mode=calendar&schedule_view=month&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>" 
+                           class="px-3 py-1 rounded-md <?= $schedule_view === 'month' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Month</a>
                     </div>
                 </div>
 
@@ -1183,6 +1277,167 @@ endif; ?>
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <?php elseif ($view_mode === 'card'): ?>
+                <!-- Card View -->
+                <?php if (empty($filteredVehicles)): ?>
+                <div class="p-12 text-center text-gray-500 text-sm bg-white rounded-2xl border border-gray-200 shadow-sm">No vehicles match your filters.</div>
+                <?php else: ?>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <?php foreach ($filteredVehicles as $index => $vehicle):
+                        $palette = $vehicleAvatarPalette[$index % count($vehicleAvatarPalette)];
+                        $vehicleImage = null;
+                        if (!empty($vehicle['images'])) {
+                            $decoded = json_decode($vehicle['images'], true);
+                            if (is_array($decoded) && !empty($decoded)) {
+                                $vehicleImage = $decoded[0];
+                            } elseif (!is_array($decoded)) {
+                                $vehicleImage = $vehicle['images'];
+                            }
+                        }
+                    ?>
+                    <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md hover:border-gray-300 transition flex items-stretch group h-32">
+                        <div class="w-32 bg-gray-50 border-r border-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden h-full">
+                            <?php if ($vehicleImage): ?>
+                            <img src="<?= htmlspecialchars($vehicleImage) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-full h-full object-cover">
+                            <?php else: ?>
+                            <div class="w-16 h-16 rounded-xl flex items-center justify-center text-lg font-bold <?= $palette ?> shadow-sm">
+                                <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1)) ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="flex-1 p-5 flex flex-col justify-center min-w-0">
+                            <h3 class="text-base font-bold text-gray-900 group-hover:text-blue-600 transition truncate">
+                                <?= htmlspecialchars($vehicle['name'] ?? ($vehicle['brand'] . ' ' . $vehicle['model'])) ?>
+                            </h3>
+                            <p class="text-sm text-gray-400 mt-1 truncate">
+                                <?= ($vehicle['year'] ? $vehicle['year'] . ' ' : '') . htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>
+                            </p>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <?php elseif ($view_mode === 'list'): ?>
+                <!-- List View -->
+                <?php if (empty($filteredVehicles)): ?>
+                <div class="p-12 text-center text-gray-500 text-sm bg-white rounded-2xl border border-gray-200 shadow-sm">No vehicles match your filters.</div>
+                <?php else: ?>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
+                        <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>Select</span>
+                    </div>
+                    <div class="space-y-3">
+                        <?php foreach ($filteredVehicles as $index => $vehicle):
+                            $palette = $vehicleAvatarPalette[$index % count($vehicleAvatarPalette)];
+                            $vehicleImage = null;
+                            if (!empty($vehicle['images'])) {
+                                $decoded = json_decode($vehicle['images'], true);
+                                if (is_array($decoded) && !empty($decoded)) {
+                                    $vehicleImage = $decoded[0];
+                                } elseif (!is_array($decoded)) {
+                                    $vehicleImage = $vehicle['images'];
+                                }
+                            }
+                        ?>
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-gray-200 hover:shadow transition p-4 flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="text-gray-300 hover:text-gray-500 cursor-grab flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                    </svg>
+                                </div>
+                                <?php if ($vehicleImage): ?>
+                                <img src="<?= htmlspecialchars($vehicleImage) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-12 h-12 rounded-xl object-contain border border-gray-100 flex-shrink-0 bg-gray-50">
+                                <?php else: ?>
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold <?= $palette ?> flex-shrink-0">
+                                    <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1)) ?>
+                                </div>
+                                <?php endif; ?>
+                                <div class="min-w-0">
+                                    <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="text-sm font-bold text-gray-900 hover:text-blue-600 transition truncate block">
+                                        <?= htmlspecialchars($vehicle['name'] ?? ($vehicle['brand'] . ' ' . $vehicle['model'])) ?>
+                                    </a>
+                                    <p class="text-xs text-gray-400 mt-0.5 truncate">
+                                        <?= ($vehicle['year'] ? $vehicle['year'] . ' ' : '') . htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <?php if (($vehicle['availability'] ?? 1) == 1): ?>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">Active</span>
+                                <?php else: ?>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Inactive</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php elseif ($view_mode === 'table'): ?>
+                <!-- Table View -->
+                <?php if (empty($filteredVehicles)): ?>
+                <div class="p-12 text-center text-gray-500 text-sm bg-white rounded-2xl border border-gray-200 shadow-sm">No vehicles match your filters.</div>
+                <?php else: ?>
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-100">
+                        <thead class="bg-gray-50/50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Name</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Price</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            <?php foreach ($filteredVehicles as $index => $vehicle):
+                                $palette = $vehicleAvatarPalette[$index % count($vehicleAvatarPalette)];
+                                $vehicleImage = null;
+                                if (!empty($vehicle['images'])) {
+                                    $decoded = json_decode($vehicle['images'], true);
+                                    if (is_array($decoded) && !empty($decoded)) {
+                                        $vehicleImage = $decoded[0];
+                                    } elseif (!is_array($decoded)) {
+                                        $vehicleImage = $vehicle['images'];
+                                    }
+                                }
+                            ?>
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-4">
+                                        <?php if ($vehicleImage): ?>
+                                        <img src="<?= htmlspecialchars($vehicleImage) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-12 h-12 rounded-xl object-contain border border-gray-100 bg-gray-50">
+                                        <?php else: ?>
+                                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold <?= $palette ?>">
+                                            <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1)) ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        <div class="min-w-0">
+                                            <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="text-sm font-bold text-gray-900 hover:text-blue-600 transition block">
+                                                <?= htmlspecialchars($vehicle['name'] ?? ($vehicle['brand'] . ' ' . $vehicle['model'])) ?>
+                                            </a>
+                                            <p class="text-xs text-gray-400 mt-0.5">
+                                                <?= ($vehicle['year'] ? $vehicle['year'] . ' ' : '') . htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                                    $<?= number_format($vehicle['price_per_day'] ?? 0, 2) ?>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <?= ($vehicle['availability'] ?? 1) == 1 ? 'New' : 'Inactive' ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+                <?php endif; ?>
             </div>
 
             <!-- Booking Details Modal -->
