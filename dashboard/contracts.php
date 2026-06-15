@@ -92,6 +92,39 @@ $total_contracts = count($contracts);
 $signed_contracts = count(array_filter($contracts, fn($c) => $c['contract_status'] === 'signed'));
 $pending_contracts = $total_contracts - $signed_contracts;
 
+// Subtext yesterday/last week statistics
+$yesterday_start = date('Y-m-d 00:00:00', strtotime('yesterday'));
+$yesterday_end = date('Y-m-d 23:59:59', strtotime('yesterday'));
+$last_week_start = date('Y-m-d 00:00:00', strtotime('-7 days'));
+$last_week_end = date('Y-m-d 23:59:59', strtotime('-7 days'));
+
+// Total contracts yesterday / last week
+$stmt_yesterday = $pdo->prepare("SELECT COUNT(*) FROM contracts WHERE tenant_id = ? AND is_deleted = 0 AND created_at BETWEEN ? AND ?");
+$stmt_yesterday->execute([$tenant_id, $yesterday_start, $yesterday_end]);
+$total_yesterday = $stmt_yesterday->fetchColumn();
+
+$stmt_last_week = $pdo->prepare("SELECT COUNT(*) FROM contracts WHERE tenant_id = ? AND is_deleted = 0 AND created_at BETWEEN ? AND ?");
+$stmt_last_week->execute([$tenant_id, $last_week_start, $last_week_end]);
+$total_last_week = $stmt_last_week->fetchColumn();
+
+// Signed contracts yesterday / last week
+$stmt_signed_yesterday = $pdo->prepare("SELECT COUNT(*) FROM contracts WHERE tenant_id = ? AND is_deleted = 0 AND contract_status = 'signed' AND created_at BETWEEN ? AND ?");
+$stmt_signed_yesterday->execute([$tenant_id, $yesterday_start, $yesterday_end]);
+$signed_yesterday = $stmt_signed_yesterday->fetchColumn();
+
+$stmt_signed_last_week = $pdo->prepare("SELECT COUNT(*) FROM contracts WHERE tenant_id = ? AND is_deleted = 0 AND contract_status = 'signed' AND created_at BETWEEN ? AND ?");
+$stmt_signed_last_week->execute([$tenant_id, $last_week_start, $last_week_end]);
+$signed_last_week = $stmt_signed_last_week->fetchColumn();
+
+// Pending contracts yesterday / last week
+$stmt_pending_yesterday = $pdo->prepare("SELECT COUNT(*) FROM contracts WHERE tenant_id = ? AND is_deleted = 0 AND contract_status = 'pending' AND created_at BETWEEN ? AND ?");
+$stmt_pending_yesterday->execute([$tenant_id, $yesterday_start, $yesterday_end]);
+$pending_yesterday = $stmt_pending_yesterday->fetchColumn();
+
+$stmt_pending_last_week = $pdo->prepare("SELECT COUNT(*) FROM contracts WHERE tenant_id = ? AND is_deleted = 0 AND contract_status = 'pending' AND created_at BETWEEN ? AND ?");
+$stmt_pending_last_week->execute([$tenant_id, $last_week_start, $last_week_end]);
+$pending_last_week = $stmt_pending_last_week->fetchColumn();
+
 // Get tenant info for sidebar
 $stmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
 $stmt->execute([$tenant_id]);
@@ -107,12 +140,8 @@ $tenant = $stmt->fetch();
         <?= SITE_NAME?>
     </title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/app/custom.css">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
         .sidebar-item {
             transition: all 0.2s;
         }
@@ -164,56 +193,36 @@ $tenant = $stmt->fetch();
             <div class="max-w-7xl mx-auto">
                 <!-- Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Total Issued</p>
-                                <p class="text-2xl  text-gray-900 mt-1">
-                                    <?= $total_contracts?>
-                                </p>
-                            </div>
-                            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                    </path>
-                                </svg>
-                            </div>
+                    <!-- Total Issued Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-gray-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.02)]">
+                        <div class="text-[11px] font-medium tracking-widest text-gray-400 uppercase">Total Issued</div>
+                        <div class="text-[38px] font-medium text-green-500 leading-none my-2">
+                            <?= $total_contracts ?>
+                        </div>
+                        <div class="text-[11px] text-gray-400 font-normal">
+                            <?= $total_yesterday ?> vs yesterday &middot; <?= $total_last_week ?> vs last week
                         </div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Signed</p>
-                                <p class="text-2xl  text-green-600 mt-1">
-                                    <?= $signed_contracts?>
-                                </p>
-                            </div>
-                            <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
+
+                    <!-- Signed Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-gray-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.02)]">
+                        <div class="text-[11px] font-medium tracking-widest text-gray-400 uppercase">Signed</div>
+                        <div class="text-[38px] font-medium text-blue-500 leading-none my-2">
+                            <?= $signed_contracts ?>
+                        </div>
+                        <div class="text-[11px] text-gray-400 font-normal">
+                            <?= $signed_yesterday ?> vs yesterday &middot; <?= $signed_last_week ?> vs last week
                         </div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Pending Signature</p>
-                                <p class="text-2xl  text-amber-600 mt-1">
-                                    <?= $pending_contracts?>
-                                </p>
-                            </div>
-                            <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
+
+                    <!-- Pending Signature Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-gray-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.02)]">
+                        <div class="text-[11px] font-medium tracking-widest text-gray-400 uppercase">Pending Signature</div>
+                        <div class="text-[38px] font-medium text-orange-500 leading-none my-2">
+                            <?= $pending_contracts ?>
+                        </div>
+                        <div class="text-[11px] text-gray-400 font-normal">
+                            <?= $pending_yesterday ?> vs yesterday &middot; <?= $pending_last_week ?> vs last week
                         </div>
                     </div>
                 </div>
@@ -300,13 +309,13 @@ endif; ?>
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-gray-50 border-b border-gray-200">
-                                    <th class="px-6 py-4 text-xs  text-gray-500 uppercase tracking-wider">Booking /
+                                    <th class="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Booking /
                                         Vehicle</th>
-                                    <th class="px-6 py-4 text-xs  text-gray-500 uppercase tracking-wider">Customer</th>
-                                    <th class="px-6 py-4 text-xs  text-gray-500 uppercase tracking-wider">Issued Date
+                                    <th class="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                    <th class="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Issued Date
                                     </th>
-                                    <th class="px-6 py-4 text-xs  text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-4 text-xs  text-gray-500 uppercase tracking-wider text-right">
+                                    <th class="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                                         Actions</th>
                                 </tr>
                             </thead>
@@ -322,7 +331,7 @@ endif; ?>
                                 <tr class="hover:bg-gray-50/50 transition-colors">
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col">
-                                            <span class="text-sm  text-gray-900">#
+                                            <span class="text-sm text-gray-700">#
                                                 <?= str_pad($contract['booking_id'], 5, '0', STR_PAD_LEFT)?>
                                             </span>
                                             <span class="text-xs text-gray-500">
@@ -335,12 +344,12 @@ endif; ?>
                                             <span class="text-sm font-medium text-gray-900">
                                                 <?= htmlspecialchars($contract['customer_name'])?>
                                             </span>
-                                            <span class="text-xs text-gray-500">
+                                            <span class="text-xs text-gray-400">
                                                 <?= htmlspecialchars($contract['customer_email'])?>
                                             </span>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
+                                    <td class="px-6 py-4 text-sm text-gray-500">
                                         <?= date('M j, Y', strtotime($contract['created_at']))?>
                                     </td>
                                     <td class="px-6 py-4">
@@ -470,7 +479,7 @@ endforeach; ?>
         <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             <div class="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white text-gray-900">
                 <div>
-                    <h3 class="text-xl font-black uppercase tracking-tighter">Contract Preview</h3>
+                    <h3 class="text-xl font-normal uppercase tracking-tighter">Contract Preview</h3>
                     <p id="contractModalSubtitle" class="text-[10px] text-gray-400  uppercase tracking-widest mt-1">
                         Booking Details</p>
                 </div>
@@ -487,7 +496,7 @@ endforeach; ?>
             </div>
             <div class="p-6 border-t border-gray-100 bg-white flex justify-end">
                 <button onclick="closeContractModal()"
-                    class="px-8 py-3 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200">Close
+                    class="px-8 py-3 bg-gray-900 text-white rounded-xl text-[10px] font-normal uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200">Close
                     Preview</button>
             </div>
         </div>

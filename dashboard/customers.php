@@ -393,43 +393,43 @@ $customers = $stmt->fetchAll();
                 <div class="flex items-start justify-between mb-6">
                     <div class="flex items-center">
                         <div
-                            class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                            class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
                             <?= strtoupper(substr($customer_detail['full_name'] ?? $customer_detail['email'], 0, 1))?>
                         </div>
                         <div class="ml-4">
-                            <h2 class="text-2xl font-bold text-gray-900">
+                            <h2 class="text-2xl font-semibold text-gray-900">
                                 <?= htmlspecialchars($customer_detail['full_name'])?>
                             </h2>
-                            <p class="text-gray-600">
+                            <p class="text-gray-400">
                                 <?= htmlspecialchars($customer_detail['email'])?>
                             </p>
                         </div>
                     </div>
-                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Active</span>
+                    <span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">Active</span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Phone</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">Phone</p>
+                        <p class="text-gray-700">
                             <?= htmlspecialchars($customer_detail['phone'] ?? 'N/A')?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">License Number</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">License Number</p>
+                        <p class="text-gray-700">
                             <?= htmlspecialchars($customer_detail['license_number'] ?? 'N/A')?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Customer Since</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">Customer Since</p>
+                        <p class="text-gray-700">
                             <?= date('M d, Y', strtotime($customer_detail['created_at']))?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Total Rentals</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">Total Rentals</p>
+                        <p class="text-gray-700">
                             <?= $customer_detail['total_rentals']?>
                         </p>
                     </div>
@@ -450,61 +450,61 @@ $customers = $stmt->fetchAll();
         ];
         $color = $status_colors[$verification_data['verification_status']] ?? 'bg-gray-100 text-gray-800';
 ?>
-                    <span class="px-3 py-1 <?= $color?> rounded-full text-sm font-medium">
+                    <span class="px-3 py-1 <?= $color?> rounded-full text-sm">
                         <?= ucfirst($verification_data['verification_status'])?>
                     </span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Session ID</p>
-                        <p class="font-medium text-gray-900 text-xs break-all">
+                        <p class="text-sm text-gray-400 mb-1">Session ID</p>
+                        <p class="text-gray-700 text-xs break-all">
                             <?= htmlspecialchars($verification_data['session_id'])?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Verified Name</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">Verified Name</p>
+                        <p class="text-gray-700">
                             <?= htmlspecialchars(($verification_data['first_name'] ?? '') . ' ' . ($verification_data['last_name'] ?? '')) ?: 'N/A'?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Date of Birth</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">Date of Birth</p>
+                        <p class="text-gray-700">
                             <?= $verification_data['dob'] ? date('M d, Y', strtotime($verification_data['dob'])) : 'N/A'?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Verified At</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">Verified At</p>
+                        <p class="text-gray-700">
                             <?= $verification_data['verified_at'] ? date('M d, Y H:i', strtotime($verification_data['verified_at'])) : 'N/A'?>
                         </p>
                     </div>
                 </div>
 
                 <div class="mt-4 pt-4 border-t border-gray-200">
-                    <p class="text-sm text-gray-600 mb-1">Verified Address</p>
-                    <p class="font-medium text-gray-900">
+                    <p class="text-sm text-gray-400 mb-1">Verified Address</p>
+                    <p class="text-gray-700">
                         <?= htmlspecialchars($verification_data['address'] ?? 'N/A')?>
                     </p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 pt-4 border-t border-gray-200">
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Verified License Number</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">Verified License Number</p>
+                        <p class="text-gray-700">
                             <?= htmlspecialchars($verification_data['license_number'] ?? 'N/A')?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">License Issue Date</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">License Issue Date</p>
+                        <p class="text-gray-700">
                             <?= $verification_data['date_of_issue'] ? date('M d, Y', strtotime($verification_data['date_of_issue'])) : 'N/A'?>
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">License Expiration Date</p>
-                        <p class="font-medium text-gray-900">
+                        <p class="text-sm text-gray-400 mb-1">License Expiration Date</p>
+                        <p class="text-gray-700">
                             <?= $verification_data['expiration_date'] ? date('M d, Y', strtotime($verification_data['expiration_date'])) : 'N/A'?>
                         </p>
                     </div>
@@ -783,34 +783,34 @@ else: ?>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div
-                                            class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                                            class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
                                             <?= strtoupper(substr($customer['full_name'] ?? $customer['email'], 0, 1))?>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">
+                                            <div class="text-sm font-semibold text-gray-900">
                                                 <?= htmlspecialchars($customer['full_name'] ?? 'N/A')?>
                                             </div>
-                                            <div class="text-sm text-gray-500">
+                                            <div class="text-sm text-gray-400">
                                                 <?= htmlspecialchars($customer['email'])?>
                                             </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?= htmlspecialchars($customer['phone'] ?? 'N/A')?>
                                 </td>
-                                <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?= htmlspecialchars($customer['license_number'] ?? 'N/A')?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?= date('M d, Y', strtotime($customer['created_at']))?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
                                         <?= $customer['total_rentals']?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="flex items-center gap-3">
                                         <?php if ($current_tab === 'all'): ?>
                                         <a href="/dashboard/customers.php?view=<?= urlencode($customer['email'])?>"
@@ -844,7 +844,7 @@ else: ?>
                                             <input type="hidden" name="action" value="permanent_delete">
                                             <button type="button"
                                                 onclick="showConfirmation('Permanent Delete', 'Are you sure you want to PERMANENTLY delete this customer? This action cannot be undone.', () => document.getElementById('permDeleteForm_<?= md5($customer['email'])?>').submit(), 'Delete Permanently', 'bg-red-600 hover:bg-red-700')"
-                                                class="text-red-600 hover:text-red-900 font-bold">Delete
+                                                class="text-red-600 hover:text-red-900">Delete
                                                 Permanently</button>
                                         </form>
                                         <?php

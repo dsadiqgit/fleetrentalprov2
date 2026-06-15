@@ -312,9 +312,8 @@ foreach ($default_templates as $key => $def) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications — <?= htmlspecialchars($tenant['name'] ?? 'Dashboard') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/app/custom.css">
     <style>
-        body { font-family: 'Inter', sans-serif; }
         .sidebar-item { transition: all .15s; }
         .sidebar-item:hover { background: #f3f4f6; }
         .sidebar-item.active { background: #eff6ff; color: #3b82f6; }
@@ -329,62 +328,46 @@ foreach ($default_templates as $key => $def) {
         #editor-hint { pointer-events: none; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-
-<!-- Topbar -->
-<header class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center px-4 gap-4">
-    <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-gray-100">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-    </button>
-    <a href="/dashboard/" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition text-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-        Dashboard
-    </a>
-    <span class="text-gray-300">/</span>
-    <span class="font-semibold text-sm text-gray-900">Notifications</span>
-</header>
+<body class="bg-gray-50 flex h-screen overflow-hidden">
 
 <div id="sidebar-overlay" class="lg:hidden fixed inset-0 bg-black/50 z-30 hidden"></div>
 
-<div class="flex pt-14 h-screen overflow-hidden">
-    <aside id="sidebar" class="fixed lg:static top-14 bottom-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 lg:flex flex-shrink-0">
-        <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-    </aside>
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed lg:static top-14 lg:top-0 bottom-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 lg:flex flex-shrink-0">
+    <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+</aside>
 
-    <main class="flex-1 overflow-y-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-            <!-- Page header -->
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <h1 class="text-xl font-extrabold text-gray-900">Notifications &amp; Emails</h1>
-                    <p class="text-sm text-gray-500 mt-0.5">Customise the emails your customers receive. Click any text in the preview to edit it.</p>
-                </div>
-                <span class="text-xs text-gray-500 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span id="enabled-count"><?= count(array_filter($templates, fn($t) => $t['enabled'])) ?></span> / <?= count($templates) ?> enabled
-                </span>
+<div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top Bar -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <nav class="text-sm text-gray-500 mb-1">
+                    <a href="/dashboard/" class="hover:text-gray-700">Dashboard</a>
+                    <span class="mx-2">/</span>
+                    <span class="text-gray-900">Notifications</span>
+                </nav>
+                <h1 class="text-2xl text-gray-900">Notifications &amp; Emails</h1>
+                <p class="text-sm text-gray-600 mt-1">Customise the emails your customers receive. Click any text in the preview to edit it.</p>
             </div>
+            <span class="text-xs text-gray-500 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span id="enabled-count"><?= count(array_filter($templates, fn($t) => $t['enabled'])) ?></span> / <?= count($templates) ?> enabled
+            </span>
+        </div>
+    </header>
 
-            <!-- ── Horizontal template cards ──────────────────────────────── -->
-            <div class="flex gap-3 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Tabs -->
+            <div class="flex items-center gap-6 mb-6 border-b border-gray-200 overflow-x-auto">
                 <?php foreach ($templates as $key => $tpl): ?>
                 <button onclick="switchTemplate('<?= $key ?>')"
                         data-key="<?= $key ?>"
-                        class="tpl-card flex-shrink-0 w-48 text-left bg-white border-2 border-gray-200 rounded-2xl p-4 shadow-sm <?= array_key_first($templates) === $key ? 'active' : '' ?>">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-8 h-8 rounded-xl flex items-center justify-center"
-                             style="background:<?= $tpl['badge_bg'] ?>">
-                            <svg class="w-4 h-4" style="color:<?= $tpl['badge_color'] ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= htmlspecialchars($tpl['icon_path']) ?>"/>
-                            </svg>
-                        </div>
-                        <span class="text-xs font-medium px-2 py-0.5 rounded-full <?= !$tpl['enabled'] ? 'bg-gray-100 text-gray-400' : ($tpl['is_custom'] ? 'bg-indigo-100 text-indigo-700' : 'bg-green-100 text-green-700') ?>">
-                            <?= !$tpl['enabled'] ? 'Off' : ($tpl['is_custom'] ? 'Custom' : 'Default') ?>
-                        </span>
-                    </div>
-                    <p class="text-sm font-bold text-gray-900 leading-tight"><?= htmlspecialchars($tpl['name']) ?></p>
-                    <p class="text-xs text-gray-400 mt-1 leading-snug line-clamp-2"><?= htmlspecialchars($tpl['description']) ?></p>
+                        class="tpl-tab px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap <?= array_key_first($templates) === $key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
+                    <?= htmlspecialchars($tpl['name']) ?>
                 </button>
                 <?php endforeach; ?>
             </div>
@@ -557,9 +540,14 @@ function switchTemplate(key) {
     CURRENT_KEY = key;
     const tpl = ALL_TEMPLATES[key];
 
-    // Update card active states
-    document.querySelectorAll('.tpl-card').forEach(c => {
-        c.classList.toggle('active', c.dataset.key === key);
+    // Update tab active states
+    document.querySelectorAll('.tpl-tab').forEach(tab => {
+        const isActive = tab.dataset.key === key;
+        if (isActive) {
+            tab.className = "tpl-tab px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600 transition-colors whitespace-nowrap";
+        } else {
+            tab.className = "tpl-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap";
+        }
     });
 
     // Update info panel
