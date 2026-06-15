@@ -107,6 +107,138 @@ try {
 catch (PDOException $e) {
     // Tables may not exist yet - use defaults
 }
+
+// Fetch vehicles for dashboard preview
+$dashboardVehicles = [];
+try {
+    $stmt = $pdo->prepare("SELECT id, brand, model, year, price_per_day, availability, images, transmission, fuel_type, mileage_limit FROM vehicles WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 6");
+    $stmt->execute([$_SESSION['tenant_id']]);
+    $dashboardVehicles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Vehicles table may not exist yet
+}
+
+// ========== SCHEDULE BOARD LOGIC (from vehicles.php) ==========
+$vehicle_search = trim($_GET['vehicle_search'] ?? '');
+
+// Get all vehicles for this tenant
+$stmt = $pdo->prepare("SELECT * FROM vehicles WHERE tenant_id = ? ORDER BY created_at DESC");
+$stmt->execute([$_SESSION['tenant_id']]);
+$vehicles = $stmt->fetchAll();
+
+// Helpers for schedule view
+if (!function_exists('minutes_from_time')) {
+    function minutes_from_time(?string $time): ?int
+    {
+        if (!$time) {
+            return null;
+        }
+        [$hour, $minute] = array_pad(explode(':', $time), 2, '00');
+        return (int)$hour * 60 + (int)$minute;
+    }
+}
+
+$selected_schedule_date = $_GET['schedule_date'] ?? date('Y-m-d');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $selected_schedule_date)) {
+    $selected_schedule_date = date('Y-m-d');
+}
+
+$schedule_view = $_GET['schedule_view'] ?? 'day';
+if (!in_array($schedule_view, ['day', 'week', 'month'])) {
+    $schedule_view = 'day';
+}
+
+if ($schedule_view === 'month') {
+    $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 month'));
+    $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 month'));
+} elseif ($schedule_view === 'week') {
+    $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -7 days'));
+    $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +7 days'));
+} else {
+    $prevScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' -1 day'));
+    $nextScheduleDate = date('Y-m-d', strtotime($selected_schedule_date . ' +1 day'));
+}
+
+$timelineStartHour = 8;
+$timelineEndHour = 18;
+$timelineStartMinutes = $timelineStartHour * 60;
+$timelineEndMinutes = $timelineEndHour * 60;
+$totalTimelineMinutes = max(60, $timelineEndMinutes - $timelineStartMinutes);
+$hourColumns = max(1, $timelineEndHour - $timelineStartHour);
+
+if ($schedule_view === 'week') {
+    $start_date_ts = strtotime($selected_schedule_date);
+    $monday_ts = strtotime('monday this week', $start_date_ts);
+    $query_start_date = date('Y-m-d', $monday_ts);
+    $query_end_date = date('Y-m-d', strtotime('+6 days', $monday_ts));
+    $week_days = [];
+    for ($d = 0; $d < 7; $d++) {
+        $week_days[] = date('Y-m-d', strtotime("+$d days", $monday_ts));
+    }
+} elseif ($schedule_view === 'month') {
+    $month_start_date = date('Y-m-01', strtotime($selected_schedule_date));
+    $days_in_month = date('t', strtotime($selected_schedule_date));
+    $query_start_date = $month_start_date;
+    $query_end_date = date('Y-m-' . $days_in_month, strtotime($selected_schedule_date));
+    $month_days = [];
+    for ($d = 0; $d < $days_in_month; $d++) {
+        $month_days[] = date('Y-m-d', strtotime("+$d days", strtotime($month_start_date)));
+    }
+    $month_today = date('Y-m-d');
+    $month_dow_labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+} else {
+    $query_start_date = $selected_schedule_date;
+    $query_end_date = $selected_schedule_date;
+}
+
+$assignmentStatusColors = [
+    'pending' => 'bg-blue-100 text-blue-900 border-blue-200',
+    'confirmed' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'active' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'completed' => 'bg-gray-100 text-gray-700 border-gray-200',
+];
+
+$assignmentStmt = $pdo->prepare("SELECT b.*, v.name AS vehicle_name, v.brand, v.model, v.category, v.images, v.license_plate
+    FROM bookings b
+    LEFT JOIN vehicles v ON b.vehicle_id = v.id
+    WHERE b.tenant_id = ? AND b.status != 'cancelled' AND b.pickup_date <= ? AND b.return_date >= ?");
+$assignmentStmt->execute([$_SESSION['tenant_id'], $query_end_date, $query_start_date]);
+$vehicleAssignments = $assignmentStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$assignmentsByVehicle = [];
+foreach ($vehicleAssignments as $assignment) {
+    if (!isset($assignmentsByVehicle[$assignment['vehicle_id']])) {
+        $assignmentsByVehicle[$assignment['vehicle_id']] = [];
+    }
+    $assignmentsByVehicle[$assignment['vehicle_id']][] = $assignment;
+}
+
+$vehicleAvatarPalette = [
+    'bg-rose-100 text-rose-700',
+    'bg-sky-100 text-sky-600',
+    'bg-amber-100 text-amber-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-indigo-100 text-indigo-700',
+    'bg-purple-100 text-purple-700',
+    'bg-cyan-100 text-cyan-700',
+    'bg-lime-100 text-lime-700',
+];
+
+if (!empty($vehicle_search)) {
+    $filteredVehicles = array_values(array_filter($vehicles, function ($vehicle) use ($vehicle_search) {
+        $haystack = strtolower(
+            ($vehicle['brand'] ?? '') . ' ' .
+            ($vehicle['model'] ?? '') . ' ' .
+            ($vehicle['license_plate'] ?? '') . ' ' .
+            ($vehicle['category'] ?? '')
+        );
+        return strpos($haystack, strtolower($vehicle_search)) !== false;
+    }));
+} else {
+    $filteredVehicles = $vehicles;
+}
+
+$filteredVehicleCount = count($filteredVehicles);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="h-full">
@@ -135,11 +267,169 @@ catch (PDOException $e) {
         .sidebar-item.active svg {
             color: #3b82f6;
         }
+
+        /* Schedule Board Styles (from vehicles.php) */
+        .cal-month-header-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 0;
+            border-left: 1px solid #f3f4f6;
+            min-width: 0;
+        }
+        .cal-month-header-cell.weekend { background-color: #fafafa; }
+        .cal-month-header-cell.today { background-color: #eff6ff; }
+        .cal-month-header-cell .dow-label {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #9ca3af;
+            margin-bottom: 2px;
+        }
+        .cal-month-header-cell .day-num {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            line-height: 1;
+        }
+        .cal-month-header-cell.today .day-num { color: #2563eb; }
+        .cal-month-header-cell.today .today-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: #2563eb;
+            margin-top: 3px;
+        }
+        .cal-month-col {
+            border-left: 1px solid #f3f4f6;
+            min-height: 80px;
+        }
+        .cal-month-col.weekend { background-color: #fafafa; }
+        .cal-month-col.today { background-color: #eff6ff; }
+        .cal-month-col.week-start { border-left-color: #d1d5db; }
+        .flatpickr-calendar:not(.inline) {
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            border: 1px solid #e5e7eb;
+            margin-top: 8px;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-months { padding: 8px 0; }
+        .flatpickr-calendar:not(.inline) .flatpickr-current-month {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-weekday {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #9ca3af;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day {
+            border-radius: 8px;
+            font-size: 13px;
+            color: #374151;
+            height: 36px;
+            width: 36px;
+            line-height: 36px;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day:hover { background: #f3f4f6; }
+        .flatpickr-calendar:not(.inline) .flatpickr-day.selected {
+            background: transparent;
+            border: 2px solid #1f2937;
+            color: #1f2937;
+            font-weight: 700;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day.today {
+            background: #f3f4f6;
+            color: #1f2937;
+            font-weight: 600;
+            border: none;
+        }
+        .flatpickr-calendar:not(.inline) .flatpickr-day.prevMonthDay,
+        .flatpickr-calendar:not(.inline) .flatpickr-day.nextMonthDay { color: #d1d5db; }
+
+        /* Page Preloader */
+        #pagePreloader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #pagePreloader.hidden-loader {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #pagePreloader .preloader-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #pagePreloader .preloader-logo svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+        #pagePreloader .preloader-bar {
+            width: 160px;
+            height: 3px;
+            background: #f3f4f6;
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        #pagePreloader .preloader-bar::after {
+            content: '';
+            position: absolute;
+            left: -40%;
+            top: 0;
+            height: 100%;
+            width: 40%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            border-radius: 999px;
+            animation: preloaderSlide 1s ease-in-out infinite;
+        }
+        @keyframes preloaderSlide {
+            0% { left: -40%; }
+            100% { left: 100%; }
+        }
+        #pagePreloader .preloader-text {
+            margin-top: 14px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #9ca3af;
+        }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
 </head>
 
 <body class="bg-gray-50 flex h-screen overflow-hidden">
+    <!-- Page Preloader -->
+    <div id="pagePreloader">
+        <div class="preloader-logo">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+        </div>
+        <div class="preloader-bar"></div>
+        <div class="preloader-text">Loading</div>
+    </div>
+
     <!-- Mobile Header -->
     <header class="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-4 py-3 z-40 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -621,6 +911,288 @@ catch (PDOException $e) {
                     </span>
                 </div>
             </div>
+
+            <!-- Vehicle Schedule Board -->
+            <div id="schedule-board" class="p-6 sm:p-8 lg:px-12 lg:py-10 bg-gray-50 border-t border-gray-200">
+                <div class="space-y-6">
+                    <!-- Schedule Header -->
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="relative">
+                                <input type="text" name="vehicle_search" value="<?= htmlspecialchars($vehicle_search) ?>" placeholder="Search vehicles" class="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" onkeydown="if(event.key==='Enter'){ window.location='/dashboard/index.php?vehicle_search='+encodeURIComponent(this.value)+'#schedule-board'; }">
+                                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"></path>
+                                </svg>
+                            </div>
+                            <button class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-gray-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 12.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 019 17v-4.586L3.293 6.707A1 1 0 013 6V4z"></path>
+                                </svg>
+                                Filters
+                            </button>
+                            <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2">
+                                <button onclick="window.location='/dashboard/index.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= $prevScheduleDate ?>&vehicle_search=<?= urlencode($vehicle_search) ?>#schedule-board'" class="p-1 text-gray-500 hover:text-gray-900">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </button>
+                                <button id="scheduleDateBtn" class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                    <?php if ($schedule_view === 'month'): ?>
+                                        <?= date('F Y', strtotime($selected_schedule_date)) ?>
+                                    <?php elseif ($schedule_view === 'week'): ?>
+                                        <?= date('M j', strtotime($week_days[0])) ?> – <?= date('M j, Y', strtotime($week_days[6])) ?>
+                                    <?php else: ?>
+                                        <?= date('F j, Y', strtotime($selected_schedule_date)) ?>
+                                    <?php endif; ?>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
+                                <input type="text" id="scheduleDateInput" value="<?= htmlspecialchars($selected_schedule_date) ?>" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" tabindex="-1">
+                                <button onclick="window.location='/dashboard/index.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= $nextScheduleDate ?>&vehicle_search=<?= urlencode($vehicle_search) ?>#schedule-board'" class="p-1 text-gray-500 hover:text-gray-900">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                                <div class="w-px h-5 bg-gray-200 mx-1"></div>
+                                <button onclick="window.location='/dashboard/index.php?schedule_view=<?= $schedule_view ?>&schedule_date=<?= date('Y-m-d') ?>&vehicle_search=<?= urlencode($vehicle_search) ?>#schedule-board'" class="text-xs font-semibold text-blue-600 hover:text-blue-800 px-1">Today</button>
+                            </div>
+                            <div class="flex items-center gap-2 border border-gray-200 rounded-lg p-1 bg-white text-sm">
+                                <a href="/dashboard/index.php?schedule_view=day&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>#schedule-board" class="px-3 py-1 rounded-md <?= $schedule_view === 'day' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Day</a>
+                                <a href="/dashboard/index.php?schedule_view=week&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>#schedule-board" class="px-3 py-1 rounded-md <?= $schedule_view === 'week' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Week</a>
+                                <a href="/dashboard/index.php?schedule_view=month&schedule_date=<?= $selected_schedule_date ?>&vehicle_search=<?= urlencode($vehicle_search) ?>#schedule-board" class="px-3 py-1 rounded-md <?= $schedule_view === 'month' ? 'bg-gray-100 text-gray-700 font-semibold' : 'text-gray-500 hover:text-gray-900' ?>">Month</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Board -->
+                    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm <?= $schedule_view === 'month' ? 'overflow-x-auto' : 'overflow-hidden' ?>">
+                        <div class="flex border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider <?= $schedule_view === 'month' ? 'min-w-max' : '' ?>">
+                            <div class="w-72 px-6 py-3 flex-shrink-0 <?= $schedule_view === 'month' ? 'sticky left-0 z-20 bg-gray-50' : '' ?>" style="<?= $schedule_view === 'month' ? 'box-shadow: 2px 0 4px rgba(0,0,0,0.04);' : '' ?>">Vehicles (<?= $filteredVehicleCount ?>)</div>
+                            <?php if ($schedule_view === 'week'): ?>
+                            <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
+                                <?php foreach ($week_days as $day): ?>
+                                <div class="py-3"><?= date('D d/m', strtotime($day)) ?></div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php elseif ($schedule_view === 'month'): ?>
+                            <div class="grid" style="grid-template-columns: repeat(<?= $days_in_month ?>, 42px); min-width: <?= $days_in_month * 42 ?>px;">
+                                <?php foreach ($month_days as $idx => $day):
+                                    $dow = (int)date('w', strtotime($day));
+                                    $dow = ($dow + 6) % 7;
+                                    $isWeekend = ($dow >= 5);
+                                    $isToday = ($day === $month_today);
+                                    $isWeekStart = ($dow === 0);
+                                    $cellClass = 'cal-month-header-cell' . ($isWeekend ? ' weekend' : '') . ($isToday ? ' today' : '') . ($isWeekStart ? ' week-start' : '');
+                                ?>
+                                <div class="<?= $cellClass ?>">
+                                    <span class="dow-label"><?= $month_dow_labels[$dow] ?></span>
+                                    <span class="day-num"><?= date('j', strtotime($day)) ?></span>
+                                    <?php if ($isToday): ?><span class="today-dot"></span><?php endif; ?>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php else: ?>
+                            <div class="flex-1 grid gap-0 text-center" style="grid-template-columns: repeat(<?= $hourColumns ?>, minmax(0, 1fr));">
+                                <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
+                                <div class="py-3"><?= sprintf('%02d:00', $hour) ?></div>
+                                <?php endfor; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="divide-y divide-gray-100">
+                            <?php if (empty($filteredVehicles)): ?>
+                            <div class="p-12 text-center text-gray-500 text-sm">No vehicles match your filters.</div>
+                            <?php else: ?>
+                            <?php foreach ($filteredVehicles as $index => $vehicle):
+                                $palette = $vehicleAvatarPalette[$index % count($vehicleAvatarPalette)];
+                                $vehicleImage = null;
+                                if (!empty($vehicle['images'])) {
+                                    $decoded = json_decode($vehicle['images'], true);
+                                    if (is_array($decoded) && !empty($decoded)) {
+                                        $vehicleImage = $decoded[0];
+                                    } elseif (!is_array($decoded)) {
+                                        $vehicleImage = $vehicle['images'];
+                                    }
+                                }
+                                $vehicleBookings = $assignmentsByVehicle[$vehicle['id']] ?? [];
+                            ?>
+                            <div class="flex <?= $schedule_view === 'month' ? 'min-w-max' : '' ?>">
+                                <div class="w-72 px-4 py-3.5 flex items-center gap-3 border-r border-gray-100 hover:bg-gray-50 transition-colors flex-shrink-0 <?= $schedule_view === 'month' ? 'sticky left-0 z-10 bg-white' : '' ?>" style="<?= $schedule_view === 'month' ? 'box-shadow: 2px 0 4px rgba(0,0,0,0.04);' : '' ?>">
+                                    <?php if ($vehicleImage): ?>
+                                    <img src="<?= htmlspecialchars($vehicleImage) ?>" alt="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>" class="w-12 h-12 rounded-xl object-cover border border-gray-200 shadow-sm flex-shrink-0">
+                                    <?php else: ?>
+                                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold <?= $palette ?> shadow-sm flex-shrink-0">
+                                        <?= strtoupper(substr($vehicle['brand'] ?? 'V', 0, 1)) ?>
+                                    </div>
+                                    <?php endif; ?>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate" title="<?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>">
+                                                <?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?>
+                                            </a>
+                                            <a href="/dashboard/vehicles.php?action=edit&id=<?= (int)$vehicle['id'] ?>" class="p-1.5 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0 group/edit" title="Edit vehicle">
+                                                <svg class="w-4 h-4 text-gray-400 group-hover/edit:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-xs text-gray-500 truncate">
+                                                <?= htmlspecialchars($vehicle['license_plate'] ?? 'No plate') ?>
+                                            </span>
+                                            <?php if (($vehicle['availability'] ?? 1) == 1): ?>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
+                                                Active
+                                            </span>
+                                            <?php else: ?>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                Inactive
+                                            </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-1 relative border-l border-gray-100 <?= $schedule_view === 'month' ? 'min-w-max' : '' ?>">
+                                    <?php if ($schedule_view === 'week'): ?>
+                                    <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
+                                        <?php for ($d = 0; $d < 7; $d++): ?>
+                                        <div class="border-l border-gray-100 min-h-[80px]"></div>
+                                        <?php endfor; ?>
+                                    </div>
+                                    <?php elseif ($schedule_view === 'month'): ?>
+                                    <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(<?= $days_in_month ?>, 42px); min-width: <?= $days_in_month * 42 ?>px;">
+                                        <?php foreach ($month_days as $idx => $day):
+                                            $dow = (int)date('w', strtotime($day));
+                                            $dow = ($dow + 6) % 7;
+                                            $isWeekend = ($dow >= 5);
+                                            $isToday = ($day === $month_today);
+                                            $isWeekStart = ($dow === 0);
+                                            $cellClass = 'cal-month-col' . ($isWeekend ? ' weekend' : '') . ($isToday ? ' today' : '') . ($isWeekStart ? ' week-start' : '');
+                                        ?>
+                                        <div class="<?= $cellClass ?> min-h-[80px]"></div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <?php else: ?>
+                                    <div class="grid text-xs text-gray-300" style="grid-template-columns: repeat(<?= $hourColumns ?>, minmax(0, 1fr));">
+                                        <?php for ($hour = $timelineStartHour; $hour < $timelineEndHour; $hour++): ?>
+                                        <div class="border-l border-gray-100 min-h-[80px]"></div>
+                                        <?php endfor; ?>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <?php foreach ($vehicleBookings as $booking):
+                                        $statusClass = $assignmentStatusColors[$booking['status']] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+                                        if ($schedule_view === 'day') {
+                                            if ($booking['pickup_date'] < $selected_schedule_date) {
+                                                $clampedStart = $timelineStartMinutes;
+                                            } else {
+                                                $clampedStart = max($timelineStartMinutes, minutes_from_time($booking['pickup_time']) ?? $timelineStartMinutes);
+                                            }
+                                            if ($booking['return_date'] > $selected_schedule_date) {
+                                                $clampedEnd = $timelineEndMinutes;
+                                            } else {
+                                                $clampedEnd = min($timelineEndMinutes, minutes_from_time($booking['return_time']) ?? $timelineEndMinutes);
+                                            }
+                                            $offsetPercent = (($clampedStart - $timelineStartMinutes) / $totalTimelineMinutes) * 100;
+                                            $widthPercent = (($clampedEnd - $clampedStart) / $totalTimelineMinutes) * 100;
+                                        } elseif ($schedule_view === 'week') {
+                                            $booking_start_ts = strtotime($booking['pickup_date'] . ' ' . ($booking['pickup_time'] ?? '00:00'));
+                                            $booking_end_ts = strtotime($booking['return_date'] . ' ' . ($booking['return_time'] ?? '23:59'));
+                                            $timeline_start_ts = $monday_ts;
+                                            $timeline_end_ts = strtotime("+7 days", $monday_ts);
+                                            $clampedStartTS = max($timeline_start_ts, $booking_start_ts);
+                                            $clampedEndTS = min($timeline_end_ts, $booking_end_ts);
+                                            $total_seconds = 7 * 24 * 3600;
+                                            $offsetPercent = (($clampedStartTS - $timeline_start_ts) / $total_seconds) * 100;
+                                            $widthPercent = (($clampedEndTS - $clampedStartTS) / $total_seconds) * 100;
+                                        } elseif ($schedule_view === 'month') {
+                                            $booking_start_ts = strtotime($booking['pickup_date'] . ' ' . ($booking['pickup_time'] ?? '00:00'));
+                                            $booking_end_ts = strtotime($booking['return_date'] . ' ' . ($booking['return_time'] ?? '23:59'));
+                                            $timeline_start_ts = strtotime($month_start_date);
+                                            $timeline_end_ts = strtotime("+$days_in_month days", strtotime($month_start_date));
+                                            $clampedStartTS = max($timeline_start_ts, $booking_start_ts);
+                                            $clampedEndTS = min($timeline_end_ts, $booking_end_ts);
+                                            $total_seconds = $days_in_month * 24 * 3600;
+                                            $offsetPercent = (($clampedStartTS - $timeline_start_ts) / $total_seconds) * 100;
+                                            $widthPercent = (($clampedEndTS - $clampedStartTS) / $total_seconds) * 100;
+                                        }
+                                    ?>
+                                    <button type="button" onclick="openBookingModal(<?= (int)$booking['id'] ?>)" class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-left text-xs font-medium shadow-sm <?= $statusClass ?> hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/60" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 4) ?>%; min-width: <?= $schedule_view === 'month' ? '30px' : ($schedule_view === 'week' ? '80px' : '120px') ?>;">
+                                        <?php if ($schedule_view !== 'month'): ?>
+                                        <div class="flex items-center gap-2">
+                                            <span class="truncate"><?= htmlspecialchars($booking['customer_name'] ?? 'Guest') ?> </span>
+                                            <span class="text-[9px] uppercase text-gray-400 truncate"><?= htmlspecialchars($booking['status']) ?></span>
+                                        </div>
+                                        <p class="text-[10px] text-gray-500 truncate">
+                                            <?= date('M d', strtotime($booking['pickup_date'])) ?> -
+                                            <?= date('M d', strtotime($booking['return_date'])) ?>
+                                        </p>
+                                        <?php else: ?>
+                                        <div class="text-[9px] text-center font-bold" title="<?= htmlspecialchars($booking['customer_name'] ?? 'Guest') ?> (<?= htmlspecialchars($booking['status']) ?>)">
+                                            <?= strtoupper(substr($booking['customer_name'] ?? 'G', 0, 2)) ?>
+                                        </div>
+                                        <?php endif; ?>
+                                    </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Details Modal -->
+                <div id="bookingModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col relative" onclick="event.stopPropagation()">
+                        <div id="bookingModalHeader" class="px-8 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-xl z-10">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 id="bookingModalTitle" class="text-lg font-bold text-gray-900 truncate">Booking Details</h3>
+                                    <p id="bookingModalSubtitle" class="text-sm text-gray-500 mt-0.5 flex items-center gap-2">Loading...</p>
+                                </div>
+                            </div>
+                            <button onclick="closeBookingModal()" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all flex-shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="bookingModalContent" class="px-8 py-6 overflow-y-auto flex-1 bg-gray-50/50">
+                            <!-- Content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contract Preview Modal -->
+                <div id="contractPreviewModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                        <div class="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white text-gray-900">
+                            <div>
+                                <h3 class="text-xl font-black uppercase tracking-tighter">Contract Preview</h3>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Agreement Details</p>
+                            </div>
+                            <button onclick="closeContractPreviewModal()" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="contractPreviewContent" class="p-8 overflow-y-auto bg-gray-50 flex-1">
+                            <!-- Content will be injected here -->
+                        </div>
+                        <div class="p-6 border-t border-gray-100 bg-white flex justify-end">
+                            <button onclick="closeContractPreviewModal()" class="px-8 py-3 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200">Close Preview</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -705,7 +1277,66 @@ catch (PDOException $e) {
                 });
             }
         });
+
+        // Schedule Board JS (from vehicles.php)
+        function openBookingModal(bookingId) {
+            window.location.href = '/dashboard/vehicles.php?view=booking&id=' + bookingId;
+        }
+        function closeBookingModal() {
+            const modal = document.getElementById('bookingModal');
+            if (modal) modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        function closeContractPreviewModal() {
+            const modal = document.getElementById('contractPreviewModal');
+            if (modal) modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Flatpickr for schedule date
+        const scheduleDateInput = document.getElementById('scheduleDateInput');
+        const scheduleDateBtn = document.getElementById('scheduleDateBtn');
+        if (scheduleDateInput && scheduleDateBtn && typeof flatpickr !== 'undefined') {
+            const scheduleFp = flatpickr(scheduleDateInput, {
+                dateFormat: "Y-m-d",
+                defaultDate: scheduleDateInput.value,
+                locale: { firstDayOfWeek: 1 },
+                monthSelectorType: 'static',
+                onChange: function(selectedDates, dateStr) {
+                    if (dateStr) {
+                        window.location = '/dashboard/index.php?schedule_view=<?= $schedule_view ?>&schedule_date=' + dateStr + '&vehicle_search=<?= urlencode($vehicle_search) ?>' + '#schedule-board';
+                    }
+                }
+            });
+            scheduleDateBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                scheduleFp.open();
+            });
+        }
+
+        // Show preloader on schedule navigation
+        document.querySelectorAll('#schedule-board a, #schedule-board button[onclick]').forEach(function(el) {
+            var original = el.getAttribute('onclick');
+            if (original && original.includes('window.location')) {
+                el.setAttribute('onclick', original.replace('window.location=', 'showPreloader(); window.location='));
+            }
+        });
+
+        // Show preloader helper
+        function showPreloader() {
+            var preloader = document.getElementById('pagePreloader');
+            if (preloader) preloader.classList.remove('hidden-loader');
+        }
+
+        // Hide preloader on page load
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var preloader = document.getElementById('pagePreloader');
+                if (preloader) preloader.classList.add('hidden-loader');
+            }, 250);
+        });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </body>
 
 </html>
