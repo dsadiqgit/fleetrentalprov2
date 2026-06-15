@@ -218,6 +218,15 @@ if ($witness) {
     }
 }
 
+$stmt_settings = $pdo->prepare("SELECT deposit_payment_mode FROM tenant_settings WHERE tenant_id = ?");
+$stmt_settings->execute([$tenant['id']]);
+$deposit_payment_mode = $stmt_settings->fetchColumn() ?: 'collection';
+
+$rental_total = $bookingForPdf['total_price'] ?? 0;
+if ($deposit_payment_mode === 'online') {
+    $rental_total = ($bookingForPdf['total_price'] ?? 0) - ($bookingForPdf['security_deposit'] ?? 0);
+}
+
 $replacements = [
     '{{vehicle_name}}' => trim($vehicleNameStr) ?: 'NOT SPECIFIED',
     '{{vehicle_registration}}' => $vehicleForPdf['registration'] ?? 'N/A',
@@ -226,7 +235,7 @@ $replacements = [
     '{{booking_reference}}' => '#' . str_pad($bookingForPdf['id'] ?? 0, 5, '0', STR_PAD_LEFT),
     '{{pickup_datetime}}' => date('M d, Y', strtotime($bookingForPdf['pickup_date'] ?? 'now')),
     '{{return_datetime}}' => date('M d, Y', strtotime($bookingForPdf['return_date'] ?? 'now')),
-    '{{booking_total_price}}' => '£' . number_format($bookingForPdf['total_price'] ?? 0, 2),
+    '{{booking_total_price}}' => '£' . number_format($rental_total, 2),
     '{{security_deposit}}' => '£' . number_format($bookingForPdf['security_deposit'] ?? 0, 2),
     '{{included_distance}}' => ($vehicleForPdf['mileage_limit'] ?? 'Unlimited') . ' miles',
     '{{excess_distance_fee}}' => '£0.50',

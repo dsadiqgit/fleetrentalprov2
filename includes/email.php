@@ -215,7 +215,13 @@ function sendContractWelcomeEmail($to, $customerName, $contractUrl, $tenant) {
     if ($tenantId) {
         $customTpl = getCustomEmailTemplate($tenantId, 'contract_welcome');
         if ($customTpl) {
+            $logoUrl = !empty($tenant['logo']) ? (strpos($tenant['logo'], 'http') === 0 ? $tenant['logo'] : SITE_URL . $tenant['logo']) : '';
+            $logoHtml = $logoUrl 
+                ? '<img src="' . $logoUrl . '" alt="' . $tenantName . '" style="max-height:38px;vertical-align:middle;display:inline-block;" />'
+                : '<span style="font-size:18px;font-weight:700;color:#111111;">' . $tenantName . '</span>';
+
             $sample = [
+                '{{company_logo}}'   => $logoHtml,
                 '{{customer_name}}'  => $customerName,
                 '{{contract_url}}'   => $contractUrl,
                 '{{company_name}}'   => $tenantName,
@@ -377,7 +383,13 @@ function sendCustomerAccountEmail($to, $customerName, $password, $tenant, $booki
     if ($tenantId) {
         $customTpl = getCustomEmailTemplate($tenantId, 'account_created');
         if ($customTpl) {
+            $logoUrl = !empty($tenant['logo']) ? (strpos($tenant['logo'], 'http') === 0 ? $tenant['logo'] : SITE_URL . $tenant['logo']) : '';
+            $logoHtml = $logoUrl 
+                ? '<img src="' . $logoUrl . '" alt="' . $tenantName . '" style="max-height:38px;vertical-align:middle;display:inline-block;" />'
+                : '<span style="font-size:18px;font-weight:700;color:#111111;">' . $tenantName . '</span>';
+
             $sample = [
+                '{{company_logo}}'   => $logoHtml,
                 '{{customer_name}}'  => $customerName,
                 '{{customer_email}}' => $to,
                 '{{password}}'       => $password,
@@ -525,7 +537,13 @@ function sendBookingConfirmationEmail($to, $bookingData, $tenant, $vehicle) {
     if ($tenantId) {
         $customTpl = getCustomEmailTemplate($tenantId, 'booking_confirmation');
         if ($customTpl) {
+            $logoUrl = !empty($tenant['logo']) ? (strpos($tenant['logo'], 'http') === 0 ? $tenant['logo'] : SITE_URL . $tenant['logo']) : '';
+            $logoHtml = $logoUrl 
+                ? '<img src="' . $logoUrl . '" alt="' . $tenantName . '" style="max-height:38px;vertical-align:middle;display:inline-block;" />'
+                : '<span style="font-size:18px;font-weight:700;color:#111111;">' . $tenantName . '</span>';
+
             $sample = [
+                '{{company_logo}}'   => $logoHtml,
                 '{{customer_name}}'  => $customerName,
                 '{{customer_email}}' => $to,
                 '{{booking_ref}}'    => $bookingRef,

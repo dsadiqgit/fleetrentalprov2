@@ -59,6 +59,47 @@ $stripe_pk = $settings['stripe_publishable_key'] ?? '';
 // Session already started in config.php
 $booking_data = $_SESSION['booking_data'] ?? [];
 
+// If a customer is logged in, retrieve their details to prefill the checkout form
+if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'customer') {
+    $stmt_u = $pdo->prepare("SELECT * FROM users WHERE id = ? AND tenant_id = ?");
+    $stmt_u->execute([$_SESSION['user_id'], $tenant_id]);
+    $loggedInUser = $stmt_u->fetch();
+    if ($loggedInUser) {
+        if (empty($booking_data['customer_email'])) {
+            $booking_data['customer_email'] = $loggedInUser['email'] ?? '';
+        }
+        if (empty($booking_data['customer_phone'])) {
+            $booking_data['customer_phone'] = $loggedInUser['phone'] ?? '';
+        }
+        if (empty($booking_data['first_name']) && empty($booking_data['last_name'])) {
+            $name_parts = explode(' ', $loggedInUser['full_name'] ?? '', 2);
+            $booking_data['first_name'] = $name_parts[0] ?? '';
+            $booking_data['last_name'] = $name_parts[1] ?? '';
+        }
+        if (empty($booking_data['customer_license'])) {
+            $booking_data['customer_license'] = $loggedInUser['license_number'] ?? '';
+        }
+        if (empty($booking_data['customer_dob'])) {
+            $booking_data['customer_dob'] = $loggedInUser['dob'] ?? '';
+        }
+        if (empty($booking_data['address_line1'])) {
+            $booking_data['address_line1'] = $loggedInUser['address_line1'] ?? '';
+        }
+        if (empty($booking_data['address_line2'])) {
+            $booking_data['address_line2'] = $loggedInUser['address_line2'] ?? '';
+        }
+        if (empty($booking_data['city'])) {
+            $booking_data['city'] = $loggedInUser['city'] ?? '';
+        }
+        if (empty($booking_data['postcode'])) {
+            $booking_data['postcode'] = $loggedInUser['postcode'] ?? '';
+        }
+        if (empty($booking_data['country'])) {
+            $booking_data['country'] = $loggedInUser['country'] ?? '';
+        }
+    }
+}
+
 $get_pickup_date     = $_GET['pickup_date']     ?? ($booking_data['pickup_date'] ?? '');
 $get_pickup_time     = $_GET['pickup_time']     ?? ($booking_data['pickup_time'] ?? '10:00');
 $get_return_date     = $_GET['return_date']     ?? ($booking_data['return_date'] ?? '');

@@ -144,13 +144,36 @@ try {
     }
     
     // Fetch tenant contact info
-    $stmt_t = $pdo->prepare("SELECT company_email, company_phone, company_address, company_website FROM tenant_settings WHERE tenant_id = ?");
+    $stmt_t = $pdo->prepare("SELECT company_email, company_phone, company_address, company_website, deposit_payment_mode FROM tenant_settings WHERE tenant_id = ?");
     $stmt_t->execute([$tenant_id]);
     $tenant_contact = $stmt_t->fetch();
     $tenant_email = $tenant_contact['company_email'] ?? '';
     $tenant_phone = $tenant_contact['company_phone'] ?? '';
     $tenant_address = $tenant_contact['company_address'] ?? '';
     $tenant_website = $tenant_contact['company_website'] ?? '';
+    $deposit_payment_mode = $tenant_contact['deposit_payment_mode'] ?? 'collection';
+
+    $rental_total = $data['total_price'];
+    if ($deposit_payment_mode === 'online') {
+        $rental_total = $data['total_price'] - ($data['security_deposit'] ?? 0);
+    }
+
+    // Build customer signature HTML
+    $customer_signature_html = '<span style="color:#999;font-style:italic;">PENDING SIGNATURE</span>';
+    $contract_status = $data['contract_status'] ?? ($data['signed'] ? 'signed' : 'pending');
+    if ($contract_status === 'signed') {
+        $sigValue = $data['signature_typed'] ?? '';
+        if (strpos($sigValue, 'data:image/') === 0) {
+            $customer_signature_html = '<img src="' . htmlspecialchars($sigValue) . '" style="max-height:60px; display:inline-block;" alt="Renter Signature" />';
+        } elseif (!empty($sigValue) && file_exists($sigValue)) {
+            // Read saved PNG signature image file and encode it as inline base64 data URL
+            $mime = mime_content_type($sigValue);
+            $imgData = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($sigValue));
+            $customer_signature_html = '<img src="' . $imgData . '" style="max-height:60px; display:inline-block;" alt="Renter Signature" />';
+        } elseif (!empty($sigValue)) {
+            $customer_signature_html = '<span style="font-family: \'Brush Script MT\', cursive, italic; font-size: 24px; color: #111;">' . htmlspecialchars($sigValue) . '</span>';
+        }
+    }
 
     $replacements = [
         '{{vehicle_name}}' => $vehicleName,
@@ -164,7 +187,7 @@ try {
         '{{booking_reference}}' => '#' . str_pad($booking_id, 5, '0', STR_PAD_LEFT),
         '{{pickup_datetime}}' => date('M d, Y', strtotime($data['pickup_date'])) . ' ' . date('g:i A', strtotime($data['pickup_time'] ?? '10:00')),
         '{{return_datetime}}' => date('M d, Y', strtotime($data['return_date'])) . ' ' . date('g:i A', strtotime($data['return_time'] ?? '10:00')),
-        '{{booking_total_price}}' => '£' . number_format($data['total_price'], 2),
+        '{{booking_total_price}}' => '£' . number_format($rental_total, 2),
         '{{security_deposit}}' => '£' . number_format($data['security_deposit'] ?? 0, 2),
         '{{included_distance}}' => ($data['mileage_limit'] ?? 'Unlimited') . ' miles',
         '{{excess_distance_fee}}' => '£0.50',
@@ -176,7 +199,7 @@ try {
             date_default_timezone_set($tz);
             return $dt;
         })(),
-        '{{signature}}' => '',
+        '{{signature}}' => $customer_signature_html,
         '{{witness_signature}}' => $witness_signature_html,
         '{{user_name}}' => $witness_name,
     ];
@@ -238,7 +261,7 @@ try {
             'vehicle' => $vehicleName,
             'pickup_date' => $data['pickup_date'],
             'return_date' => $data['return_date'],
-            'total_price' => $data['total_price'],
+            'total_price' => $rental_total,
             'total_days' => $data['total_days'],
         ]
     ]);

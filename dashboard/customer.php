@@ -59,10 +59,7 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bookings - <?= htmlspecialchars($tenant['name']) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+    <link rel="stylesheet" href="/app/custom.css">
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
 </head>
 <body class="bg-gray-50 flex h-screen overflow-hidden">
@@ -75,9 +72,13 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
             </button>
-            <span class="text-lg font-bold text-gray-900"><?= htmlspecialchars($tenant['name']) ?></span>
+            <?php if (!empty($tenant['logo'])): ?>
+                <img src="<?= htmlspecialchars($tenant['logo']) ?>" alt="Logo" class="h-6 w-auto object-contain">
+            <?php else: ?>
+                <span class="text-lg font-semibold text-gray-900"><?= htmlspecialchars($tenant['name']) ?></span>
+            <?php endif; ?>
         </div>
-        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
             <?= strtoupper(substr($user['full_name'] ?? 'C', 0, 1)) ?>
         </div>
     </header>
@@ -95,7 +96,7 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
         <main class="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 lg:p-10">
             <!-- Welcome Header -->
             <div class="max-w-6xl mb-12">
-                <h1 class="text-4xl font-black text-gray-900 tracking-tight">Bonjour, <?= htmlspecialchars(explode(' ', $user['full_name'] ?? 'Customer')[0]) ?>!</h1>
+                <h1 class="text-4xl font-semibold text-gray-900 tracking-tight">Bonjour, <?= htmlspecialchars(explode(' ', $user['full_name'] ?? 'Customer')[0]) ?>!</h1>
                 <p class="text-gray-500 mt-2 text-lg font-medium">Here are your active fleet reservations.</p>
             </div>
 
@@ -108,8 +109,8 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-6xl">
                 <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all">
                     <div>
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total Orders</p>
-                        <h3 class="text-3xl font-black text-gray-900"><?= $totalBookings ?></h3>
+                        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-1">Total Orders</p>
+                        <h3 class="text-3xl font-semibold text-gray-900"><?= $totalBookings ?></h3>
                     </div>
                     <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -118,8 +119,8 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
 
                 <div class="bg-[#1a1f2b] p-8 rounded-[2rem] shadow-2xl flex items-center justify-between text-white group">
                     <div>
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Active Rentals</p>
-                        <h3 class="text-3xl font-black"><?= $activeBookings ?></h3>
+                        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-1">Active Rentals</p>
+                        <h3 class="text-3xl font-semibold"><?= $activeBookings ?></h3>
                     </div>
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 transition-transform group-hover:scale-110">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -128,8 +129,8 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
 
                 <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all">
                     <div>
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Pending Sign</p>
-                        <h3 class="text-3xl font-black text-gray-900"><?= $pendingContracts ?></h3>
+                        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-1">Pending Sign</p>
+                        <h3 class="text-3xl font-semibold text-gray-900"><?= $pendingContracts ?></h3>
                     </div>
                     <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 transition-transform group-hover:scale-110">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -140,7 +141,7 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
             <!-- Content Area -->
             <div class="max-w-6xl space-y-6">
                 <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">Recent Reservations</h2>
+                    <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">Recent Reservations</h2>
                 </div>
 
                 <?php if (empty($bookings)): ?>
@@ -148,7 +149,7 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                         <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8">
                             <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
-                        <h3 class="text-2xl font-black text-gray-900">No bookings yet</h3>
+                        <h3 class="text-2xl font-semibold text-gray-900">No bookings yet</h3>
                         <p class="text-gray-400 mt-4 max-w-sm mx-auto font-medium">Your rental history will appear here once you make your first reservation.</p>
                     </div>
                 <?php else: ?>
@@ -185,34 +186,34 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                                         </div>
                                     <?php endif; ?>
                                     <div class="absolute top-4 left-4">
-                                        <span class="px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-white/90 backdrop-blur-md shadow-xl text-gray-900 border border-gray-100"><?= $bookingRef ?></span>
+                                        <span class="px-4 py-1.5 rounded-2xl text-[10px] font-semibold uppercase tracking-widest bg-white/90 backdrop-blur-md shadow-xl text-gray-900 border border-gray-100"><?= $bookingRef ?></span>
                                     </div>
                                 </div>
         
                                 <div class="flex-1">
                                     <div class="flex flex-wrap items-center gap-4 mb-3">
-                                        <span class="px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] <?= $statusClass ?> shadow-sm shadow-current/5"><?= $booking['status'] ?></span>
+                                        <span class="px-4 py-1.5 rounded-2xl text-[10px] font-semibold uppercase tracking-[0.1em] <?= $statusClass ?> shadow-sm shadow-current/5"><?= $booking['status'] ?></span>
                                         <div class="flex items-center gap-2 text-gray-400">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            <span class="text-xs font-black uppercase tracking-tight"><?= date('M j, Y', strtotime($booking['created_at'])) ?></span>
+                                            <span class="text-xs font-semibold uppercase tracking-tight"><?= date('M j, Y', strtotime($booking['created_at'])) ?></span>
                                         </div>
                                     </div>
-                                    <h3 class="text-3xl font-black text-gray-900 leading-tight mb-6"><?= htmlspecialchars($vehicleName ?: 'Vehicle Rental') ?></h3>
+                                    <h3 class="text-3xl font-semibold text-gray-900 leading-tight mb-6"><?= htmlspecialchars($vehicleName ?: 'Vehicle Rental') ?></h3>
                                     <div class="flex flex-wrap items-center gap-y-4">
                                         <div class="flex items-center gap-8">
                                             <div>
-                                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pick-up</p>
-                                                <p class="text-base font-black text-gray-900"><?= date('D, M j', strtotime($booking['pickup_date'])) ?></p>
+                                                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Pick-up</p>
+                                                <p class="text-base font-semibold text-gray-900"><?= date('D, M j', strtotime($booking['pickup_date'])) ?></p>
                                             </div>
                                             <div class="w-12 h-0.5 bg-gray-100 rounded-full"></div>
                                             <div>
-                                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Return</p>
-                                                <p class="text-base font-black text-gray-900"><?= date('D, M j', strtotime($booking['return_date'])) ?></p>
+                                                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Return</p>
+                                                <p class="text-base font-semibold text-gray-900"><?= date('D, M j', strtotime($booking['return_date'])) ?></p>
                                             </div>
                                         </div>
                                         <div class="ml-auto flex items-center gap-3 bg-gray-50 px-6 py-3 rounded-[1.5rem] border border-gray-100">
-                                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total cost</span>
-                                            <span class="text-2xl font-black text-gray-900">£<?= number_format($booking['total_price'], 2) ?></span>
+                                            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Total cost</span>
+                                            <span class="text-2xl font-semibold text-gray-900">£<?= number_format($booking['total_price'], 2) ?></span>
                                         </div>
                                     </div>
                                 </div>
@@ -221,16 +222,16 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                                     <?php if ($booking['contract_id']): ?>
                                         <?php if ($booking['contract_status'] === 'signed'): ?>
                                             <button onclick="viewContract(<?= $booking['id'] ?>, '<?= htmlspecialchars($booking['signing_token']) ?>')" 
-                                                    class="flex-1 flex items-center justify-center gap-2 px-8 py-5 text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-50 border border-gray-200 rounded-[1.5rem] hover:bg-gray-100 transition-all">
+                                                    class="flex-1 flex items-center justify-center gap-2 px-8 py-5 text-xs font-semibold uppercase tracking-widest text-gray-700 bg-gray-50 border border-gray-200 rounded-[1.5rem] hover:bg-gray-100 transition-all">
                                                 View Agreement
                                             </button>
                                             <a href="/api/download-contract.php?booking_id=<?= $booking['id'] ?>" target="_blank"
-                                               class="flex-1 flex items-center justify-center gap-2 px-8 py-5 text-xs font-black uppercase tracking-widest text-white rounded-[1.5rem] shadow-2xl shadow-blue-200 transition-all active:scale-95" style="background: linear-gradient(135deg, <?= $primaryColor ?>, #1e40af)">
+                                               class="flex-1 flex items-center justify-center gap-2 px-8 py-5 text-xs font-semibold uppercase tracking-widest text-white rounded-[1.5rem] shadow-2xl shadow-blue-200 transition-all active:scale-95" style="background: linear-gradient(135deg, <?= $primaryColor ?>, #1e40af)">
                                                 PDF Copy
                                             </a>
                                         <?php else: ?>
                                             <a href="/templates/contract-sign.php?booking_id=<?= $booking['id'] ?>&token=<?= htmlspecialchars($booking['signing_token']) ?>" 
-                                               class="w-full flex items-center justify-center gap-2 px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-white rounded-[1.5rem] shadow-2xl shadow-amber-200 transform hover:-translate-y-1 transition-all active:scale-95 animate-pulse" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
+                                               class="w-full flex items-center justify-center gap-2 px-8 py-6 text-xs font-semibold uppercase tracking-[0.2em] text-white rounded-[1.5rem] shadow-2xl shadow-amber-200 transform hover:-translate-y-1 transition-all active:scale-95 animate-pulse" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
                                                 Sign Contract
                                             </a>
                                         <?php endif; ?>

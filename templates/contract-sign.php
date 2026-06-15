@@ -22,7 +22,7 @@ if (!$booking_id || !$token) {
 // Validate booking + contract
 $stmt = $pdo->prepare("
     SELECT c.*, b.customer_name, b.customer_email, b.customer_phone,
-           b.pickup_date, b.return_date, b.total_days, b.total_price,
+           b.pickup_date, b.return_date, b.total_days, b.total_price, b.security_deposit,
            v.brand, v.model, v.year, v.category
     FROM contracts c
     JOIN bookings b ON c.booking_id = b.id
@@ -43,6 +43,19 @@ $vehicleName = trim(($contract['brand'] ?? '') . ' ' . ($contract['model'] ?? ''
 $bookingRef = str_pad($booking_id, 5, '0', STR_PAD_LEFT);
 $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
 $secondaryColor = $tenant['secondary_color'] ?? '#1E40AF';
+
+// Get deposit payment mode to calculate correct rental total
+$deposit_payment_mode = 'collection';
+try {
+    $setStmt = $pdo->prepare("SELECT deposit_payment_mode FROM tenant_settings WHERE tenant_id = ?");
+    $setStmt->execute([$tenant_id]);
+    $deposit_payment_mode = $setStmt->fetchColumn() ?: 'collection';
+} catch (Exception $e) {}
+
+$rental_total = $contract['total_price'];
+if ($deposit_payment_mode === 'online') {
+    $rental_total = $contract['total_price'] - ($contract['security_deposit'] ?? 0);
+}
 
 // Check Didit ID verification status
 $idVerified = false;
@@ -209,7 +222,7 @@ try {
         }
         
         .contract-content {
-            max-height: 350px;
+            max-height: 60vh;
             overflow-y: auto;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
@@ -343,7 +356,7 @@ try {
                         </div>
                         <div>
                             <span class="text-gray-500 block text-xs">Total</span>
-                            <span class="font-bold" style="color: <?= $primaryColor ?>">£<?= number_format($contract['total_price'], 2) ?></span>
+                            <span class="font-bold" style="color: <?= $primaryColor ?>">£<?= number_format($rental_total, 2) ?></span>
                         </div>
                     </div>
                 </div>

@@ -29,11 +29,11 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS email_templates (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
 // ── Default template definitions ─────────────────────────────────────────────
-function notif_wrap(string $content, string $title_bar = '{{company_name}}'): string {
+function notif_wrap(string $content, string $title_bar = '{{company_logo}}'): string {
     return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
          . '<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Arial,sans-serif;background:#f5f5f5;">'
          . '<div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">'
-         . '<div style="padding:24px 32px;background:#111;color:#fff;"><p style="margin:0;font-size:18px;font-weight:700;">' . $title_bar . '</p></div>'
+         . '<div style="padding:24px 32px;background:#ffffff;text-align:center;border-bottom:2px solid #111111;">' . $title_bar . '</div>'
          . '<div style="padding:32px;">' . $content . '</div>'
          . '<div style="padding:18px 32px;border-top:1px solid #f0f0f0;background:#fafafa;text-align:center;font-size:12px;color:#999;">'
          . '&copy; {{company_name}}. All rights reserved. &mdash; This is an automated message, please do not reply.'
@@ -221,7 +221,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        $logo_html = !empty($tenant['logo']) 
+            ? '<img src="' . SITE_URL . htmlspecialchars($tenant['logo']) . '" alt="' . htmlspecialchars($tenant['name'] ?? 'Logo') . '" style="max-height:38px;vertical-align:middle;display:inline-block;" />'
+            : '<span style="font-size:18px;font-weight:700;color:#111111;">' . htmlspecialchars($tenant['name'] ?? 'Your Company') . '</span>';
+
         $sample = [
+            '{{company_logo}}'   => $logo_html,
             '{{customer_name}}'  => 'John Smith',
             '{{customer_email}}' => $test_email,
             '{{booking_ref}}'    => '00123',
@@ -503,7 +508,16 @@ let CURRENT_KEY = Object.keys(ALL_TEMPLATES)[0];
 function loadVisualEditor(html) {
     const iframe = document.getElementById('visual-editor');
     const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open(); doc.write(html); doc.close();
+
+    // Replace {{company_logo}} with actual logo for live preview
+    const logoUrl = '<?= !empty($tenant['logo']) ? htmlspecialchars($tenant['logo']) : '' ?>';
+    const logoHtml = logoUrl 
+        ? `<img src="${logoUrl}" alt="<?= htmlspecialchars($tenant['name']) ?>" style="max-height:38px;vertical-align:middle;display:inline-block;" />`
+        : `<span style="font-size:18px;font-weight:700;color:#111111;"><?= htmlspecialchars($tenant['name']) ?></span>`;
+    
+    let renderedHtml = html.replaceAll('{{company_logo}}', logoHtml);
+
+    doc.open(); doc.write(renderedHtml); doc.close();
     setTimeout(() => {
         doc.designMode = 'on';
         doc.body.style.cursor = 'text';
@@ -522,8 +536,17 @@ function getCleanHTML() {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     doc.designMode = 'off';
     // Use body.innerHTML only — avoids browser-injected styles (cursor:text, rgb() computed values, etc.)
-    const bodyContent = doc.body ? doc.body.innerHTML : '';
+    let bodyContent = doc.body ? doc.body.innerHTML : '';
     doc.designMode = 'on';
+
+    // Replace actual logo HTML back with the template variable before saving to database
+    const logoUrl = '<?= !empty($tenant['logo']) ? htmlspecialchars($tenant['logo']) : '' ?>';
+    const logoHtml = logoUrl 
+        ? `<img src="${logoUrl}" alt="<?= htmlspecialchars($tenant['name']) ?>" style="max-height:38px;vertical-align:middle;display:inline-block;" />`
+        : `<span style="font-size:18px;font-weight:700;color:#111111;"><?= htmlspecialchars($tenant['name']) ?></span>`;
+
+    bodyContent = bodyContent.replaceAll(logoHtml, '{{company_logo}}');
+
     // Re-wrap in a clean, minimal HTML document suitable for email clients
     return '<!DOCTYPE html><html><head>'
          + '<meta charset="UTF-8">'

@@ -369,6 +369,52 @@ try {
         $booking_id = $pdo->lastInsertId();
     }
 
+    // If a customer is logged in, automatically save their new checkout/address details back to their user profile record!
+    if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'customer') {
+        try {
+            $user_id = $_SESSION['user_id'];
+            $full_name = $booking_data['customer_name'] ?? '';
+            $phone = $booking_data['customer_phone'] ?? '';
+            $license = $booking_data['customer_license'] ?? '';
+            $dob = $sd['customer_dob'] ?? '';
+            
+            $address_line1 = $sd['address_line1'] ?? '';
+            $address_line2 = $sd['address_line2'] ?? '';
+            $city = $sd['city'] ?? '';
+            $postcode = $sd['postcode'] ?? '';
+            $country = $sd['country'] ?? '';
+            
+            // First, make sure columns exist in the users table dynamically
+            $columns = ['address_line1', 'address_line2', 'city', 'postcode', 'country', 'license_number', 'dob'];
+            foreach ($columns as $col) {
+                $stmt_col = $pdo->query("SHOW COLUMNS FROM users LIKE '$col'");
+                if ($stmt_col->rowCount() == 0) {
+                    $col_type = ($col === 'dob') ? "DATE NULL" : "VARCHAR(255) DEFAULT ''";
+                    if ($col === 'license_number') {
+                        $pdo->exec("ALTER TABLE users ADD COLUMN license_number VARCHAR(255) DEFAULT ''");
+                    } else {
+                        $pdo->exec("ALTER TABLE users ADD COLUMN $col $col_type");
+                    }
+                }
+            }
+            
+            $stmt_u = $pdo->prepare("
+                UPDATE users 
+                SET full_name = ?, phone = ?, license_number = ?, dob = ?,
+                    address_line1 = ?, address_line2 = ?, city = ?, postcode = ?, country = ?,
+                    updated_at = NOW()
+                WHERE id = ? AND tenant_id = ?
+            ");
+            $stmt_u->execute([
+                $full_name, $phone, $license, empty($dob) ? null : $dob,
+                $address_line1, $address_line2, $city, $postcode, $country,
+                $user_id, $tenant_id
+            ]);
+        } catch (Exception $e) {
+            error_log("Failed to auto-save customer checkout details to profile: " . $e->getMessage());
+        }
+    }
+
     // Send booking confirmation email
     try {
         require_once __DIR__ . '/../includes/email.php';
