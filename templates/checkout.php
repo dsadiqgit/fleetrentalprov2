@@ -58,11 +58,17 @@ if ($vehicle['images']) {
 }
 if (empty($vehicle_image)) $vehicle_image = '/assets/images/placeholder-img.webp';
 
-$stmt = $pdo->prepare("SELECT require_license_verification, stripe_publishable_key FROM tenant_settings WHERE tenant_id = ?");
+$stmt = $pdo->prepare("SELECT require_license_verification, stripe_publishable_key, company_email, company_phone, company_address, company_website FROM tenant_settings WHERE tenant_id = ?");
 $stmt->execute([$tenant_id]);
 $settings = $stmt->fetch();
 $require_verification = $settings ? (bool)$settings['require_license_verification'] : false;
 $stripe_pk = $settings['stripe_publishable_key'] ?? '';
+
+// Company info for contract preview
+$company_email = $settings['company_email'] ?? '';
+$company_phone = $settings['company_phone'] ?? '';
+$company_address = $settings['company_address'] ?? '';
+$company_website = $settings['company_website'] ?? '';
 
 // Session already started in config.php
 $booking_data = $_SESSION['booking_data'] ?? [];
@@ -108,6 +114,17 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'customer') {
     }
 }
 
+// Build customer name and address for contract preview (after session + profile prefill)
+$customer_name = trim(($booking_data['first_name'] ?? '') . ' ' . ($booking_data['last_name'] ?? ''));
+$addr_parts = array_filter([
+    $booking_data['address_line1'] ?? '',
+    $booking_data['address_line2'] ?? '',
+    $booking_data['city'] ?? '',
+    $booking_data['postcode'] ?? '',
+    ($booking_data['country'] ?? '') !== 'Other' && !empty($booking_data['country']) ? $booking_data['country'] : ''
+]);
+$customer_address = implode(', ', $addr_parts);
+
 $get_pickup_date     = $_GET['pickup_date']     ?? ($booking_data['pickup_date'] ?? '');
 $get_pickup_time     = $_GET['pickup_time']     ?? ($booking_data['pickup_time'] ?? '10:00');
 $get_return_date     = $_GET['return_date']     ?? ($booking_data['return_date'] ?? '');
@@ -149,7 +166,7 @@ $rental_days = ($pickup_ts && $return_ts) ? max(1, (int)round(($return_ts - $pic
         input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.25); border-color: #3b82f6; }
         .field-label { font-size: .8125rem; font-weight: 600; color: #374151; margin-bottom: .375rem; display: block; }
         .field-input { width: 100%; padding: .625rem .875rem; border: 1.5px solid #d1d5db; border-radius: .5rem; font-size: .9375rem; background: #fff; transition: border-color .15s; }
-        .contract-body { max-height: 340px; overflow-y: auto; font-size: .875rem; line-height: 1.65; color: #374151; border: 1.5px solid #d1d5db; border-radius: .75rem; padding: 1.25rem 1.5rem; background: #fafafa; }
+        .contract-body { max-height: 520px; overflow-y: auto; font-size: .875rem; line-height: 1.65; color: #374151; border: 1.5px solid #d1d5db; border-radius: .75rem; padding: 1.25rem 1.5rem; background: #fafafa; }
         .contract-body::-webkit-scrollbar { width: 6px; }
         .contract-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         #signatureCanvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
@@ -506,6 +523,30 @@ const stripePk = '<?= htmlspecialchars($stripe_pk) ?>';
 const vehicleId = '<?= htmlspecialchars($vehicle_id) ?>';
 const pricePerDay = <?= floatval($vehicle['price_per_day']) ?>;
 
+// Real data for checkout contract preview (replaces template placeholders)
+const checkoutContractData = {
+    tenantName: <?= json_encode($tenant['name'] ?? '') ?>,
+    tenantEmail: <?= json_encode($company_email) ?>,
+    tenantPhone: <?= json_encode($company_phone) ?>,
+    tenantAddress: <?= json_encode($company_address) ?>,
+    tenantWebsite: <?= json_encode($company_website) ?>,
+    renterName: <?= json_encode($customer_name) ?>,
+    renterAddress: <?= json_encode($customer_address ?: 'Not provided') ?>,
+    vehicleName: <?= json_encode(trim(($vehicle['brand'] ?? '') . ' ' . ($vehicle['model'] ?? ''))) ?>,
+    vehicleYear: <?= json_encode($vehicle['year'] ?? '') ?>,
+    vehicleColor: <?= json_encode($vehicle['exterior_color'] ?? '') ?>,
+    vehicleReg: <?= json_encode($vehicle['license_plate'] ?? 'Not specified') ?>,
+    pickupDate: <?= json_encode($pickup_date_display) ?>,
+    pickupTime: <?= json_encode($pickup_time_display) ?>,
+    returnDate: <?= json_encode($return_date_display) ?>,
+    returnTime: <?= json_encode($return_time_display) ?>,
+    totalDays: <?= json_encode($rental_days) ?>,
+    totalPrice: <?= json_encode(number_format($vehicle['price_per_day'] * $rental_days, 2)) ?>,
+    deposit: <?= json_encode(number_format($vehicle['deposit'] ?? 0, 2)) ?>,
+    currency: '£',
+    currentDatetime: new Date().toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' })
+};
+
 // Hide card option if no Stripe key
 if (!stripePk) {
     document.querySelector('input[value="card"]')?.closest('label')?.classList.add('hidden');
@@ -741,11 +782,50 @@ async function loadContract() {
         if (data.success) {
             document.getElementById('contractTitle').textContent = data.name || 'Rental Agreement';
             let html = data.content || 'Standard rental agreement applies.';
+
+            // Replace all template placeholders with real checkout data
+            const d = checkoutContractData;
+            const reps = {
+                '{{current_datetime}}': d.currentDatetime,
+                '{{tenant_name}}': d.tenantName,
+                '{{tenant_email}}': d.tenantEmail,
+                '{{tenant_phone}}': d.tenantPhone,
+                '{{tenant_address}}': d.tenantAddress,
+                '{{tenant_website}}': d.tenantWebsite,
+                '{{renter_full_name}}': d.renterName,
+                '{{renter_address}}': d.renterAddress,
+                '{{vehicle_name}}': d.vehicleName,
+                '{{vehicle_year}}': d.vehicleYear,
+                '{{vehicle_color}}': d.vehicleColor,
+                '{{vehicle_registration}}': d.vehicleReg,
+                '{{booking_reference}}': '#PREVIEW',
+                '{{pickup_datetime}}': d.pickupDate + ' ' + d.pickupTime,
+                '{{return_datetime}}': d.returnDate + ' ' + d.returnTime,
+                '{{booking_total_price}}': d.currency + d.totalPrice,
+                '{{security_deposit}}': d.currency + d.deposit,
+                '{{included_distance}}': 'Unlimited miles',
+                '{{excess_distance_fee}}': d.currency + '0.50',
+                '{{deductible_amount}}': d.currency + '500',
+                '{{signature}}': '<span style="color:#999;font-style:italic;">PENDING SIGNATURE</span>',
+                '{{witness_signature}}': '',
+                '{{user_name}}': d.tenantName,
+                // Legacy hardcoded fallback text
+                'Your Business Address': d.tenantAddress || 'Your Business Address',
+                'Renter Address': d.renterAddress,
+                'www.yourcompany.com': d.tenantWebsite || 'www.yourcompany.com',
+                '@yourcompany': d.tenantEmail || '@yourcompany',
+                '555-123-4567': d.tenantPhone || '555-123-4567',
+                'Your Logo': '<span style="color:#9ca3af;font-size:.875rem;">Your Logo</span>',
+            };
+            for (const [key, val] of Object.entries(reps)) {
+                html = html.split(key).join(val);
+            }
+            // Safety net: strip any remaining unreplaced {{...}} placeholders
+            html = html.replace(/\{\{[^{}]+\}\}/g, '');
+
             if (data.is_html) {
-                // Visual template — set directly as HTML
                 document.getElementById('contractBody').innerHTML = html;
             } else {
-                // Plain text — convert newlines and basic markdown
                 html = html.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 document.getElementById('contractBody').innerHTML = html;
             }

@@ -446,8 +446,7 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
                                 This Vehicle Rental Contract ("Contract") is entered into as of
                                 <strong>{{current_datetime}}</strong>, by and between <strong>{{tenant_name}}</strong>
                                 ("Owner"), with a principal place of business at <strong>{{tenant_address}}</strong>,
-                                and <strong>{{renter_full_name}}</strong> ("Renter"), residing at <strong>Renter
-                                    Address</strong>. This Contract outlines the terms and conditions under which the
+                                and <strong>{{renter_full_name}}</strong> ("Renter"), residing at <strong>{{renter_address}}</strong>. This Contract outlines the terms and conditions under which the
                                 Owner agrees to lease the vehicle described below to the Renter.
                             </div>
                         </div>
@@ -626,16 +625,16 @@ if ($tenant && $tenant['plan'] === 'trial' && isset($tenant['trial_end_date']) &
         const sectionTemplates = {
             agreement: {
                 title: 'Agreement',
-                content: 'This Vehicle Rental Contract ("Contract") is entered into as of <strong>{{current_datetime}}</strong>, by and between <strong>{{tenant_name}}</strong> ("Owner"), with a principal place of business at <strong>{{tenant_address}}</strong>, and <strong>{{renter_full_name}}</strong> ("Renter"), residing at <strong>Renter Address</strong>. This Contract outlines the terms and conditions under which the Owner agrees to lease the vehicle described below to the Renter.'
+                content: 'This Vehicle Rental Contract ("Contract") is entered into as of <strong>{{current_datetime}}</strong>, by and between <strong>{{tenant_name}}</strong> ("Owner"), with a principal place of business at <strong>{{tenant_address}}</strong>, and <strong>{{renter_full_name}}</strong> ("Renter"), residing at <strong>{{renter_address}}</strong>. This Contract outlines the terms and conditions under which the Owner agrees to lease the vehicle described below to the Renter.'
             },
             vehicle: {
                 title: 'Leased Vehicle',
                 content: `<table class="w-full border border-gray-300">
             <tr class="border-b border-gray-300"><td class="p-2 border-r border-gray-300 font-medium w-32">Make</td><td class="p-2">{{vehicle_name}}</td></tr>
             <tr class="border-b border-gray-300"><td class="p-2 border-r border-gray-300 font-medium">Model</td><td class="p-2">{{vehicle_name}}</td></tr>
-            <tr class="border-b border-gray-300"><td class="p-2 border-r border-gray-300 font-medium">Year</td><td class="p-2">2024</td></tr>
+            <tr class="border-b border-gray-300"><td class="p-2 border-r border-gray-300 font-medium">Year</td><td class="p-2">{{vehicle_year}}</td></tr>
             <tr class="border-b border-gray-300"><td class="p-2 border-r border-gray-300 font-medium">VIN</td><td class="p-2">{{vehicle_registration}}</td></tr>
-            <tr><td class="p-2 border-r border-gray-300 font-medium">Color</td><td class="p-2">Black</td></tr>
+            <tr><td class="p-2 border-r border-gray-300 font-medium">Color</td><td class="p-2">{{vehicle_color}}</td></tr>
         </table>`
             },
             payment: {

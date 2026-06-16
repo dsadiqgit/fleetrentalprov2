@@ -51,12 +51,12 @@ $tenant_id = getTenantId();
 $pdo = getDB();
 
 try {
-    // Get contract with token validation
+    // Get contract with token validation (fetch all real data — no placeholders)
     $stmt = $pdo->prepare("
         SELECT c.*, b.customer_name, b.customer_email, b.customer_phone, b.customer_license,
                b.pickup_date, b.pickup_time, b.return_date, b.return_time,
-               b.total_days, b.total_price, b.security_deposit, b.price_per_day,
-               v.brand, v.model, v.year, v.category, v.mileage_limit,
+               b.total_days, b.total_price, b.security_deposit, b.price_per_day, b.notes,
+               v.brand, v.model, v.year, v.category, v.mileage_limit, v.license_plate, v.exterior_color,
                t.name as tenant_name
         FROM contracts c
         JOIN bookings b ON c.booking_id = b.id
@@ -143,8 +143,15 @@ try {
         }
     }
     
-    // Fetch tenant contact info
-    $stmt_t = $pdo->prepare("SELECT company_email, company_phone, company_address, company_website, deposit_payment_mode FROM tenant_settings WHERE tenant_id = ?");
+    // Fetch tenant contact info + contract-specific settings
+    try {
+        $pdo->exec("ALTER TABLE tenant_settings ADD COLUMN excess_distance_fee VARCHAR(50) DEFAULT '£0.50'");
+    } catch (Exception $e) {}
+    try {
+        $pdo->exec("ALTER TABLE tenant_settings ADD COLUMN deductible_amount VARCHAR(50) DEFAULT '£500'");
+    } catch (Exception $e) {}
+
+    $stmt_t = $pdo->prepare("SELECT company_email, company_phone, company_address, company_website, deposit_payment_mode, excess_distance_fee, deductible_amount FROM tenant_settings WHERE tenant_id = ?");
     $stmt_t->execute([$tenant_id]);
     $tenant_contact = $stmt_t->fetch();
     $tenant_email = $tenant_contact['company_email'] ?? '';
@@ -152,11 +159,43 @@ try {
     $tenant_address = $tenant_contact['company_address'] ?? '';
     $tenant_website = $tenant_contact['company_website'] ?? '';
     $deposit_payment_mode = $tenant_contact['deposit_payment_mode'] ?? 'collection';
+    $excess_distance_fee = $tenant_contact['excess_distance_fee'] ?? '£0.50';
+    $deductible_amount = $tenant_contact['deductible_amount'] ?? '£500';
 
     $rental_total = $data['total_price'];
     if ($deposit_payment_mode === 'online') {
         $rental_total = $data['total_price'] - ($data['security_deposit'] ?? 0);
     }
+
+    // Build renter address from booking notes (primary) or user profile (fallback)
+    $renter_address = '';
+    $notesData = [];
+    if (!empty($data['notes'])) {
+        $decoded = json_decode($data['notes'], true);
+        if (is_array($decoded)) {
+            $notesData = $decoded;
+        }
+    }
+    $addrParts = [];
+    if (!empty($notesData['address_line1'])) $addrParts[] = $notesData['address_line1'];
+    if (!empty($notesData['address_line2'])) $addrParts[] = $notesData['address_line2'];
+    if (!empty($notesData['city']))          $addrParts[] = $notesData['city'];
+    if (!empty($notesData['postcode']))     $addrParts[] = $notesData['postcode'];
+    if (!empty($notesData['country']))      $addrParts[] = $notesData['country'];
+
+    if (empty($addrParts) && !empty($data['customer_email'])) {
+        $userStmt = $pdo->prepare("SELECT address_line1, address_line2, city, postcode, country FROM users WHERE email = ? AND tenant_id = ? LIMIT 1");
+        $userStmt->execute([$data['customer_email'], $tenant_id]);
+        $userData = $userStmt->fetch();
+        if ($userData) {
+            if (!empty($userData['address_line1'])) $addrParts[] = $userData['address_line1'];
+            if (!empty($userData['address_line2'])) $addrParts[] = $userData['address_line2'];
+            if (!empty($userData['city']))          $addrParts[] = $userData['city'];
+            if (!empty($userData['postcode']))     $addrParts[] = $userData['postcode'];
+            if (!empty($userData['country']))      $addrParts[] = $userData['country'];
+        }
+    }
+    $renter_address = implode(', ', array_filter($addrParts));
 
     // Build customer signature HTML
     $customer_signature_html = '<span style="color:#999;font-style:italic;">PENDING SIGNATURE</span>';
@@ -177,8 +216,11 @@ try {
 
     $replacements = [
         '{{vehicle_name}}' => $vehicleName,
-        '{{vehicle_registration}}' => 'N/A',
+        '{{vehicle_registration}}' => (!empty($data['license_plate']) ? $data['license_plate'] : 'Not specified'),
+        '{{vehicle_year}}' => ($data['year'] ?? ''),
+        '{{vehicle_color}}' => ($data['exterior_color'] ?? ''),
         '{{renter_full_name}}' => $data['customer_name'],
+        '{{renter_address}}' => $renter_address,
         '{{tenant_name}}' => $data['tenant_name'],
         '{{tenant_email}}' => $tenant_email,
         '{{tenant_phone}}' => $tenant_phone,
@@ -190,8 +232,8 @@ try {
         '{{booking_total_price}}' => '£' . number_format($rental_total, 2),
         '{{security_deposit}}' => '£' . number_format($data['security_deposit'] ?? 0, 2),
         '{{included_distance}}' => ($data['mileage_limit'] ?? 'Unlimited') . ' miles',
-        '{{excess_distance_fee}}' => '£0.50',
-        '{{deductible_amount}}' => '£500',
+        '{{excess_distance_fee}}' => $excess_distance_fee,
+        '{{deductible_amount}}' => $deductible_amount,
         '{{current_datetime}}' => (function() {
             $tz = date_default_timezone_get();
             date_default_timezone_set('Europe/London');
@@ -211,6 +253,12 @@ try {
     // Direct translations requested by the user
     $content = str_ireplace('business Owner', 'Witness', $content);
     $content = str_ireplace('Car Rental', $witness_name, $content);
+
+    // Safety net: remove any unreplaced {{...}} placeholders so they never appear in the rendered contract
+    $content = preg_replace('/\{\{[^{}]+\}\}/', '', $content);
+
+    // Safety net for legacy hardcoded placeholder text from old default templates
+    $content = str_ireplace('Renter Address', ($renter_address ?: 'Not provided'), $content);
     
     $isHtml = $isVisualTemplate;
     if ($isHtml) {
