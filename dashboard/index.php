@@ -641,7 +641,7 @@ $filteredVehicleCount = count($filteredVehicles);
                             <div class="md:col-span-6 space-y-6">
                                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Set up <span class="border-b-2 border-blue-500 pb-1">operating</span> hours</h1>
                                 <p class="text-gray-600 leading-relaxed text-base">
-                                    Great! The most important aspect of a rental business is setting up your rental periods. Fleetwire gives you tons of options that you can customize to fit the needs of your business.
+                                    Great! The most important aspect of a rental business is setting up your rental periods. Fleetwire gives you tons of options that you can customise to fit the needs of your business.
                                 </p>
                                 <div class="flex flex-wrap gap-3 pt-2">
                                     <a href="/dashboard/settings.php?tab=booking" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition shadow-md hover:shadow-lg text-center uppercase tracking-wide">
@@ -659,7 +659,7 @@ $filteredVehicleCount = count($filteredVehicles);
                                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                                     </div>
                                     <div class="p-4 space-y-3.5">
-                                        <p class="text-gray-400 text-[10px]">Customize the hours of operation for your business. <span class="text-blue-500 font-semibold cursor-pointer">LEARN MORE ↗</span></p>
+                                        <p class="text-gray-400 text-[10px]">Customise the hours of operation for your business. <span class="text-blue-500 font-semibold cursor-pointer">LEARN MORE ↗</span></p>
                                         <div class="border border-gray-200 rounded-lg p-2.5 bg-gray-50">
                                             <p class="text-[9px] text-gray-500 font-medium mb-1">Default Pickup Hours</p>
                                             <div class="bg-white border border-gray-300 rounded px-2 py-1 flex items-center justify-between text-gray-800 font-semibold">
@@ -742,7 +742,7 @@ $filteredVehicleCount = count($filteredVehicles);
                             <div class="md:col-span-6 space-y-6">
                                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Set up <span class="border-b-2 border-blue-500 pb-1">payment</span> methods</h1>
                                 <p class="text-gray-600 leading-relaxed text-base">
-                                    Accept credit cards, security deposits, and booking payments online. Connect with Stripe instantly to securely authorize and capture customer payments.
+                                    Accept credit cards, security deposits, and booking payments online. Connect with Stripe instantly to securely authorise and capture customer payments.
                                 </p>
                                 <div class="flex flex-wrap gap-3 pt-2">
                                     <a href="/dashboard/settings.php?tab=payments" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition shadow-md hover:shadow-lg text-center uppercase tracking-wide">
@@ -827,7 +827,7 @@ $filteredVehicleCount = count($filteredVehicles);
                             <div class="md:col-span-6 space-y-6">
                                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Choose a <span class="border-b-2 border-blue-500 pb-1">plan</span></h1>
                                 <p class="text-gray-600 leading-relaxed text-base">
-                                    Activate your subscription to unlock unlimited vehicles, unlimited customized contracts, custom domains, visual templates, and live payment gates.
+                                    Activate your subscription to unlock unlimited vehicles, unlimited customised contracts, custom domains, visual templates, and live payment gates.
                                 </p>
                                 <div class="flex flex-wrap gap-3 pt-2">
                                     <a href="/dashboard/settings.php?tab=billing" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition shadow-md hover:shadow-lg text-center uppercase tracking-wide">
@@ -849,7 +849,7 @@ $filteredVehicleCount = count($filteredVehicles);
                                         <div>
                                             <h4 class="font-extrabold text-gray-900 text-sm">Professional Plan</h4>
                                             <p class="text-[9px] text-gray-500 mt-1">✓ Unlimited fleet entries</p>
-                                            <p class="text-[9px] text-gray-500">✓ Fully customized contracts</p>
+                                            <p class="text-[9px] text-gray-500">✓ Fully customised contracts</p>
                                             <p class="text-[9px] text-gray-500">✓ Secure online Stripe checkout</p>
                                         </div>
                                         <div class="text-right">

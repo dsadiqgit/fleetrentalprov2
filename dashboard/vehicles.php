@@ -93,7 +93,8 @@ $new_details = [
     'mileage_limit' => 'INT DEFAULT 300',
     'unlimited_mileage' => 'TINYINT(1) DEFAULT 0',
     'deposit_type' => "VARCHAR(50) DEFAULT 'collection'",
-    'require_deposit' => 'TINYINT(1) DEFAULT 0'
+    'require_deposit' => 'TINYINT(1) DEFAULT 0',
+    'mileage' => 'INT DEFAULT 0'
 ];
 
 foreach ($new_details as $col => $def) {
@@ -204,6 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $min_license_years = intval($_POST['min_license_years'] ?? 1);
         $mileage_limit = intval($_POST['mileage_limit'] ?? 300);
         $unlimited_mileage = isset($_POST['unlimited_mileage']) ? 1 : 0;
+        $mileage = intval($_POST['mileage'] ?? 0);
 
         // Handle images
         $image_paths = [];
@@ -271,12 +273,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             if ($vehicle_id) {
                 // Update existing vehicle
-                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, booking_overview = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ? WHERE id = ? AND tenant_id = ?");
-                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $vehicle_id, $_SESSION['tenant_id']]);
+                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, booking_overview = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ?, mileage = ? WHERE id = ? AND tenant_id = ?");
+                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $mileage, $vehicle_id, $_SESSION['tenant_id']]);
             } else {
                 // Insert new vehicle
-                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type]);
+                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type, mileage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $mileage]);
                 $vehicle_id = $pdo->lastInsertId();
             }
 
@@ -296,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         if ($original) {
             $new_name = $original['name'] . ' (Copy)';
-            $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type, mileage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $_SESSION['tenant_id'],
                 $new_name,
@@ -332,7 +334,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $original['mileage_limit'],
                 $original['unlimited_mileage'],
                 $original['require_deposit'],
-                $original['deposit_type']
+                $original['deposit_type'],
+                $original['mileage']
             ]);
             $new_id = $pdo->lastInsertId();
             redirect('/dashboard/vehicles.php?edit=' . $new_id);
@@ -371,6 +374,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $min_license_years = intval($_POST['min_license_years'] ?? 1);
     $mileage_limit = intval($_POST['mileage_limit'] ?? 300);
     $unlimited_mileage = isset($_POST['unlimited_mileage']) ? 1 : 0;
+    $mileage = intval($_POST['mileage'] ?? 0);
 
     $current_tab = sanitize($_POST['current_tab'] ?? 'basic');
     $current_pricing_tab = sanitize($_POST['current_pricing_tab'] ?? 'daily');
@@ -473,14 +477,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 // Update existing vehicle
                 $vehicle_id = intval($_POST['vehicle_id']);
 
-                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, booking_overview = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ? WHERE id = ? AND tenant_id = ?");
-                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $vehicle_id, $_SESSION['tenant_id']]);
+                $stmt = $pdo->prepare("UPDATE vehicles SET name = ?, brand = ?, model = ?, year = ?, category = ?, transmission = ?, fuel_type = ?, seats = ?, price_per_day = ?, deposit = ?, images = ?, featured = ?, contract_template_id = ?, daily_pricing = ?, pricing_packages = ?, unavailable_dates = ?, doors = ?, bags = ?, exterior_color = ?, interior_color = ?, engine_capacity = ?, air_conditioning = ?, gps = ?, description = ?, booking_overview = ?, license_plate = ?, vehicle_features = ?, min_days = ?, min_age = ?, min_license_years = ?, mileage_limit = ?, unlimited_mileage = ?, require_deposit = ?, deposit_type = ?, mileage = ? WHERE id = ? AND tenant_id = ?");
+                $stmt->execute([$vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $mileage, $vehicle_id, $_SESSION['tenant_id']]);
                 $success = 'Vehicle updated successfully!';
             }
             else {
                 // Insert new vehicle
-                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type]);
+                $stmt = $pdo->prepare("INSERT INTO vehicles (tenant_id, name, brand, model, year, category, transmission, fuel_type, seats, price_per_day, deposit, images, featured, contract_template_id, daily_pricing, pricing_packages, unavailable_dates, doors, bags, exterior_color, interior_color, engine_capacity, air_conditioning, gps, description, booking_overview, license_plate, vehicle_features, min_days, min_age, min_license_years, mileage_limit, unlimited_mileage, require_deposit, deposit_type, mileage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$_SESSION['tenant_id'], $vehicle_name, $brand, $model, $year, $category, $transmission, $fuel_type, $seats, $price_per_day, $deposit, $image, $featured, $contract_template_id, $daily_pricing_json, $pricing_packages_json, $unavailable_dates, $doors, $bags, $exterior_color, $interior_color, $engine_capacity, $air_conditioning, $gps, $description, $booking_overview, $license_plate, $vehicle_features, $min_days, $min_age, $min_license_years, $mileage_limit, $unlimited_mileage, $require_deposit, $deposit_type, $mileage]);
                 $success = 'Vehicle added successfully!';
             }
 
@@ -1559,42 +1563,55 @@ endif; ?>
                     pricingTab: '<?= htmlspecialchars($current_pricing_tab)?>' 
                 }" class="space-y-8">
 
-                    <!-- Hero header -->
-                    <?php
-                        $stepNavigation = [
-                            ['label' => 'Vehicle Information', 'tab' => 'basic'],
-                            ['label' => 'Vehicle Images', 'tab' => 'images'],
-                            ['label' => 'Rental Policy & Documents', 'tab' => 'settings'],
-                            ['label' => 'Rental Setting', 'tab' => 'pricing'],
-                        ];
-                        $activeCircleClasses = 'bg-white text-blue-600 shadow-lg border-2 border-blue-500';
-                        $inactiveCircleClasses = 'bg-white/70 text-blue-200 border border-blue-100';
-                    ?>
-                    <div class="mb-8" x-cloak>
-                        <div class="relative flex items-center justify-between">
-                            <?php foreach ($stepNavigation as $stepIdx => $step): ?>
-                            <button type="button" id="step-btn-<?= $step['tab']?>" @click="navigateToTab('<?= $step['tab']?>', $data)" class="relative z-10 flex flex-col items-center text-center gap-2 focus:outline-none px-2 md:px-4">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all" :class="vehicleTab === '<?= $step['tab']?>' ? 'bg-blue-600 text-white border-2 border-blue-600' : 'bg-white text-gray-500 border border-gray-300'">
-                                    <?= str_pad($stepIdx + 1, 2, '0', STR_PAD_LEFT)?>
-                                </div>
-                                <span class="text-[10px] font-medium uppercase tracking-[0.3em] leading-tight" :class="vehicleTab === '<?= $step['tab']?>' ? 'text-blue-600' : 'text-gray-400'">
-                                    <?= $step['label']?>
-                                </span>
+                    <!-- Tabs Navigation -->
+                    <div class="border-b border-gray-200 mb-8" x-cloak>
+                        <nav class="flex space-x-1 overflow-x-auto">
+                            <button type="button" @click="navigateToTab('basic', $data)"
+                                :class="vehicleTab === 'basic' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Vehicle Information
                             </button>
-                            <?php endforeach; ?>
-                        </div>
-                        <div class="flex flex-wrap items-center justify-end gap-3 mt-6">
-                            <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-gray-300 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:shadow-md transition">Cancel</a>
+                            <button type="button" @click="navigateToTab('images', $data)"
+                                :class="vehicleTab === 'images' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                Vehicle Images
+                            </button>
+                            <button type="button" @click="navigateToTab('settings', $data)"
+                                :class="vehicleTab === 'settings' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                Rental Policy & Documents
+                            </button>
+                            <button type="button" @click="navigateToTab('pricing', $data)"
+                                :class="vehicleTab === 'pricing' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Rental Setting
+                            </button>
                             <?php if ($show_edit_form): ?>
-                            <form method="POST" class="inline" onsubmit="return confirm('Duplicate this vehicle?');">
-                                <input type="hidden" name="action" value="duplicate_vehicle">
-                                <input type="hidden" name="vehicle_id" value="<?= $edit_vehicle['id'] ?>">
-                                <button type="submit" class="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-100 transition">Duplicate</button>
-                            </form>
+                            <button type="button" @click="navigateToTab('calendar', $data)"
+                                :class="vehicleTab === 'calendar' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                Availability
+                            </button>
                             <?php endif; ?>
-                            <button form="vehicleForm" type="submit" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save</button>
-                            <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : 'pricing'), $data)" x-show="vehicleTab !== 'pricing'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
-                        </div>
+                        </nav>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-3 mb-8" x-cloak>
+                        <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-gray-300 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:shadow-md transition">Cancel</a>
+                        <?php if ($show_edit_form): ?>
+                        <form method="POST" class="inline" onsubmit="return confirm('Duplicate this vehicle?');">
+                            <input type="hidden" name="action" value="duplicate_vehicle">
+                            <input type="hidden" name="vehicle_id" value="<?= $edit_vehicle['id'] ?>">
+                            <button type="submit" class="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-100 transition">Duplicate</button>
+                        </form>
+                        <?php endif; ?>
+                        <button form="vehicleForm" type="submit" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save</button>
+                        <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : (vehicleTab === 'settings' ? 'pricing' : 'calendar')), $data)" x-show="vehicleTab !== '<?= $show_edit_form ? 'calendar' : 'pricing' ?>'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
                     </div>
 
                     <form id="vehicleForm" method="POST" enctype="multipart/form-data" class="space-y-8" @submit="showHtml5Error = false" @invalid.capture="handleFormInvalid($event, $data)">
@@ -1616,7 +1633,6 @@ endif; ?>
                                     <h2 @click="navigateToTab('basic', $data)" class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors">Vehicle Information</h2>
                                     <p class="text-sm text-gray-500">Provide basic details about the vehicle.</p>
                                 </div>
-                                <span class="px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-full">Step 1</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                 <div>
@@ -1720,6 +1736,10 @@ endif; ?>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Engine Capacity (L)</label>
                                 <input type="text" name="engine_capacity" value="<?= field_value('engine_capacity', '1.6')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Mileage</label>
+                                <input type="number" name="mileage" value="<?= field_value('mileage', '0')?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="e.g. 45000">
                             </div>
                             <div class="col-span-2">
                                 <?php
@@ -1844,7 +1864,6 @@ endif; ?>
                                     <h2 @click="navigateToTab('settings', $data)" class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors">Rental Policy & Documents</h2>
                                     <p class="text-sm text-gray-500">Specify deposit requirements and renter qualifications.</p>
                                 </div>
-                                <span class="px-3 py-1 text-xs font-semibold text-amber-600 bg-amber-50 rounded-full">Step 2</span>
                             </div>
                             <div class="space-y-6">
                                 <div>
@@ -1932,7 +1951,6 @@ endif; ?>
                                     <h2 @click="navigateToTab('pricing', $data)" class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors">Pricing Settings</h2>
                                     <p class="text-sm text-gray-500">Adjust daily rates and custom packages.</p>
                                 </div>
-                                <span class="px-3 py-1 text-xs font-semibold text-violet-600 bg-violet-50 rounded-full">Step 4</span>
                             </div>
                             <div class="flex flex-wrap gap-3 mb-6">
                                 <button type="button" @click="pricingTab = 'daily'" :class="pricingTab === 'daily' ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-4 py-2 rounded-xl font-medium text-sm transition">Daily rate</button>
