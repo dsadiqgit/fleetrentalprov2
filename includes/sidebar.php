@@ -320,8 +320,8 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
         </div>
 
         <div class="flex text-[11px] text-gray-400 space-x-4 justify-between">
-            <a href="/terms.php" class="hover:text-gray-600 text-center">Terms and<br>conditions</a>
-            <a href="/privacy.php" class="hover:text-gray-600 text-center">Privacy<br>Policy</a>
+            <a href="/terms.php" target="_blank" class="hover:text-gray-600 text-center">Terms and<br>conditions</a>
+            <a href="/privacy.php" target="_blank" class="hover:text-gray-600 text-center">Privacy<br>Policy</a>
         </div>
     </div>
 </div>

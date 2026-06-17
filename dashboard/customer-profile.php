@@ -154,14 +154,10 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - <?= htmlspecialchars($tenant['name']) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/app/custom.css">
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
     <script src="/app/custom-select.js" defer></script>
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
         :root {
             --primary-color: <?= $primaryColor ?>;
             --primary-hover: <?= $primaryColor ?>dd;
