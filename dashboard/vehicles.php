@@ -1258,7 +1258,7 @@ endif; ?>
                                         $widthPercent = (($clampedEndTS - $clampedStartTS) / $total_seconds) * 100;
                                     }
                                 ?>
-                                <button type="button" onclick="openBookingModal(<?= (int)$booking['id']?>)" class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-left text-xs font-medium shadow-sm <?= $statusClass ?> hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/60" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 4) ?>%; min-width: <?= $schedule_view === 'month' ? '30px' : ($schedule_view === 'week' ? '80px' : '120px') ?>;">
+                                <a href="/dashboard/booking.php?id=<?= (int)$booking['id'] ?>" class="absolute top-3 h-14 rounded-xl border px-4 py-2 flex flex-col justify-center text-left text-xs font-medium shadow-sm <?= $statusClass ?> hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/60" style="left: <?= $offsetPercent ?>%; width: <?= max($widthPercent, 4) ?>%; min-width: <?= $schedule_view === 'month' ? '30px' : ($schedule_view === 'week' ? '80px' : '120px') ?>;">
                                     <?php if ($schedule_view !== 'month'): ?>
                                     <div class="flex items-center gap-2">
                                         <span class="truncate"><?= htmlspecialchars($booking['customer_name'] ?? 'Guest')?> </span>
@@ -1273,7 +1273,7 @@ endif; ?>
                                         <?= strtoupper(substr($booking['customer_name'] ?? 'G', 0, 2)) ?>
                                     </div>
                                     <?php endif; ?>
-                                </button>
+                                </a>
                                 <?php endforeach; ?>
                             </div>
                         </div>
