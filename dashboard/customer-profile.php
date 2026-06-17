@@ -154,15 +154,32 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - <?= htmlspecialchars($tenant['name']) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/app/custom.css">
     <link rel="icon" href="/assets/images/fleet-logo-black-small.png" type="image/png">
+    <script src="/app/custom-select.js" defer></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        :root {
+            --primary-color: <?= $primaryColor ?>;
+            --primary-hover: <?= $primaryColor ?>dd;
+            --primary-light: <?= $primaryColor ?>10;
+        }
+        .text-brand { color: var(--primary-color); }
+        .bg-brand { background-color: var(--primary-color); }
+        .bg-brand-light { background-color: var(--primary-light); }
+        .border-brand { border-color: var(--primary-color); }
+        .focus\:ring-brand:focus { --tw-ring-color: var(--primary-color); }
+    </style>
 </head>
-<body class="bg-gray-50 flex h-screen overflow-hidden">
+<body class="bg-slate-50/50 flex h-screen overflow-hidden text-slate-800">
 
     <!-- Mobile Header -->
-    <header class="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-4 py-3 z-40 flex items-center justify-between">
+    <header class="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-100 px-6 py-4 z-40 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-3">
-            <button id="mobile-menu-btn" class="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600">
+            <button id="mobile-menu-btn" class="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
@@ -170,16 +187,16 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
             <?php if (!empty($tenant['logo'])): ?>
                 <img src="<?= htmlspecialchars($tenant['logo']) ?>" alt="Logo" class="h-6 w-auto object-contain">
             <?php else: ?>
-                <span class="text-lg font-semibold text-gray-900"><?= htmlspecialchars($tenant['name']) ?></span>
+                <span class="text-lg font-bold text-slate-900 tracking-tight"><?= htmlspecialchars($tenant['name']) ?></span>
             <?php endif; ?>
         </div>
-        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+        <div class="w-9 h-9 rounded-xl bg-brand flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-brand/20">
             <?= strtoupper(substr($user['full_name'] ?? 'C', 0, 1)) ?>
         </div>
     </header>
 
     <!-- Sidebar Overlay -->
-    <div id="sidebar-overlay" class="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30 hidden transition-all duration-300"></div>
+    <div id="sidebar-overlay" class="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden transition-all duration-300"></div>
 
     <!-- Sidebar -->
     <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-40">
@@ -187,12 +204,12 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col overflow-hidden pt-14 lg:pt-0">
-        <main class="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 lg:p-10">
+    <div class="flex-1 flex flex-col overflow-hidden pt-16 lg:pt-0">
+        <main class="flex-1 overflow-y-auto bg-slate-50/30 p-4 sm:p-6 lg:p-10">
             <!-- Header -->
-            <div class="max-w-6xl mb-12">
-                <h1 class="text-4xl font-semibold text-gray-900 tracking-tight">My Profile</h1>
-                <p class="text-gray-500 mt-2 text-lg font-medium">Manage your personal information and active payment methods.</p>
+            <div class="max-w-6xl mb-10">
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">My Profile</h1>
+                <p class="text-slate-500 mt-2 font-medium text-sm sm:text-base">Manage your personal information and active payment methods.</p>
             </div>
 
             <!-- Notifications -->
@@ -283,8 +300,8 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Country</label>
-                                    <select name="country" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Country</label>
+                                    <select name="country" class="custom-select w-full">
                                         <?php
                                         $saved_country = $user['country'] ?? 'GB';
                                         $country_options = [''=>'Select country…','GB'=>'United Kingdom','IE'=>'Ireland','US'=>'United States','AU'=>'Australia','CA'=>'Canada','FR'=>'France','DE'=>'Germany','ES'=>'Spain','IT'=>'Italy','NL'=>'Netherlands','Other'=>'Other'];
