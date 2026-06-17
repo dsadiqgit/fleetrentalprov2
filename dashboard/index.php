@@ -853,7 +853,7 @@ $filteredVehicleCount = count($filteredVehicles);
                                             <p class="text-[9px] text-gray-500">✓ Secure online Stripe checkout</p>
                                         </div>
                                         <div class="text-right">
-                                            <p class="text-xl font-black text-blue-600">$99.00</p>
+                                            <p class="text-xl font-black text-blue-600">£99.00</p>
                                             <p class="text-[9px] text-gray-400 uppercase font-medium">/ month</p>
                                         </div>
                                     </div>
