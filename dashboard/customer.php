@@ -249,8 +249,30 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
 
             <!-- Content Area -->
             <div class="max-w-6xl space-y-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Recent Reservations</h2>
+                <?php
+                $tabCounts = [
+                    'all' => count($bookings),
+                    'upcoming' => count(array_filter($bookings, fn($b) => in_array($b['status'], ['pending', 'confirmed']))),
+                    'active' => count(array_filter($bookings, fn($b) => $b['status'] === 'active')),
+                    'past' => count(array_filter($bookings, fn($b) => $b['status'] === 'completed')),
+                    'cancelled' => count(array_filter($bookings, fn($b) => $b['status'] === 'cancelled')),
+                ];
+                $tabs = [
+                    'all' => 'All',
+                    'upcoming' => 'Upcoming',
+                    'active' => 'Active',
+                    'past' => 'Past',
+                    'cancelled' => 'Cancelled',
+                ];
+                ?>
+                <div class="border-b border-gray-200">
+                    <nav class="flex space-x-6" id="bookingTabs">
+                        <?php foreach ($tabs as $key => $label): ?>
+                            <button type="button" data-tab="<?= $key ?>" class="tab-btn py-3 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors <?= $key === 'all' ? 'text-blue-600 border-blue-600' : '' ?>">
+                                <?= $label ?> <span class="ml-1 text-gray-400">(<?= $tabCounts[$key] ?>)</span>
+                            </button>
+                        <?php endforeach; ?>
+                    </nav>
                 </div>
 
                 <?php if (empty($bookings)): ?>
@@ -264,8 +286,13 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                         <p class="text-slate-400 mt-2 max-w-sm mx-auto text-sm font-medium">Your upcoming or past reservations will appear here once booked.</p>
                     </div>
                 <?php else: ?>
-                    <div class="grid grid-cols-1 gap-6 pb-20">
-                        <?php foreach ($bookings as $booking): 
+                    <div class="grid grid-cols-1 gap-6 pb-20" id="bookingsList">
+                        <?php foreach ($bookings as $booking):
+                            $tabGroup = $booking['status'];
+                            if (in_array($tabGroup, ['pending', 'confirmed'])) $tabGroup = 'upcoming';
+                            elseif ($tabGroup === 'completed') $tabGroup = 'past';
+                        ?>
+                        <?php
                             $vehicleName = trim(($booking['brand'] ?? '') . ' ' . ($booking['model'] ?? ''));
                             $bookingRef = 'REF-' . str_pad($booking['id'], 5, '0', STR_PAD_LEFT);
                             
@@ -284,7 +311,7 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                             ];
                             $statusClass = $statusColors[$booking['status']] ?? 'bg-slate-100 text-slate-600 border-slate-200';
                         ?>
-                        <div class="bg-white rounded-[2rem] border border-slate-100 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden relative">
+                        <div class="booking-card bg-white rounded-[2rem] border border-slate-100 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden relative" data-status="<?= $tabGroup ?>">
                             <div class="flex flex-col lg:flex-row lg:items-center gap-6">
                                 
                                 <!-- Vehicle Image Container -->
@@ -378,6 +405,15 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                             </div>
                         </div>
                         <?php endforeach; ?>
+                        <div id="tabEmptyState" class="hidden bg-white rounded-[2.5rem] border border-slate-100 p-16 text-center shadow-sm">
+                            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-900">No reservations found</h3>
+                            <p class="text-slate-400 mt-2 max-w-sm mx-auto text-sm font-medium">No bookings match the selected filter.</p>
+                        </div>
                     </div>
                 <?php endif; ?>
             </div>
@@ -599,6 +635,48 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeContractModal();
     });
+
+    // Booking Tabs Filter
+    (function() {
+        const tabButtons = document.querySelectorAll('#bookingTabs .tab-btn');
+        const cards = document.querySelectorAll('.booking-card');
+        const emptyState = document.getElementById('tabEmptyState');
+
+        function filterBookings(tab) {
+            let visibleCount = 0;
+            cards.forEach(function(card) {
+                const status = card.getAttribute('data-status');
+                if (tab === 'all' || status === tab) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                emptyState?.classList.remove('hidden');
+            } else {
+                emptyState?.classList.add('hidden');
+            }
+        }
+
+        tabButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const tab = btn.getAttribute('data-tab');
+
+                // Update active styles
+                tabButtons.forEach(function(b) {
+                    b.classList.remove('text-blue-600', 'border-blue-600');
+                    b.classList.add('text-gray-500', 'border-transparent');
+                });
+                btn.classList.remove('text-gray-500', 'border-transparent');
+                btn.classList.add('text-blue-600', 'border-blue-600');
+
+                filterBookings(tab);
+            });
+        });
+    })();
     </script>
 </body>
 </html>

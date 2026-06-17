@@ -33,7 +33,7 @@ function notif_wrap(string $content, string $title_bar = '{{company_logo}}'): st
     return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
          . '<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Arial,sans-serif;background:#f5f5f5;">'
          . '<div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">'
-         . '<div style="padding:24px 32px;background:#ffffff;text-align:center;border-bottom:2px solid #111111;">' . $title_bar . '</div>'
+         . '<div style="padding:24px 32px;background:#ffffff;text-align:center;border-bottom:1px solid #111111;">' . $title_bar . '</div>'
          . '<div style="padding:32px;">' . $content . '</div>'
          . '<div style="padding:18px 32px;border-top:1px solid #f0f0f0;background:#fafafa;text-align:center;font-size:12px;color:#999;">'
          . '&copy; {{company_name}}. All rights reserved. &mdash; This is an automated message, please do not reply.'
@@ -510,7 +510,7 @@ function loadVisualEditor(html) {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
 
     // Replace {{company_logo}} with actual logo for live preview
-    const logoUrl = '<?= !empty($tenant['logo']) ? htmlspecialchars($tenant['logo']) : '' ?>';
+    const logoUrl = '<?= !empty($tenant['logo']) ? (strpos($tenant['logo'], 'http') === 0 ? htmlspecialchars($tenant['logo']) : SITE_URL . htmlspecialchars($tenant['logo'])) : '' ?>';
     const logoHtml = logoUrl 
         ? `<img src="${logoUrl}" alt="<?= htmlspecialchars($tenant['name']) ?>" style="max-height:38px;vertical-align:middle;display:inline-block;" />`
         : `<span style="font-size:18px;font-weight:700;color:#111111;"><?= htmlspecialchars($tenant['name']) ?></span>`;
@@ -540,7 +540,7 @@ function getCleanHTML() {
     doc.designMode = 'on';
 
     // Replace actual logo HTML back with the template variable before saving to database
-    const logoUrl = '<?= !empty($tenant['logo']) ? htmlspecialchars($tenant['logo']) : '' ?>';
+    const logoUrl = '<?= !empty($tenant['logo']) ? (strpos($tenant['logo'], 'http') === 0 ? htmlspecialchars($tenant['logo']) : SITE_URL . htmlspecialchars($tenant['logo'])) : '' ?>';
     const logoHtml = logoUrl 
         ? `<img src="${logoUrl}" alt="<?= htmlspecialchars($tenant['name']) ?>" style="max-height:38px;vertical-align:middle;display:inline-block;" />`
         : `<span style="font-size:18px;font-weight:700;color:#111111;"><?= htmlspecialchars($tenant['name']) ?></span>`;

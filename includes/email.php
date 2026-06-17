@@ -582,8 +582,8 @@ function sendBookingConfirmationEmail($to, $bookingData, $tenant, $vehicle) {
         <style>
             body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; color: #333; }
             .email-wrapper { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-            .email-header { padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; }
-            .booking-ref { font-size: 13px; color: #666; }
+            .email-header { padding: 24px 32px; background: #ffffff; text-align: center; border-bottom: 1px solid #111111; }
+            .booking-ref { font-size: 13px; color: #666; text-align: center; padding: 12px 0 0; }
             .booking-ref strong { color: #000; }
             .content-card { margin: 0 16px 16px; border: 1px solid #e5e5e5; border-radius: 16px; padding: 32px; background: #fff; }
             .greeting { font-size: 14px; color: #333; margin: 0 0 8px; }
