@@ -99,12 +99,21 @@ Back to Bookings
 </div>
 </div>
 <!-- Tabs -->
-<div class="flex items-center justify-center mb-6">
-<div class="flex h-10 w-fit items-center rounded-full border border-gray-200 bg-white p-1 shadow-sm">
-<a href="?id=<?= $booking['id'] ?>&tab=details" class="flex items-center gap-2 rounded-full px-4 py-1.5 font-semibold whitespace-nowrap transition-all text-xs <?= $active_tab==='details'?'bg-gray-900 text-white shadow-sm':'text-gray-500 hover:text-gray-900 hover:bg-gray-50' ?>"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Overview</a>
-<a href="?id=<?= $booking['id'] ?>&tab=condition" class="flex items-center gap-2 rounded-full px-4 py-1.5 font-semibold whitespace-nowrap transition-all text-xs <?= $active_tab==='condition'?'bg-gray-900 text-white shadow-sm':'text-gray-500 hover:text-gray-900 hover:bg-gray-50' ?>"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>Condition</a>
-<a href="?id=<?= $booking['id'] ?>&tab=contract" class="flex items-center gap-2 rounded-full px-4 py-1.5 font-semibold whitespace-nowrap transition-all text-xs <?= $active_tab==='contract'?'bg-gray-900 text-white shadow-sm':'text-gray-500 hover:text-gray-900 hover:bg-gray-50' ?>"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>Contract</a>
-</div>
+<div class="border-b border-gray-200 mb-6">
+    <nav class="flex space-x-1 overflow-x-auto">
+        <a href="?id=<?= $booking['id'] ?>&tab=details" class="tab-button flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 <?= $active_tab === 'details' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Overview
+        </a>
+        <a href="?id=<?= $booking['id'] ?>&tab=condition" class="tab-button flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 <?= $active_tab === 'condition' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Condition
+        </a>
+        <a href="?id=<?= $booking['id'] ?>&tab=contract" class="tab-button flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 <?= $active_tab === 'contract' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Contract
+        </a>
+    </nav>
 </div>
 <?php if ($active_tab === 'details'): ?>
 <div class="grid lg:grid-cols-12 gap-6">
@@ -167,7 +176,7 @@ Back to Bookings
 <div class="bg-amber-50 rounded-2xl p-5 border border-amber-100">
 <div class="flex items-start gap-3">
 <svg class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-<div><p class="text-xs font-semibold text-amber-700 mb-1">Notes</p><p class="text-sm text-amber-900/80"><?= nl2br(htmlspecialchars($booking['notes'])) ?></p></div>
+<div class="min-w-0"><p class="text-xs font-semibold text-amber-700 mb-1">Notes</p><p class="text-sm text-amber-900/80 break-words"><?= nl2br(htmlspecialchars($booking['notes'])) ?></p></div>
 </div>
 </div>
 <?php endif; ?>
