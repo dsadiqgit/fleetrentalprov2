@@ -172,6 +172,10 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
         .border-brand { border-color: var(--primary-color); }
         .hover\:bg-brand-dark:hover { background-color: var(--primary-hover); }
         .focus\:ring-brand:focus { --tw-ring-color: var(--primary-color); }
+        .sidebar-item { transition: all 0.2s; }
+        .sidebar-item:hover { background-color: #f3f4f6; }
+        .sidebar-item.active { background-color: #eff6ff; color: #3b82f6; }
+        .sidebar-item.active svg { color: #3b82f6; }
     </style>
 </head>
 <body class="bg-slate-50/50 flex h-screen overflow-hidden text-slate-800">
@@ -205,15 +209,18 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden pt-16 lg:pt-0">
+        <!-- Desktop Top Bar -->
+        <header class="hidden lg:block bg-white border-b border-gray-200 px-6 py-4">
+            <nav class="text-sm text-gray-500 mb-1">
+                <a href="/dashboard/customer.php" class="hover:text-gray-700">Dashboard</a>
+                <span class="mx-2">/</span>
+                <span class="text-gray-900">My Bookings</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">My Bookings</h1>
+            <p class="text-sm text-gray-600 mt-1">Track your reservations and rental history.</p>
+        </header>
+
         <main class="flex-1 overflow-y-auto bg-slate-50/30 p-4 sm:p-6 lg:p-10">
-            
-            <!-- Welcome Header -->
-            <div class="max-w-6xl mb-10">
-                <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Hello, <?= htmlspecialchars(explode(' ', $user['full_name'] ?? 'Customer')[0]) ?>!</h1>
-                <p class="text-slate-500 mt-2 font-medium max-w-xl text-sm sm:text-base leading-relaxed">
-                    Welcome to your personalized dashboard with <?= htmlspecialchars($tenant['name']) ?>. Track your active rentals, view reservations, and complete pending contracts.
-                </p>
-            </div>
 
             <!-- Stats Overview -->
             <?php
