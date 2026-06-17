@@ -170,9 +170,50 @@ $rental_days = ($pickup_ts && $return_ts) ? max(1, (int)round(($return_ts - $pic
         .contract-body::-webkit-scrollbar { width: 6px; }
         .contract-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         #signatureCanvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
+
+        /* Preloader */
+        #pagePreloader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        #pagePreloader.hidden-preloader {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .preloader-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: preloaderSpin 0.8s linear infinite;
+        }
+        @keyframes preloaderSpin {
+            to { transform: rotate(360deg); }
+        }
+        .preloader-brand {
+            margin-top: 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
+
+<!-- Preloader -->
+<div id="pagePreloader">
+    <div class="preloader-spinner"></div>
+    <div class="preloader-brand"><?= htmlspecialchars($tenant['name']) ?></div>
+</div>
 
 <!-- Header -->
 <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
@@ -1013,6 +1054,14 @@ async function submitContactForm(event) {
         showErrorModal('Error: ' + err.message);
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Preloader: hide when page is fully loaded
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+    const preloader = document.getElementById('pagePreloader');
+    if (preloader) preloader.classList.add('hidden-preloader');
+});
 </script>
 </body>
 </html>

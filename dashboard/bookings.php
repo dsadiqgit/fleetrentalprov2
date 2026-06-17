@@ -24,6 +24,7 @@ try {
         id INT AUTO_INCREMENT PRIMARY KEY,
         tenant_id INT NOT NULL,
         vehicle_id INT NOT NULL,
+        customer_id INT NULL,
         customer_name VARCHAR(255) NOT NULL,
         customer_email VARCHAR(255) NOT NULL,
         customer_phone VARCHAR(50),
@@ -52,12 +53,19 @@ catch (PDOException $e) {
 // Table already exists
 }
 
-// Ensure stripe_payment_id column exists
+// Ensure dynamic columns exist
 try {
     $check_col = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME = 'stripe_payment_id'");
     $check_col->execute();
     if ($check_col->fetchColumn() == 0) {
         $pdo->exec("ALTER TABLE bookings ADD COLUMN stripe_payment_id VARCHAR(255) NULL AFTER payment_status");
+    }
+
+    $check_cid = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME = 'customer_id'");
+    $check_cid->execute();
+    if ($check_cid->fetchColumn() == 0) {
+        $pdo->exec("ALTER TABLE bookings ADD COLUMN customer_id INT NULL AFTER vehicle_id");
+        $pdo->exec("ALTER TABLE bookings ADD INDEX idx_customer_id (customer_id)");
     }
 
     // Ensure is_deleted column exists

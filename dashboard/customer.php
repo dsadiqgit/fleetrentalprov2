@@ -39,43 +39,96 @@ $user = $stmt->fetch();
 $success_msg = '';
 $error_msg = '';
 
+// Helper: ensure a column exists on a table
+try {
+    $tablesToFix = [
+        'bookings' => [
+            'customer_id' => 'INT NULL AFTER vehicle_id',
+            'is_deleted' => 'TINYINT(1) DEFAULT 0 AFTER payment_status',
+        ],
+        'contracts' => [
+            'contract_status' => "VARCHAR(50) DEFAULT 'pending' AFTER signed_at",
+            'signing_token' => 'VARCHAR(255) NULL AFTER signature_url',
+            'signed_pdf_path' => 'VARCHAR(500) NULL AFTER signing_token',
+        ],
+    ];
+    foreach ($tablesToFix as $table => $columns) {
+        foreach ($columns as $col => $definition) {
+            $check = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+            $check->execute([$table, $col]);
+            if ($check->fetchColumn() == 0) {
+                $pdo->exec("ALTER TABLE {$table} ADD COLUMN {$col} {$definition}");
+            }
+        }
+    }
+} catch (PDOException $e) {
+    error_log("Column migration error in customer.php: " . $e->getMessage());
+}
+
 // Handle Booking Cancellation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cancel_booking') {
     $cancel_booking_id = intval($_POST['booking_id'] ?? 0);
-    if ($cancel_booking_id > 0) {
-        // Validate booking belongs to the customer and is eligible for cancellation
-        $stmt_check = $pdo->prepare("SELECT status FROM bookings WHERE id = ? AND tenant_id = ? AND customer_email = ?");
-        $stmt_check->execute([$cancel_booking_id, $tenant_id, $user_email]);
-        $booking_status = $stmt_check->fetchColumn();
-        
-        if (!$booking_status) {
-            $error_msg = "Booking not found or access denied.";
-        } elseif (!in_array($booking_status, ['pending', 'confirmed'])) {
-            $error_msg = "This booking cannot be cancelled because its status is already '{$booking_status}'.";
-        } else {
-            try {
-                $pdo->beginTransaction();
+    if ($cancel_booking_id <= 0) {
+        $error_msg = "Invalid booking ID.";
+    } else {
+        try {
+            // Fetch the booking with all relevant fields
+            $stmt_check = $pdo->prepare("SELECT status, customer_email, customer_id FROM bookings WHERE id = ? AND tenant_id = ? LIMIT 1");
+            $stmt_check->execute([$cancel_booking_id, $tenant_id]);
+            $booking = $stmt_check->fetch();
+            
+            if (!$booking) {
+                $error_msg = "Booking not found.";
+            } else {
+                $is_owner = false;
+                // Primary: check by customer_id (most reliable)
+                if (!empty($booking['customer_id']) && $booking['customer_id'] == $user_id) {
+                    $is_owner = true;
+                }
+                // Fallback: check by customer_email (for legacy bookings without customer_id)
+                if (!$is_owner && !empty($booking['customer_email']) && strtolower(trim($booking['customer_email'])) === strtolower(trim($user_email))) {
+                    $is_owner = true;
+                }
                 
-                // Update booking status to cancelled
-                $stmt_cancel = $pdo->prepare("UPDATE bookings SET status = 'cancelled', updated_at = NOW() WHERE id = ?");
-                $stmt_cancel->execute([$cancel_booking_id]);
-                
-                // Update associated contract status to cancelled if exists
-                $stmt_contract = $pdo->prepare("UPDATE contracts SET contract_status = 'cancelled', updated_at = NOW() WHERE booking_id = ?");
-                $stmt_contract->execute([$cancel_booking_id]);
-                
-                $pdo->commit();
-                $success_msg = "Booking #REF-" . str_pad($cancel_booking_id, 5, '0', STR_PAD_LEFT) . " has been successfully cancelled.";
-                
-            } catch (Exception $e) {
-                $pdo->rollBack();
-                $error_msg = "Failed to cancel booking. Please try again or contact support.";
+                if (!$is_owner) {
+                    $error_msg = "Access denied. This booking is not associated with your account.";
+                } elseif (!in_array($booking['status'], ['pending', 'confirmed'])) {
+                    $error_msg = "This booking cannot be cancelled because its status is already '{$booking['status']}'.";
+                } else {
+                    $pdo->beginTransaction();
+                    
+                    // Update booking status to cancelled (never delete — only change status)
+                    $stmt_cancel = $pdo->prepare("UPDATE bookings SET status = 'cancelled', updated_at = NOW() WHERE id = ?");
+                    $stmt_cancel->execute([$cancel_booking_id]);
+                    
+                    // Update associated contract status to cancelled if a contract exists
+                    try {
+                        $hasContractStatus = $pdo->query("SHOW COLUMNS FROM contracts LIKE 'contract_status'")->rowCount() > 0;
+                        if ($hasContractStatus) {
+                            $stmt_contract = $pdo->prepare("UPDATE contracts SET contract_status = 'cancelled', updated_at = NOW() WHERE booking_id = ?");
+                            $stmt_contract->execute([$cancel_booking_id]);
+                        }
+                    } catch (Exception $contractErr) {
+                        // Contract update is secondary — don't fail the whole cancellation
+                        error_log("Contract status update skipped during cancellation: " . $contractErr->getMessage());
+                    }
+                    
+                    $pdo->commit();
+                    $success_msg = "Booking #REF-" . str_pad($cancel_booking_id, 5, '0', STR_PAD_LEFT) . " has been successfully cancelled.";
+                }
             }
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $error_msg = "An error occurred while cancelling the booking: " . $e->getMessage();
+            error_log("Customer booking cancellation error: " . $e->getMessage());
         }
     }
 }
 
 // Get customer bookings with vehicle and contract info
+// is_deleted = 0 ensures truly deleted bookings are hidden, but cancelled bookings remain visible
 $stmt = $pdo->prepare("
     SELECT b.*, 
            v.brand, v.model, v.year, v.category, v.images as vehicle_images,
@@ -83,11 +136,13 @@ $stmt = $pdo->prepare("
     FROM bookings b
     LEFT JOIN vehicles v ON b.vehicle_id = v.id
     LEFT JOIN contracts c ON c.booking_id = b.id AND c.tenant_id = b.tenant_id
-    WHERE b.tenant_id = ? AND b.customer_email = ?
+    WHERE b.tenant_id = ? 
+      AND b.is_deleted = 0
+      AND (b.customer_email = ? OR b.customer_id = ?)
     AND NOT (b.status = 'pending' AND b.payment_status = 'unpaid')
     ORDER BY b.created_at DESC
 ");
-$stmt->execute([$tenant_id, $user_email]);
+$stmt->execute([$tenant_id, $user_email, $user_id]);
 $bookings = $stmt->fetchAll();
 
 $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
@@ -481,19 +536,6 @@ $primaryColor = $tenant['primary_color'] ?? '#3B82F6';
                         text = text.replace(/\n/g, '<br>');
                         text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                         html = '<div class="prose prose-sm max-w-none">' + text + '</div>';
-                    }
-                    
-                    // Show signature for signed contracts
-                    if (data.contract.contract_status === 'signed' && data.contract.signature_image_url) {
-                        html += `
-                            <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #e5e7eb;">
-                                <p style="font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Digital Signature</p>
-                                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center;">
-                                    <img src="${data.contract.signature_image_url}" alt="Signature" style="max-width: 280px; max-height: 120px; margin: 0 auto; display: block;">
-                                </div>
-                                ${data.contract.signed_at ? '<p style="font-size: 11px; color: #9ca3af; margin-top: 8px;">Signed on ' + new Date(data.contract.signed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</p>' : ''}
-                            </div>
-                        `;
                     }
                     
                     content.innerHTML = html;

@@ -45,19 +45,36 @@ if (isset($_GET['redirect_status']) && $_GET['redirect_status'] === 'succeeded')
     if ($verified && $pending) {
         $bd = $pending['booking_data'];
         
+        // Resolve customer_id if user is logged in
+        $customer_id = null;
+        if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'customer') {
+            $customer_id = $_SESSION['user_id'];
+        }
+
+        // Ensure customer_id column exists in bookings
+        try {
+            $check_col = $pdo->query("SHOW COLUMNS FROM bookings LIKE 'customer_id'");
+            if ($check_col->rowCount() == 0) {
+                $pdo->exec("ALTER TABLE bookings ADD COLUMN customer_id INT NULL AFTER vehicle_id");
+            }
+        } catch (Exception $e) {
+            // Column might already exist
+        }
+        
         try {
             // 1) CREATE BOOKING
             $insertStmt = $pdo->prepare("
                 INSERT INTO bookings (
-                    tenant_id, vehicle_id, customer_name, customer_email, customer_phone,
+                    tenant_id, vehicle_id, customer_id, customer_name, customer_email, customer_phone,
                     customer_license, pickup_date, return_date, pickup_time, return_time,
                     total_days, price_per_day, total_price, security_deposit, status,
                     payment_status, stripe_payment_id, notes, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', 'paid', ?, ?, NOW())
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', 'paid', ?, ?, NOW())
             ");
             $insertStmt->execute([
                 $tenant_id,
                 $bd['vehicle_id'],
+                $customer_id,
                 $bd['customer_name'],
                 $bd['customer_email'],
                 $bd['customer_phone'] ?? null,
