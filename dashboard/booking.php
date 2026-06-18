@@ -384,10 +384,11 @@ t.textContent=message;n.classList.remove('translate-y-20','opacity-0','pointer-e
 setTimeout(()=>n.classList.add('translate-y-20','opacity-0','pointer-events-none'),3000);
 }
 function updateBookingStatus(bookingId,status){
-if(!confirm('Are you sure you want to update this booking status?'))return;
+showConfirmation('Update Booking Status','Are you sure you want to update this booking status?',()=>{
 fetch('/dashboard/update-booking-status.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({booking_id:bookingId,status:status})})
 .then(r=>r.json()).then(d=>{if(d.success){showNotification('Status updated','success');setTimeout(()=>location.reload(),800);}else{showNotification(d.message||'Error','error');}})
 .catch(()=>showNotification('Error updating status','error'));
+},'Update Status','bg-blue-600 hover:bg-blue-700');
 }
 function updateSecurityDeposit(bookingId){
 const amount=document.getElementById('deposit-amount').value;
@@ -487,11 +488,13 @@ function viewContractPDF(bookingId) {
 }
 
 function generateContract(bookingId, templateId) {
-    if (!confirm('Generate contract for this booking?')) return;
+    showConfirmation('Generate Contract','Generate contract for this booking?',()=>{
     fetch('/dashboard/generate-contract.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ booking_id: bookingId, template_id: templateId }) })
     .then(r => r.json()).then(d => { if (d.success) { showNotification('Contract generated','success'); setTimeout(()=>location.reload(),800); } else { showNotification(d.message || 'Failed to generate','error'); } })
     .catch(() => showNotification('Error generating contract','error'));
+    },'Generate','bg-blue-600 hover:bg-blue-700');
 }
 </script>
+    <?php include __DIR__ . '/../includes/confirmation-modal.php'; ?>
 </body>
 </html>
