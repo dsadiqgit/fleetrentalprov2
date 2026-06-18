@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/tenant_init.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 $tenant_id = getTenantId();
 $tenant = getTenant();
@@ -46,6 +47,48 @@ $sections_order_json = $content['sections_order'] ?? '[]';
 $sections_order = json_decode($sections_order_json, true);
 if (empty($sections_order)) {
     $sections_order = ["hero", "vehicles", "how_it_works", "services", "about", "testimonials", "contact"];
+}
+
+// Handle contact form submission
+$contact_status = null;
+$contact_status_msg = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_name'])) {
+    $c_name  = sanitize($_POST['contact_name'] ?? '');
+    $c_phone = sanitize($_POST['contact_phone_input'] ?? '');
+    $c_email = sanitize($_POST['contact_email_input'] ?? '');
+    $c_msg   = sanitize($_POST['contact_message'] ?? '');
+
+    if (!empty($c_name) && (!empty($c_phone) || !empty($c_email))) {
+        $stmt = $pdo->prepare("SELECT company_email FROM tenant_settings WHERE tenant_id = ?");
+        $stmt->execute([$tenant_id]);
+        $ts = $stmt->fetch();
+        $tenant_email = $ts['company_email'] ?? ($content['contact_email'] ?? '');
+
+        if (!empty($tenant_email)) {
+            $subject = "New Contact Form Message from " . $c_name;
+            $body = "<h2>New Contact Form Message</h2>";
+            $body .= "<p><strong>Name:</strong> " . htmlspecialchars($c_name) . "</p>";
+            if ($c_phone) $body .= "<p><strong>Phone:</strong> " . htmlspecialchars($c_phone) . "</p>";
+            if ($c_email) $body .= "<p><strong>Email:</strong> " . htmlspecialchars($c_email) . "</p>";
+            $body .= "<p><strong>Message:</strong></p><p>" . nl2br(htmlspecialchars($c_msg)) . "</p>";
+            $body .= "<hr><p><em>Sent from the website contact form.</em></p>";
+            $headers = "MIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\nFrom: " . ($c_email ?: $tenant_email) . "\r\n";
+            $sent = mail($tenant_email, $subject, $body, $headers);
+            if ($sent) {
+                $contact_status = 'success';
+                $contact_status_msg = 'Thank you! Your message has been sent. We will get back to you soon.';
+            } else {
+                $contact_status = 'error';
+                $contact_status_msg = 'Sorry, we were unable to send your message. Please try again later.';
+            }
+        } else {
+            $contact_status = 'error';
+            $contact_status_msg = 'Unable to send message. Tenant email is not configured.';
+        }
+    } else {
+        $contact_status = 'error';
+        $contact_status_msg = 'Please fill in your name and at least a phone number or email address.';
+    }
 }
 
 // Ensure 'services' is in the order for existing tenants
@@ -677,25 +720,30 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                     <?= htmlspecialchars($content['contact_subtitle'] ?? 'Have a question or need help with your booking? Send us a message and our team will respond as soon as possible.')?>
                 </p>
             </div>
+            <?php if ($contact_status): ?>
+            <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium <?= $contact_status === 'success' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30' ?>">
+                <?= htmlspecialchars($contact_status_msg)?>
+            </div>
+            <?php endif; ?>
             <form class="space-y-3" method="post">
                 <div>
                     <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Name</label>
-                    <input type="text" name="contact_name" placeholder="Your name" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm">
+                    <input type="text" name="contact_name" placeholder="Your name" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm" value="<?= htmlspecialchars($_POST['contact_name'] ?? '')?>" <?= $contact_status === 'success' ? 'disabled' : ''?>>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Phone number</label>
-                    <input type="tel" name="contact_phone_input" placeholder="+1 XX XX XX XXX" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm">
+                    <input type="tel" name="contact_phone_input" placeholder="+1 XX XX XX XXX" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm" value="<?= htmlspecialchars($_POST['contact_phone_input'] ?? '')?>" <?= $contact_status === 'success' ? 'disabled' : ''?>>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Email address</label>
-                    <input type="email" name="contact_email_input" placeholder="yourmail@gmail.com" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm">
+                    <input type="email" name="contact_email_input" placeholder="yourmail@gmail.com" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm" value="<?= htmlspecialchars($_POST['contact_email_input'] ?? '')?>" <?= $contact_status === 'success' ? 'disabled' : ''?>>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Describe your request</label>
-                    <textarea rows="4" name="contact_message" placeholder="Enter your questions here..." class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm resize-none"></textarea>
+                    <textarea rows="4" name="contact_message" placeholder="Enter your questions here..." class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm resize-none" <?= $contact_status === 'success' ? 'disabled' : ''?>><?= htmlspecialchars($_POST['contact_message'] ?? '')?></textarea>
                 </div>
-                <button type="submit" class="w-full flex items-center justify-between px-5 py-3.5 rounded-lg font-semibold text-white text-sm mt-1 hover:opacity-90 transition" style="background-color: <?= htmlspecialchars($contact_primary)?>;">
-                    Request a call back
+                <button type="submit" class="w-full flex items-center justify-between px-5 py-3.5 rounded-lg font-semibold text-white text-sm mt-1 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed" style="background-color: <?= htmlspecialchars($contact_primary)?>;" <?= $contact_status === 'success' ? 'disabled' : ''?>>
+                    <?= $contact_status === 'success' ? 'Message Sent!' : 'Request a call back' ?>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
             </form>
@@ -821,7 +869,7 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                 flatpickr.l10ns.default.firstDayOfWeek = 1;
             }
 
-            flatpickr("#date_range", {
+            const pickupInstance = flatpickr("#date_range", {
                 mode: "range",
                 dateFormat: "Y-m-d",
                 minDate: "today",

@@ -1251,71 +1251,120 @@ endforeach; ?>
             $bld_name    = $content['company_name'] ?? 'Your Company';
             $bld_map_q   = urlencode($bld_address ?: $bld_name);
             ?>
-            <footer class="bg-gray-50 border-t border-gray-200 pt-14 pb-8">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <footer class="bg-white border-t-4 border-gray-900 pt-14 pb-8 shadow-[0_-1px_0_0_#e5e7eb]">
+                <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
                         <!-- Col 1: Logo + Newsletter + Social -->
-                        <div>
-                            <div class="flex items-center gap-3 mb-5">
-                                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-black text-xs">⚡</div>
-                                <span class="font-bold text-gray-900 text-base editable" data-field="company_name" contenteditable="false">
+                        <div class="sm:col-span-2 lg:col-span-1">
+                            <div class="flex items-center gap-3 mb-4">
+                                <?php if (!empty($tenant['logo_url']) || !empty($tenant['logo'])): ?>
+                                <span class="font-extrabold text-gray-900 text-lg tracking-tight">
+                                    <img src="<?= htmlspecialchars($tenant['logo_url'] ?: $tenant['logo'])?>" alt="Logo" class="h-8 w-auto">
+                                </span>
+                                <?php else: ?>
+                                <div class="w-9 h-9 rounded-lg bg-gray-900 flex items-center justify-center text-white font-black text-sm">⚡</div>
+                                <span class="font-extrabold text-gray-900 text-lg tracking-tight editable" data-field="company_name" contenteditable="false">
                                     <span class="edit-tooltip">Click to edit</span>
                                     <?= htmlspecialchars($bld_name)?>
                                 </span>
+                                <?php endif; ?>
                             </div>
-                            <p class="text-sm text-gray-500 mb-2.5">Subscribe to the newsletter</p>
-                            <div class="flex gap-2 mb-6">
-                                <input type="email" placeholder="yourmail@gmail.com" class="flex-1 min-w-0 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm">
-                                <button class="flex-shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold">
-                                    Subscribe
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            <p class="text-xs text-gray-400 mb-1 uppercase tracking-widest font-semibold">Newsletter</p>
+                            <p class="text-sm text-gray-500 mb-3">Get offers &amp; updates straight to your inbox.</p>
+                            <div class="flex gap-2 mb-6 max-w-xs">
+                                <input type="email" placeholder="yourmail@gmail.com"
+                                    class="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400">
+                                <button class="flex-shrink-0 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-gray-700 transition flex items-center gap-1.5">
+                                    Go
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                 </button>
                             </div>
-                            <div class="flex gap-3">
-                                <a href="#" class="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            <div class="flex gap-2.5">
+                                <a href="#" aria-label="Instagram" class="w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                                 </a>
-                                <a href="#" class="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                <a href="#" aria-label="Facebook" class="w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                                 </a>
-                                <a href="#" class="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                <a href="#" aria-label="X / Twitter" class="w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                                 </a>
                             </div>
                         </div>
                         <!-- Col 2: Working hours + Contacts -->
                         <div>
-                            <h4 class="font-bold text-gray-900 text-sm mb-4">Working hours</h4>
-                            <div class="space-y-2.5 text-sm text-gray-500 mb-7">
-                                <div class="flex justify-between gap-4"><span>Monday - Friday:</span><span class="font-medium text-gray-700 whitespace-nowrap">08:00 AM - 20:00 PM</span></div>
-                                <div class="flex justify-between gap-4"><span>Saturday:</span><span class="font-medium text-gray-700 whitespace-nowrap">09:00 AM - 18:00 PM</span></div>
-                                <div class="flex justify-between gap-4"><span>Sunday:</span><span class="font-medium text-gray-700 whitespace-nowrap">10:00 AM - 16:00 PM</span></div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Working hours</p>
+                            <div class="space-y-2 text-sm mb-6">
+                                <div class="flex items-center justify-between gap-2 py-1.5 border-b border-dashed border-gray-100">
+                                    <span class="text-gray-500">Mon – Fri</span>
+                                    <span class="font-semibold text-gray-800 text-xs whitespace-nowrap">08:00 – 20:00</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 py-1.5 border-b border-dashed border-gray-100">
+                                    <span class="text-gray-500">Saturday</span>
+                                    <span class="font-semibold text-gray-800 text-xs whitespace-nowrap">09:00 – 18:00</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 py-1.5">
+                                    <span class="text-gray-500">Sunday</span>
+                                    <span class="font-semibold text-gray-800 text-xs whitespace-nowrap">10:00 – 16:00</span>
+                                </div>
                             </div>
-                            <h4 class="font-bold text-gray-900 text-sm mb-3">Contacts</h4>
-                            <div class="space-y-1.5 text-sm text-gray-500">
-                                <p class="editable" data-field="contact_phone" contenteditable="false"><span class="edit-tooltip">Click to edit</span><?= htmlspecialchars($bld_phone ?: '+1 (555) 123-4567')?></p>
-                                <p class="editable" data-field="contact_email" contenteditable="false"><span class="edit-tooltip">Click to edit</span><?= htmlspecialchars($bld_email ?: 'info@yourcompany.com')?></p>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Contacts</p>
+                            <div class="space-y-2.5">
+                                <p class="editable flex items-center gap-2.5 text-sm text-gray-600 hover:text-gray-900 transition group cursor-pointer" data-field="contact_phone" contenteditable="false">
+                                    <span class="edit-tooltip">Click to edit</span>
+                                    <span class="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-gray-900 group-hover:text-white flex items-center justify-center transition flex-shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                    </span>
+                                    <?= htmlspecialchars($bld_phone ?: '+1 (555) 123-4567')?>
+                                </p>
+                                <p class="editable flex items-center gap-2.5 text-sm text-gray-600 hover:text-gray-900 transition group cursor-pointer" data-field="contact_email" contenteditable="false">
+                                    <span class="edit-tooltip">Click to edit</span>
+                                    <span class="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-gray-900 group-hover:text-white flex items-center justify-center transition flex-shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                    </span>
+                                    <?= htmlspecialchars($bld_email ?: 'info@yourcompany.com')?>
+                                </p>
                             </div>
                         </div>
                         <!-- Col 3: Useful links + Location -->
                         <div>
-                            <h4 class="font-bold text-gray-900 text-sm mb-4">Useful links</h4>
-                            <ul class="space-y-2.5 text-sm text-gray-500 mb-7">
-                                <li><a href="#" class="hover:text-gray-900 transition">FAQs</a></li>
-                                <li><a href="#" class="hover:text-gray-900 transition">Privacy policy</a></li>
-                                <li><a href="#" class="hover:text-gray-900 transition">Terms &amp; conditions</a></li>
-                                <li><a href="#" class="hover:text-gray-900 transition">Insurance Details</a></li>
-                                <li><a href="#" class="hover:text-gray-900 transition">Rental agreement</a></li>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Useful links</p>
+                            <ul class="space-y-2 text-sm mb-7">
+                                <li><a href="#" class="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition group"><svg class="w-3 h-3 text-gray-300 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>FAQs</a></li>
+                                <li><a href="#" class="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition group"><svg class="w-3 h-3 text-gray-300 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>Privacy policy</a></li>
+                                <li><a href="#" class="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition group"><svg class="w-3 h-3 text-gray-300 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>Terms &amp; conditions</a></li>
+                                <li><a href="#" class="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition group"><svg class="w-3 h-3 text-gray-300 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>Insurance Details</a></li>
+                                <li><a href="#" class="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition group"><svg class="w-3 h-3 text-gray-300 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>Rental agreement</a></li>
                             </ul>
-                            <h4 class="font-bold text-gray-900 text-sm mb-2">Our location:</h4>
-                            <p class="text-sm text-gray-500 editable" data-field="contact_address" contenteditable="false">
-                                <span class="edit-tooltip">Click to edit</span>
-                                <?= htmlspecialchars($bld_address ?: '123 Main Street, Your City')?>
-                            </p>
+                            <?php if (!empty($bld_address)): ?>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Our location</p>
+                            <div class="flex items-start gap-2 text-sm text-gray-500">
+                                <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <span class="leading-relaxed"><?= htmlspecialchars($bld_address)?></span>
+                            </div>
+                            <?php endif; ?>
                         </div>
                         <!-- Col 4: Map -->
-                        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-                        <div id="builderMap" class="rounded-xl overflow-hidden border border-gray-200 z-0" style="height:220px;"></div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Find us</p>
+                            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+                            <div class="relative group" data-field="contact_address">
+                                <div id="builderMap" class="rounded-xl overflow-hidden border border-gray-200 shadow-sm z-0" style="height:210px;"></div>
+                                <button type="button"
+                                    class="absolute top-2 right-2 z-[50] flex items-center gap-1.5 bg-white/95 hover:bg-white text-gray-700 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shadow-md border border-gray-200/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer"
+                                    onclick="openAddressEditor(event)">
+                                    <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    Edit address
+                                </button>
+                            </div>
+                            <?php if (!empty($bld_address)): ?>
+                            <a href="https://www.google.com/maps/search/?api=1&query=<?= $bld_map_q?>" target="_blank" rel="noopener noreferrer"
+                               class="inline-flex items-center gap-1.5 mt-2.5 text-xs font-semibold text-gray-500 hover:text-gray-900 transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                Get directions
+                            </a>
+                            <?php endif; ?>
+                        </div>
                         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
                         <style>
                         #builderMap .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important; padding: 0 !important; }
@@ -1351,12 +1400,13 @@ endforeach; ?>
                                             ).openPopup();
                                     }
                                 });
+
                         })();
                         </script>
                     </div>
-                    <div class="border-t border-gray-200 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-400">
-                        <p>&copy; <?= date('Y')?> <?= htmlspecialchars($bld_name)?>. All rights reserved.</p>
-                        <p>Built with <span class="text-blue-500">FleetRentalPro</span></p>
+                    <div class="border-t border-gray-100 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <p class="text-xs text-gray-400">&copy; <?= date('Y')?> <span class="font-semibold text-gray-600"><?= htmlspecialchars($bld_name)?></span>. All rights reserved.</p>
+                        <p class="text-xs text-gray-400">Built with <span class="font-semibold text-blue-500">FleetRentalPro</span></p>
                     </div>
                 </div>
             </footer>
@@ -1431,6 +1481,28 @@ endforeach; ?>
                     class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
                     OK
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Address Edit Modal -->
+    <div class="modal-overlay" id="addressModal">
+        <div class="modal-content">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">Edit Business Address</h3>
+                <p class="text-sm text-gray-500 mb-4">Enter your business address to update the map location.</p>
+                <textarea id="addressInput" rows="3" placeholder="123 Main Street, City, Country"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeAddressModal()"
+                        class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">
+                        Cancel
+                    </button>
+                    <button onclick="saveAddress()"
+                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                        Save
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1842,6 +1914,60 @@ endforeach; ?>
 
         function closePanel() {
             toggleTab(null);
+        }
+
+        function openAddressEditor(e) {
+            e.stopPropagation();
+            const el = document.querySelector('[data-field="contact_address"]');
+            let currentAddress = '';
+            if (el) {
+                const clone = el.cloneNode(true);
+                const tooltip = clone.querySelector('.edit-tooltip');
+                if (tooltip) tooltip.remove();
+                currentAddress = clone.textContent.trim();
+            }
+            const input = document.getElementById('addressInput');
+            if (input) input.value = currentAddress;
+            document.getElementById('addressModal').classList.add('show');
+        }
+
+        function closeAddressModal() {
+            document.getElementById('addressModal').classList.remove('show');
+        }
+
+        function saveAddress() {
+            const input = document.getElementById('addressInput');
+            const newAddress = input.value.trim();
+            if (newAddress) {
+                // Save via AJAX
+                const formData = new FormData();
+                formData.append('action', 'save');
+                formData.append('field', 'contact_address');
+                formData.append('value', newAddress);
+                fetch(window.location.href, { method: 'POST', body: formData })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update preview
+                            const previewEl = document.querySelector('[data-field="contact_address"]');
+                            if (previewEl) {
+                                const tooltip = previewEl.querySelector('.edit-tooltip');
+                                previewEl.textContent = newAddress;
+                                if (tooltip) {
+                                    tooltip.style.display = '';
+                                    previewEl.appendChild(tooltip);
+                                }
+                            }
+                            // Update sidebar input
+                            const sidebarInput = document.querySelector('[data-sync="contact_address"]');
+                            if (sidebarInput) sidebarInput.value = newAddress;
+                            // Reload to update map
+                            setTimeout(() => window.location.reload(), 500);
+                        }
+                    })
+                    .catch(err => console.error('Save failed:', err));
+            }
+            closeAddressModal();
         }
         let currentImageField = null;
         let currentImageElement = null;
@@ -2536,7 +2662,7 @@ endforeach; ?>
         }
 
         // Connect visual editor clicks to side panel
-        document.querySelectorAll('.editable').forEach(el => {
+        document.querySelectorAll('.editable, .editable-overlay').forEach(el => {
             el.addEventListener('click', (e) => {
                 const field = el.getAttribute('data-field');
                 const sidebarInput = document.querySelector(`[data-sync="${field}"]`);
