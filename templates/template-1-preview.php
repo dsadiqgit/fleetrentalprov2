@@ -49,20 +49,29 @@ if (empty($sections_order)) {
     $sections_order = ["hero", "vehicles", "how_it_works", "services", "about", "testimonials", "contact"];
 }
 
-// Handle contact form submission
-$contact_status = null;
-$contact_status_msg = '';
+// Handle contact form submission (PRG + AJAX)
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_name'])) {
     $c_name  = sanitize($_POST['contact_name'] ?? '');
     $c_phone = sanitize($_POST['contact_phone_input'] ?? '');
     $c_email = sanitize($_POST['contact_email_input'] ?? '');
     $c_msg   = sanitize($_POST['contact_message'] ?? '');
 
-    if (!empty($c_name) && (!empty($c_phone) || !empty($c_email))) {
+    $errors = [];
+    if (empty($c_name)) $errors[] = 'Please enter your name.';
+    $has_phone = !empty($c_phone);
+    $has_email = !empty($c_email);
+    if (!$has_phone && !$has_email) $errors[] = 'Please enter a phone number or email address so we can reach you.';
+    if ($has_phone && !preg_match('/^[\d\s\-\+\(\)]{7,20}$/', $c_phone)) $errors[] = 'Please enter a valid phone number.';
+    if ($has_email && !filter_var($c_email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Please enter a valid email address.';
+
+    if (empty($errors)) {
         $stmt = $pdo->prepare("SELECT company_email FROM tenant_settings WHERE tenant_id = ?");
         $stmt->execute([$tenant_id]);
         $ts = $stmt->fetch();
-        $tenant_email = $ts['company_email'] ?? ($content['contact_email'] ?? '');
+        $tenant_email = '';
+        if ($ts && !empty($ts['company_email'])) $tenant_email = $ts['company_email'];
+        elseif (!empty($content['contact_email'])) $tenant_email = $content['contact_email'];
 
         if (!empty($tenant_email)) {
             $subject = "New Contact Form Message from " . $c_name;
@@ -72,24 +81,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_name'])) {
             if ($c_email) $body .= "<p><strong>Email:</strong> " . htmlspecialchars($c_email) . "</p>";
             $body .= "<p><strong>Message:</strong></p><p>" . nl2br(htmlspecialchars($c_msg)) . "</p>";
             $body .= "<hr><p><em>Sent from the website contact form.</em></p>";
-            $headers = "MIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\nFrom: " . ($c_email ?: $tenant_email) . "\r\n";
-            $sent = mail($tenant_email, $subject, $body, $headers);
-            if ($sent) {
-                $contact_status = 'success';
-                $contact_status_msg = 'Thank you! Your message has been sent. We will get back to you soon.';
+
+            $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || ($_SERVER['SERVER_ADDR'] ?? '') === '127.0.0.1';
+            if ($isLocal) {
+                $headers = "MIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\nFrom: " . ($c_email ?: $tenant_email) . "\r\n";
+                $sent = @mail($tenant_email, $subject, $body, $headers);
             } else {
-                $contact_status = 'error';
-                $contact_status_msg = 'Sorry, we were unable to send your message. Please try again later.';
+                require_once __DIR__ . '/../includes/email.php';
+                $sent = sendEmail($tenant_email, $subject, $body, $content['company_name'] ?? $tenant['name'] ?? SITE_NAME);
             }
+
+            $status  = $sent ? 'success' : 'error';
+            $message = $sent ? 'Thank you! Your message has been sent. We will get back to you soon.' : 'Sorry, we could not send your message right now. Please give us a call instead — we would love to hear from you!';
         } else {
-            $contact_status = 'error';
-            $contact_status_msg = 'Unable to send message. Tenant email is not configured.';
+            $status  = 'error';
+            $message = 'Our team is not currently accepting messages by email. Please give us a call — we would love to help you!';
         }
     } else {
-        $contact_status = 'error';
-        $contact_status_msg = 'Please fill in your name and at least a phone number or email address.';
+        $status  = 'error';
+        $message = implode(' ', $errors);
     }
+
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['status' => $status, 'message' => $message]);
+        exit;
+    }
+
+    $_SESSION['contact_status'] = $status;
+    $_SESSION['contact_status_msg'] = $message;
+    header('Location: ' . $_SERVER['REQUEST_URI'] . '#contact');
+    exit;
 }
+
+$contact_status = $_SESSION['contact_status'] ?? null;
+$contact_status_msg = $_SESSION['contact_status_msg'] ?? '';
+unset($_SESSION['contact_status'], $_SESSION['contact_status_msg']);
 
 // Ensure 'services' is in the order for existing tenants
 if (!in_array('services', $sections_order)) {
@@ -900,19 +927,36 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                     <?= htmlspecialchars($content['contact_subtitle'] ?? 'Have a question or need help with your booking? Send us a message and our team will respond as soon as possible.')?>
                 </p>
             </div>
+            <!-- Contact Status Modal -->
             <?php if ($contact_status): ?>
-            <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium <?= $contact_status === 'success' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30' ?>">
-                <?= htmlspecialchars($contact_status_msg)?>
+            <div id="contactModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="display:flex;">
+                <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden p-6 text-center animate-fade-in-up">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 <?= $contact_status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' ?>">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <?php if ($contact_status === 'success'): ?>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            <?php else: ?>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            <?php endif; ?>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= $contact_status === 'success' ? 'Message Sent!' : 'Something went wrong' ?></h3>
+                    <p class="text-gray-500 text-sm mb-6 leading-relaxed"><?= htmlspecialchars($contact_status_msg)?></p>
+                    <button type="button" onclick="document.getElementById('contactModal').style.display='none'" class="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-sm transition-colors">
+                        OK
+                    </button>
+                </div>
             </div>
             <?php endif; ?>
-            <form class="space-y-3" method="post">
+            <div id="contactInlineErrors" class="hidden mb-4"></div>
+            <form id="contactForm" class="space-y-3" method="post" action="#contact" novalidate>
                 <div>
-                    <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Name</label>
-                    <input type="text" name="contact_name" placeholder="Your name" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm" value="<?= htmlspecialchars($_POST['contact_name'] ?? '')?>" <?= $contact_status === 'success' ? 'disabled' : ''?>>
+                    <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Name *</label>
+                    <input type="text" name="contact_name" placeholder="Your name" required class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm" value="<?= htmlspecialchars($_POST['contact_name'] ?? '')?>" <?= $contact_status === 'success' ? 'disabled' : ''?>>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Phone number</label>
-                    <input type="tel" name="contact_phone_input" placeholder="+1 XX XX XX XXX" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm" value="<?= htmlspecialchars($_POST['contact_phone_input'] ?? '')?>" <?= $contact_status === 'success' ? 'disabled' : ''?>>
+                    <input type="tel" name="contact_phone_input" placeholder="+1 XX XX XX XXX" pattern="^[\d\s\-\+\(\)]{7,20}$" title="Please enter a valid phone number (7-20 digits)" class="w-full bg-white/10 border border-white/15 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm" value="<?= htmlspecialchars($_POST['contact_phone_input'] ?? '')?>" <?= $contact_status === 'success' ? 'disabled' : ''?>>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-white/55 uppercase tracking-wide mb-1.5">Email address</label>
@@ -927,6 +971,98 @@ $currency_symbol = $currency_symbols[$currency_code] ?? $currency_code;
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
             </form>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var form = document.getElementById('contactForm');
+                var errorBox = document.getElementById('contactInlineErrors');
+                var preloader = document.getElementById('formPreloader');
+                if (!form) return;
+
+                function showContactModal(status, msg) {
+                    var existing = document.getElementById('contactModal');
+                    if (existing) existing.remove();
+
+                    var isSuccess = status === 'success';
+                    var modal = document.createElement('div');
+                    modal.id = 'contactModal';
+                    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4';
+                    modal.style.display = 'flex';
+                    modal.innerHTML =
+                        '<div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden p-6 text-center">' +
+                            '<div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ' + (isSuccess ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600') + '">' +
+                                '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                                    (isSuccess ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>') +
+                                '</svg>' +
+                            '</div>' +
+                            '<h3 class="text-lg font-bold text-gray-900 mb-2">' + (isSuccess ? 'Message Sent!' : 'Something went wrong') + '</h3>' +
+                            '<p class="text-gray-500 text-sm mb-6 leading-relaxed">' + msg.replace(/</g,'&lt;') + '</p>' +
+                            '<button type="button" class="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-sm transition-colors contact-modal-close">OK</button>' +
+                        '</div>';
+                    document.body.appendChild(modal);
+                    modal.querySelector('.contact-modal-close').addEventListener('click', function() { modal.remove(); });
+                    if (isSuccess) {
+                        form.querySelectorAll('input, textarea').forEach(function(el){ el.disabled = true; });
+                        var btn = form.querySelector('button[type="submit"]');
+                        if (btn) { btn.disabled = true; btn.innerHTML = 'Message Sent! <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>'; }
+                    }
+                }
+
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    var name  = form.querySelector('[name="contact_name"]').value.trim();
+                    var phone = form.querySelector('[name="contact_phone_input"]').value.trim();
+                    var email = form.querySelector('[name="contact_email_input"]').value.trim();
+                    var errors = [];
+
+                    if (!name) errors.push('Please enter your name.');
+                    if (!phone && !email) errors.push('Please enter a phone number or email address so we can reach you.');
+                    if (phone && !/^[\d\s\-+()]{7,20}$/.test(phone)) errors.push('Please enter a valid phone number.');
+                    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Please enter a valid email address.');
+
+                    if (errors.length > 0) {
+                        if (errorBox) {
+                            errorBox.innerHTML = '<div class="rounded-xl bg-red-500/90 text-white px-5 py-4 text-sm font-semibold shadow-lg">' +
+                                '<div class="flex items-center gap-2 mb-1"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Please fix the following:</span></div>' +
+                                '<ul class="list-disc list-inside space-y-1 pl-1">' + errors.map(function(m){ return '<li>' + m + '</li>'; }).join('') + '</ul></div>';
+                            errorBox.classList.remove('hidden');
+                            errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        return false;
+                    }
+
+                    if (errorBox) errorBox.classList.add('hidden');
+                    if (preloader) preloader.classList.remove('hidden');
+
+                    var formData = new FormData(form);
+                    var controller = new AbortController();
+                    var timeoutId = setTimeout(function(){ controller.abort(); }, 30000);
+
+                    fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        signal: controller.signal
+                    })
+                    .then(function(r){
+                        clearTimeout(timeoutId);
+                        if (!r.ok) throw new Error('Server returned ' + r.status);
+                        return r.json();
+                    })
+                    .then(function(data){
+                        if (preloader) preloader.classList.add('hidden');
+                        showContactModal(data.status, data.message);
+                    })
+                    .catch(function(err){
+                        clearTimeout(timeoutId);
+                        if (preloader) preloader.classList.add('hidden');
+                        var msg = err.name === 'AbortError' ? 'Request timed out. Please try again.' : 'Something went wrong. Please try again or give us a call.';
+                        showContactModal('error', msg);
+                    });
+                });
+            });
+            </script>
         </div>
     </section>
     <?php
@@ -1308,6 +1444,14 @@ endforeach; ?>
             if (modal) modal.classList.add('hidden');
         }
     </script>
+
+    <!-- Preloader Overlay -->
+    <div id="formPreloader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[9999] flex items-center justify-center hidden">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-10 h-10 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div>
+            <p class="text-sm font-semibold text-gray-700">Sending...</p>
+        </div>
+    </div>
 
     <!-- Validation Error Modal -->
     <div id="dateErrorModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
