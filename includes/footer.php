@@ -3,7 +3,9 @@
     <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-4 gap-8">
             <div>
-                <img src="/assets/images/fleet-logo-black.svg" alt="Fleet Rental Pro" class="h-10 mb-4 brightness-0 invert">
+                <a href="/">
+                    <img src="/assets/images/fleet-logo-black.svg" alt="Fleet Rental Pro" class="h-10 mb-4 brightness-0 invert">
+                </a>
                 <p class="text-gray-400 text-sm">The complete car rental management platform for modern businesses.</p>
             </div>
             <div>
@@ -33,7 +35,7 @@
             </div>
         </div>
         <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; <?= date('Y') ?> <?= SITE_NAME ?>. All rights reserved.</p>
+            <p>&copy; 2026 Fleet Rental Pro. All rights reserved.</p>
         </div>
     </div>
 </footer>

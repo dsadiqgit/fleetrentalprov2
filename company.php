@@ -246,7 +246,7 @@
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-lg font-bold text-gray-900">Enterprise Security</h3>
-                                <p class="text-gray-500">We utilize AI-powered document verification and biometric
+                                <p class="text-gray-500">We utilise AI-powered document verification and biometric
                                     liveness detection to keep your fleet safe from fraud.</p>
                             </div>
                         </div>
@@ -325,7 +325,7 @@
                         </div>
                         <div class="ml-6 flex-1">
                             <h3 class="text-xl font-bold text-gray-900 mb-2 transition-colors duration-300 tab-title">
-                                Conversion Optimized</h3>
+                                Conversion Optimised</h3>
                             <p class="text-gray-500 leading-relaxed tab-text transition-colors duration-300">Every pixel
                                 is designed to turn visitors into renters, with lightning-fast load times and seamless
                                 checkout.</p>
@@ -447,7 +447,7 @@ endfor; ?>
     ═══════════════════════════════════════════ -->
     <div class="py-24 text-center bg-white relative overflow-hidden">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight">Ready to modernize your <span
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight">Ready to modernise your <span
                     class="gradient-text">car rental website?</span></h2>
             <p class="text-xl text-gray-600 mb-10 leading-relaxed">
                 Join the operators who are reducing their overhead and increasing their revenue with the most advanced

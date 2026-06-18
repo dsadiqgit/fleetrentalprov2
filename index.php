@@ -1247,7 +1247,7 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-8">
                         <a href="#demo"
                             class="px-10 py-4 mb-4 sm:mb-0 bg-[#2d2d2d] text-white rounded-full font-bold text-lg hover:bg-black transition-all shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95">
-                            Book demo
+                            Book a demo
                         </a>
                         <a href="#tour"
                             class="flex items-center gap-3 text-gray-500 font-bold hover:text-gray-900 transition-colors group">
@@ -1264,47 +1264,7 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
         </div>
 
 
-        <!-- Footer -->
-        <footer class="bg-gray-900 text-gray-300 py-12">
-            <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid md:grid-cols-4 gap-8">
-                    <div>
-                        <div class="text-white text-xl font-bold mb-4">
-                            <?= SITE_NAME?>
-                        </div>
-                        <p class="text-sm">Complete car rental management platform for modern businesses.</p>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Product</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="#features" class="hover:text-white">Features</a></li>
-                            <li><a href="#pricing" class="hover:text-white">Pricing</a></li>
-                            <li><a href="/blog" class="hover:text-white">Blog</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Company</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="#" class="hover:text-white">About</a></li>
-                            <li><a href="#" class="hover:text-white">Contact</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Legal</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
-                            <li><a href="#" class="hover:text-white">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="mt-8 pt-8 border-t border-gray-800 text-center text-sm">
-                    <p>&copy;
-                        <?= date('Y')?>
-                        <?= SITE_NAME?>. All rights reserved.
-                    </p>
-                </div>
-            </div>
-        </footer>
+        <?php include __DIR__ . '/includes/footer.php'; ?>
 
         <script>
             // Reviews Carousel for Mobile
