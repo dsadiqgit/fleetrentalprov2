@@ -725,6 +725,16 @@ if ($show_edit_form) {
         $stmt = $pdo->prepare("SELECT pickup_date, return_date FROM bookings WHERE vehicle_id = ? AND status NOT IN ('cancelled', 'completed')");
         $stmt->execute([$_GET['id']]);
         $booked_dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch booking history for this vehicle
+        $stmt = $pdo->prepare("
+            SELECT b.id, b.pickup_date, b.return_date, b.status, b.customer_name, b.customer_email, b.total_price, b.created_at
+            FROM bookings b
+            WHERE b.vehicle_id = ? AND b.tenant_id = ?
+            ORDER BY b.pickup_date DESC
+        ");
+        $stmt->execute([$_GET['id'], $_SESSION['tenant_id']]);
+        $vehicle_booking_history = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
@@ -918,7 +928,7 @@ if ($show_edit_form) {
                         <?php
 elseif ($show_edit_form): ?>
                         <span class="mx-2">/</span>
-                        <span class="text-gray-900">Edit Vehicle</span>
+                        <span class="text-gray-900">View Vehicle</span>
                         <?php
 endif; ?>
                     </nav>
@@ -927,7 +937,7 @@ endif; ?>
                         Add New Vehicle
                         <?php
 elseif ($show_edit_form): ?>
-                        Edit Vehicle
+                        View Vehicle
                         <?php
 else: ?>
                         Vehicles
@@ -1559,9 +1569,9 @@ endif; ?>
     endif; ?>
 
                 <div x-data="{ 
-                    vehicleTab: '<?= htmlspecialchars($current_tab)?>', 
+                    vehicleTab: localStorage.getItem('vehicleTab_<?= $_GET['id'] ?? 'new' ?>') || '<?= htmlspecialchars($current_tab)?>', 
                     pricingTab: '<?= htmlspecialchars($current_pricing_tab)?>' 
-                }" class="space-y-8">
+                }" x-init="$watch('vehicleTab', value => localStorage.setItem('vehicleTab_<?= $_GET['id'] ?? 'new' ?>', value))" class="space-y-8">
 
                     <!-- Tabs Navigation -->
                     <div class="border-b border-gray-200 mb-8" x-cloak>
@@ -1597,6 +1607,12 @@ endif; ?>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 Availability
                             </button>
+                            <button type="button" @click="navigateToTab('history', $data)"
+                                :class="vehicleTab === 'history' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                History
+                            </button>
                             <?php endif; ?>
                         </nav>
                     </div>
@@ -1611,7 +1627,7 @@ endif; ?>
                         </form>
                         <?php endif; ?>
                         <button form="vehicleForm" type="submit" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save</button>
-                        <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : (vehicleTab === 'settings' ? 'pricing' : 'calendar')), $data)" x-show="vehicleTab !== '<?= $show_edit_form ? 'calendar' : 'pricing' ?>'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
+                        <button type="button" @click="navigateToTab(vehicleTab === 'basic' ? 'images' : (vehicleTab === 'images' ? 'settings' : (vehicleTab === 'settings' ? 'pricing' : (vehicleTab === 'pricing' ? 'calendar' : 'history')))), $data)" x-show="vehicleTab !== '<?= $show_edit_form ? 'history' : 'pricing' ?>'" class="px-5 py-2.5 rounded-full bg-blue-600 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition">Next</button>
                     </div>
 
                     <form id="vehicleForm" method="POST" enctype="multipart/form-data" class="space-y-8" @submit="showHtml5Error = false" @invalid.capture="handleFormInvalid($event, $data)">
@@ -2069,6 +2085,82 @@ endif; ?>
                     <?php
     endif; ?>
 
+                    <!-- History Tab -->
+                    <?php if ($show_edit_form): ?>
+                    <div x-show="vehicleTab === 'history'" class="space-y-8" x-cloak>
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">Booking History</h2>
+                                    <p class="text-sm text-gray-500">All trips and reservations for this vehicle.</p>
+                                </div>
+                                <span class="px-3 py-1 text-xs font-semibold text-blue-600 bg-blue-50 rounded-full"><?= count($vehicle_booking_history ?? []) ?> Records</span>
+                            </div>
+
+                            <?php if (!empty($vehicle_booking_history)): ?>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-gray-200">
+                                            <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Trip Date</th>
+                                            <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mileage</th>
+                                            <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                                            <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <?php foreach ($vehicle_booking_history as $booking): ?>
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="py-3 px-4 text-sm text-gray-900 whitespace-nowrap">
+                                                <?= date('d/m/Y', strtotime($booking['pickup_date'])) ?>
+                                                <span class="text-gray-400 text-xs">to</span>
+                                                <?= date('d/m/Y', strtotime($booking['return_date'])) ?>
+                                            </td>
+                                            <td class="py-3 px-4 text-sm text-gray-600 whitespace-nowrap">
+                                                <?= number_format($edit_vehicle['mileage'] ?? 0) ?> <?= htmlspecialchars($distance_unit)?>
+                                            </td>
+                                            <td class="py-3 px-4 whitespace-nowrap">
+                                                <?php
+                                                $statusColors = [
+                                                    'pending' => 'bg-yellow-100 text-yellow-800',
+                                                    'confirmed' => 'bg-blue-100 text-blue-800',
+                                                    'active' => 'bg-emerald-100 text-emerald-800',
+                                                    'completed' => 'bg-gray-100 text-gray-700',
+                                                    'cancelled' => 'bg-red-100 text-red-800'
+                                                ];
+                                                $statusClass = $statusColors[$booking['status']] ?? 'bg-gray-100 text-gray-700';
+                                                ?>
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $statusClass ?>">
+                                                    <?= ucfirst(htmlspecialchars($booking['status'])) ?>
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-sm text-gray-900 whitespace-nowrap">
+                                                <?= htmlspecialchars($booking['customer_name'] ?? 'N/A') ?>
+                                            </td>
+                                            <td class="py-3 px-4 text-sm font-semibold text-gray-900 whitespace-nowrap text-right">
+                                                &pound;<?= number_format($booking['total_price'] ?? 0, 2) ?>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <?php else: ?>
+                            <div class="text-center py-12">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-1">No booking history</h3>
+                                <p class="text-sm text-gray-500">This vehicle hasn't been booked yet.</p>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                 </form>
                 </div>
             <?php
@@ -2120,7 +2212,7 @@ endif; ?>
 
         function navigateToTab(targetTab, alpineData) {
             const currentTab = alpineData.vehicleTab;
-            const steps = ['basic', 'images', 'settings', 'pricing', 'calendar'];
+            const steps = ['basic', 'images', 'settings', 'pricing', 'calendar', 'history'];
             const currentIdx = steps.indexOf(currentTab);
             const targetIdx = steps.indexOf(targetTab);
             
