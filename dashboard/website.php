@@ -163,7 +163,7 @@ $tenant_url = (ROOT_DOMAIN === 'localhost')
             </div>
 
             <!-- Templates Grid -->
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-8 gap-6">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
                 <?php foreach ($templates as $template): ?>
                 <div
                     class="bg-white rounded-lg border-2 <?= $template['id'] === $current_template ? 'border-blue-600' : 'border-gray-200'?> overflow-hidden hover:shadow-lg transition relative">

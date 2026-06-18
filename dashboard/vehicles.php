@@ -1873,7 +1873,7 @@ endif; ?>
                                         </svg>
                                         Contract Template <span class="text-red-500">*</span>
                                     </label>
-                                    <select name="contract_template_id" required class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 pr-8 pl-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                                    <select name="contract_template_id" id="contractTemplateSelect" required class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 pr-8 pl-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                                             style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 4 5&quot;><path fill=&quot;%23666&quot; d=&quot;M2 0L0 2h4zm0 5L0 3h4z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;">
                                         <option value="">No contract assigned</option>
                                         <?php foreach ($contract_templates as $template): ?>
@@ -1883,6 +1883,10 @@ endif; ?>
                                         <?php
     endforeach; ?>
                                     </select>
+                                    <button type="button" onclick="previewContractTemplate()" class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-black transition-all shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View Contract
+                                    </button>
                                 </div>
                                 
                                 <div class="space-y-4 bg-gray-50 p-6 rounded-xl border border-gray-100" x-data="{ requireDeposit: <?= $show_edit_form && !empty($edit_vehicle['require_deposit']) ? 'true' : 'false'?> }">
@@ -3492,6 +3496,16 @@ endif; ?>
             }
         }
 
+        function previewContractTemplate() {
+            const select = document.getElementById('contractTemplateSelect');
+            const templateId = select ? select.value : '';
+            if (!templateId) {
+                alert('Please select a contract template first.');
+                return;
+            }
+            window.open(`/dashboard/download-template-pdf.php?template_id=${templateId}`, '_blank');
+        }
+
         if (typeof window !== 'undefined') {
             const bookingModalGlobals = {
                 openBookingModal,
@@ -3508,7 +3522,8 @@ endif; ?>
                 previewMiscPhotos,
                 submitConditionReport,
                 viewContractPDF,
-                closeContractPreviewModal
+                closeContractPreviewModal,
+                previewContractTemplate
             };
 
             Object.entries(bookingModalGlobals).forEach(([key, fn]) => {

@@ -21,18 +21,20 @@ $map_query      = urlencode($footer_address ?: $company_name_f);
 ?>
 
 <footer class="bg-white border-t-4 border-gray-900 pt-14 pb-8 shadow-[0_-1px_0_0_#e5e7eb]">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 
             <!-- Col 1: Logo + Newsletter + Social -->
             <div class="sm:col-span-2 lg:col-span-1">
                 <div class="flex items-center gap-3 mb-4">
-                    <?php if (!empty($tenant['logo_url'])): ?>
-                    <img src="<?= htmlspecialchars($tenant['logo_url'])?>" alt="Logo" class="h-9 w-auto">
+                    <?php if (!empty($tenant['logo_url']) || !empty($tenant['logo'])): ?>
+                    <span class="font-extrabold text-gray-900 text-lg tracking-tight">
+                        <img src="<?= htmlspecialchars($tenant['logo_url'] ?: $tenant['logo'])?>" alt="Logo" class="h-8 w-auto">
+                    </span>
                     <?php else: ?>
                     <div class="w-9 h-9 rounded-lg bg-gray-900 flex items-center justify-center text-white font-black text-sm">⚡</div>
-                    <?php endif; ?>
                     <span class="font-extrabold text-gray-900 text-lg tracking-tight"><?= htmlspecialchars($company_name_f)?></span>
+                    <?php endif; ?>
                 </div>
                 <p class="text-xs text-gray-400 mb-1 uppercase tracking-widest font-semibold">Newsletter</p>
                 <p class="text-sm text-gray-500 mb-3">Get offers &amp; updates straight to your inbox.</p>
@@ -126,17 +128,62 @@ $map_query      = urlencode($footer_address ?: $company_name_f);
             <!-- Col 4: Map -->
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Find us</p>
-                <div class="rounded-xl overflow-hidden border border-gray-200 shadow-sm" style="height:210px;">
-                    <iframe src="https://maps.google.com/maps?q=<?= $map_query?>&output=embed&z=14"
-                        class="w-full h-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Our location"></iframe>
-                </div>
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+                <div id="tenantMap" class="rounded-xl overflow-hidden border border-gray-200 shadow-sm z-0" style="height:210px;"></div>
                 <?php if (!empty($footer_address)): ?>
-                <a href="https://maps.google.com/maps?q=<?= $map_query?>" target="_blank" rel="noopener noreferrer"
+                <a href="https://www.google.com/maps/search/?api=1&query=<?= $map_query?>" target="_blank" rel="noopener noreferrer"
                    class="inline-flex items-center gap-1.5 mt-2.5 text-xs font-semibold text-gray-500 hover:text-gray-900 transition">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                     Get directions
                 </a>
                 <?php endif; ?>
+                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+                <style>
+                .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important; padding: 0 !important; }
+                .leaflet-popup-content { margin: 12px 16px !important; line-height: 1.4 !important; }
+                .leaflet-popup-tip { background: white !important; }
+                .leaflet-container a.leaflet-popup-close-button { color: #9ca3af !important; font-size: 18px !important; top: 6px !important; right: 6px !important; }
+                </style>
+                <script>
+                (function() {
+                    const address = <?= json_encode($footer_address ?: $company_name_f) ?>;
+                    const mapQuery = <?= json_encode($map_query) ?>;
+                    const mapDiv = document.getElementById('tenantMap');
+                    if (!mapDiv || !address) return;
+
+                    const map = L.map('tenantMap', { zoomControl: false, attributionControl: false })
+                        .setView([51.5074, -0.1278], 14);
+
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 19, subdomains: 'abcd'
+                    }).addTo(map);
+
+                    const pinHtml = '<div style="position:relative;width:28px;height:28px;">' +
+                        '<div style="width:28px;height:28px;background:#111827;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.25);"></div>' +
+                        '<div style="position:absolute;top:6px;left:6px;width:12px;height:12px;background:white;border-radius:50%;"></div>' +
+                        '</div>';
+                    const customIcon = L.divIcon({ className: '', html: pinHtml, iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30] });
+
+                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(address))
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.length > 0) {
+                                const lat = parseFloat(data[0].lat);
+                                const lon = parseFloat(data[0].lon);
+                                map.setView([lat, lon], 15);
+                                L.marker([lat, lon], { icon: customIcon }).addTo(map)
+                                    .bindPopup(
+                                        '<div style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;color:#374151;">' +
+                                        '<p style="font-weight:700;margin:0 0 6px 0;color:#111827;">' + address.replace(/</g,'&lt;') + '</p>' +
+                                        '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapQuery) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#2563eb;font-size:12px;font-weight:600;text-decoration:none;">' +
+                                        'Open in Maps <svg width=12 height=12 fill=none stroke=currentColor viewBox="0 0 24 24"><path stroke-linecap=round stroke-linejoin=round stroke-width=2 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>' +
+                                        '</div>',
+                                        { offset: [0, -30], className: 'rounded-xl-popup' }
+                                    ).openPopup();
+                            }
+                        });
+                })();
+                </script>
             </div>
         </div>
 

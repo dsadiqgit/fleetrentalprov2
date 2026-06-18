@@ -108,7 +108,7 @@ foreach ($templates as &$template) {
                 </div>
 
                 <!-- Templates Grid -->
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-8 gap-6">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach ($templates as $template): ?>
                     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition">
                         <!-- Template Image -->
