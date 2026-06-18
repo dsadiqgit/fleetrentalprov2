@@ -25,6 +25,16 @@ if (!in_array($data['status'], $allowed_statuses)) {
 $pdo = getDB();
 
 try {
+    // Require pickup condition report with mileage before starting trip
+    if ($data['status'] === 'active') {
+        $stmt = $pdo->prepare("SELECT id FROM booking_condition_reports WHERE booking_id = ? AND tenant_id = ? AND report_type = 'pickup' AND mileage IS NOT NULL");
+        $stmt->execute([$data['booking_id'], $_SESSION['tenant_id']]);
+        if ($stmt->rowCount() === 0) {
+            echo json_encode(['success' => false, 'message' => 'Please complete the pickup condition report with mileage before starting the trip.']);
+            exit;
+        }
+    }
+
     // Update booking status
     $stmt = $pdo->prepare("
         UPDATE bookings 
