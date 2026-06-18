@@ -139,10 +139,8 @@
                         ensure all Authorised Users maintain strict credential hygiene and utilise Multi-Factor
                         Authentication where provided.</p>
 
-                    <h2 id="trial">5) Trial Policy</h2>
-                    <p>Trial accounts are provided for internal evaluation only. We reserve the right to limit API
-                        throughput and booking volume during the 30-day trial period to ensure platform stability for
-                        paid subscribers.</p>
+                    <h2 id="trial">5) Money-Back Guarantee</h2>
+                    <p>We offer a 14-day money-back guarantee for all new subscriptions. If you are not satisfied with our service within the first 14 days, you may request a full refund, no questions asked. Refunds will be processed within 5-10 business days to the original payment method.</p>
 
                     <h2 id="billing">6) Subscriptions & Billing</h2>
                     <p>Our "No-Refund" policy is absolute to the height of the law. Subscriptions are billed in advance

@@ -14,11 +14,22 @@ $error = '';
 $success = false;
 
 // Handle Stripe Session for Guest Signups
-$plan_slug = sanitize($_GET['plan'] ?? 'trial');
+$plan_slug = sanitize($_GET['plan'] ?? 'growth');
 $session_id = sanitize($_GET['session_id'] ?? '');
 $is_paid = isset($_GET['paid']) && $_GET['paid'] === 'true';
 
+// Require payment before signup
+if (!$is_paid && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    // Redirect to pricing if no payment
+    header('Location: /pricing.php');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Require payment verification to create account
+    if (!$is_paid) {
+        $error = 'Please complete payment first to create your account. <a href="/pricing.php" class="underline">Choose a plan</a>';
+    }
     $email = sanitize($_POST['email'] ?? '');
     $first_name = sanitize($_POST['first_name'] ?? '');
     $password = $_POST['password'] ?? '';

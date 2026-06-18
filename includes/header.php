@@ -140,9 +140,9 @@ function is_header_active($page)
                                         Integration</a>
                                     <a href="/pricing.php"
                                         class="text-sm text-gray-600 hover:text-blue-600 transition">Pricing Plans</a>
-                                    <a href="/auth/signup.php"
-                                        class="text-sm text-blue-600 hover:text-blue-700 font-medium transition">Start
-                                        Free Trial &rarr;</a>
+                                    <a href="/checkout.php?plan=growth"
+                                        class="text-sm text-blue-600 hover:text-blue-700 font-medium transition">Get
+                                        Started &rarr;</a>
                                 </div>
                             </div>
                         </div>
@@ -490,9 +490,9 @@ function is_header_active($page)
                 <?php
 else: ?>
                 <a href="/auth/login.php" class="text-gray-600 hover:text-gray-900 text-sm">Sign In</a>
-                <a href="/auth/signup.php"
+                <a href="/checkout.php?plan=growth"
                     class="px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 inline-flex items-center space-x-2">
-                    <span>Start free trial</span>
+                    <span>Get Started</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 8l4 4m0 0l-4 4m4-4H3"></path>

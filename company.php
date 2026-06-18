@@ -454,9 +454,9 @@ endfor; ?>
                 car rental software on the market.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="/auth/signup.php"
+                <a href="/checkout.php?plan=growth"
                     class="px-10 py-4 bg-blue-600 text-white font-bold rounded-xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all hover:scale-105">
-                    Start Your Free Trial
+                    Get Started
                 </a>
                 <a href="/contact.php"
                     class="px-10 py-4 bg-white text-gray-900 border border-gray-200 font-bold rounded-xl hover:bg-gray-50 transition-all">

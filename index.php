@@ -79,9 +79,9 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
                         </p>
                         <div class="mb-6">
                             <div class="flex gap-3">
-                                <a href="/auth/signup.php"
+                                <a href="/checkout.php?plan=growth"
                                     class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium whitespace-nowrap inline-flex items-center justify-center text-sm gap-2">
-                                    Sign Up
+                                    Get Started
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
@@ -1033,7 +1033,7 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
                         class="group flex w-full items-center justify-between gap-4 py-5 text-left transition-colors hover:opacity-80 sm:gap-6 sm:py-6 md:gap-10 md:py-7">
                         <span
                             class="text-[18px] font-semibold leading-[1.3] tracking-[-0.5px] text-[#1a1a1a] sm:text-[19px] sm:tracking-[-0.6px] md:text-[22px] md:tracking-[-0.8px] lg:text-[24px] lg:tracking-[-1px]">Is
-                            there a free trial?</span>
+                            there a money-back guarantee?</span>
                         <div
                             class="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#f5f5f7] transition-colors group-hover:bg-[#ebebed] sm:size-9 md:size-10">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -1045,8 +1045,8 @@ if ($request_uri !== '/' && $request_uri !== '/index.php' && $request_uri !== ''
                         </div>
                     </button>
                     <div class="faq-content hidden overflow-hidden">
-                        <p class="pb-5 text-[18px] text-gray-600 leading-relaxed sm:pb-6 md:pb-7">Yes! We offer a 30-day
-                            free trial with full access to all features. No credit card required to start.</p>
+                        <p class="pb-5 text-[18px] text-gray-600 leading-relaxed sm:pb-6 md:pb-7">Yes! We offer a 14-day
+                            money-back guarantee. If you're not satisfied within 14 days, we'll refund your payment in full, no questions asked.</p>
                     </div>
                 </div>
                 <div class="border-b border-[#e5e5e5] last:border-b-0">

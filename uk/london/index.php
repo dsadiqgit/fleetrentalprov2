@@ -71,10 +71,10 @@
     <div class="py-20 bg-gradient-to-br from-blue-600 to-blue-700">
         <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-4xl font-bold text-white mb-6">Ready to Transform Your London Rental Business?</h2>
-            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">Join hundreds of rental companies using our platform to streamline operations and grow revenue.</p>
+            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">Be one of the first UK rental companies to run your entire fleet from one platform.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/auth/signup.php" class="px-8 py-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 inline-flex items-center justify-center">
-                    Start Free Trial
+                <a href="/checkout.php?plan=growth" class="px-8 py-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 inline-flex items-center justify-center">
+                    Get Started
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                     </svg>

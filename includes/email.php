@@ -187,6 +187,7 @@ function sendWelcomeEmail($email, $name) {
                 <h2>Hello " . htmlspecialchars($name) . "!</h2>
                 <p>Thank you for joining " . SITE_NAME . ". We're excited to have you on board!</p>
                 <p>You can now access your dashboard and start managing your fleet rental business.</p>
+                <p><strong>Remember:</strong> All plans come with a 14-day money-back guarantee. If you're not satisfied within the first 14 days, we'll refund your payment in full, no questions asked.</p>
                 <p style='text-align: center;'>
                     <a href='" . SITE_URL . "/auth/login.php' class='button' style='color: #fff;'>Login to Dashboard</a>
                 </p>

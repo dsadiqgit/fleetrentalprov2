@@ -263,7 +263,7 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
                 </svg>
                 <span class="font-medium text-sm">
                     <?= $trial_days_remaining ?> day
-                    <?= $trial_days_remaining != 1 ? 's' : '' ?> left on your free trial
+                    <?= $trial_days_remaining != 1 ? 's' : '' ?> left in money-back guarantee period
                 </span>
             </div>
             <div class="w-full bg-gray-700/50 rounded-full h-1.5 mb-4 overflow-hidden">
@@ -283,7 +283,7 @@ $tenant_site_url = $is_localhost_env ? $app_base_route . '/?tenant=' . urlencode
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="font-medium text-sm">Free trial expired</span>
+                <span class="font-medium text-sm">Money-back guarantee period ended</span>
             </div>
             <div class="w-full bg-red-800/50 rounded-full h-1.5 mb-4 overflow-hidden">
                 <div class="bg-red-500 h-full rounded-full" style="width: 0%"></div>

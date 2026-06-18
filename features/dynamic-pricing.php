@@ -48,9 +48,9 @@
                     pricing engine analyses demand patterns, seasonal shifts, and inventory scarcity to optimise rates
                     in real-time.</p>
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="/auth/signup.php"
+                    <a href="/checkout.php?plan=growth"
                         class="inline-flex justify-center items-center px-8 py-3.5 border border-transparent text-base font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg shadow-blue-600/20">
-                        Start free trial
+                        Get Started
                     </a>
                     <a href="/contact.php"
                         class="inline-flex justify-center items-center px-8 py-3.5 border border-white/20 text-base font-semibold rounded-lg text-white hover:bg-white/10 transition backdrop-blur-sm">
@@ -542,9 +542,9 @@
             <p class="text-xl text-gray-600 mb-10">Get started today and protect your assets from the very next booking.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="/auth/signup.php"
+                <a href="/checkout.php?plan=growth"
                     class="inline-flex justify-center items-center px-8 py-3.5 border border-transparent text-base font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition">
-                    Start free trial
+                    Get Started
                 </a>
                 <a href="/contact.php"
                     class="inline-flex justify-center items-center px-8 py-3.5 border border-gray-300 text-base font-semibold rounded-lg text-gray-900 bg-white hover:bg-gray-50 transition">

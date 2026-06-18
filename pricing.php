@@ -33,11 +33,11 @@ require_once __DIR__ . '/config/config.php';
                 Pricing that scales with<br>your rental business.
             </h1>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-                Start with 30 days free trial. No credit card required. Cancel anytime. And scale to hundreds of vehicles at the same affordable price.
+                Plans from £79/month. 14-day money-back guarantee — no questions asked. Scale to hundreds of vehicles at the same affordable price.
             </p>
             <div class="flex justify-center gap-4">
-                <a href="/auth/signup.php" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
-                    Start Free Trial
+                <a href="/checkout.php?plan=growth" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
+                    Get Started
                 </a>
                 <a href="#compare" class="px-8 py-3 border-2 border-gray-300 text-gray-900 rounded-lg font-semibold hover:bg-gray-50">
                     View Features
@@ -158,8 +158,8 @@ require_once __DIR__ . '/config/config.php';
                             <span class="text-gray-700">Email and chat support</span>
                         </li>
                     </ul>
-                    <a href="/auth/signup.php" class="block w-full text-center py-3 px-6 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition">
-                        Start Free Trial
+                    <a href="/checkout.php?plan=starter" class="block w-full text-center py-3 px-6 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition">
+                        Get Started
                     </a>
                 </div>
 
@@ -198,8 +198,8 @@ require_once __DIR__ . '/config/config.php';
                             <span class="text-gray-700">Priority support</span>
                         </li>
                     </ul>
-                    <a href="/auth/signup.php" class="block w-full text-center py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
-                        Start Free Trial
+                    <a href="/checkout.php?plan=growth" class="block w-full text-center py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+                        Get Started
                     </a>
                 </div>
 
@@ -303,7 +303,7 @@ require_once __DIR__ . '/config/config.php';
             <!-- FAQ Item 1 -->
             <div class="border-b border-[#e5e5e5] last:border-b-0">
                 <button onclick="toggleFaq(0)" class="group flex w-full items-center justify-between gap-4 py-5 text-left transition-colors hover:opacity-80 sm:gap-6 sm:py-6 md:gap-10 md:py-7">
-                    <span class="text-[18px] font-semibold leading-[1.3] tracking-[-0.5px] text-[#1a1a1a] sm:text-[19px] sm:tracking-[-0.6px] md:text-[22px] md:tracking-[-0.8px] lg:text-[24px] lg:tracking-[-1px]">Is there a free trial?</span>
+                    <span class="text-[18px] font-semibold leading-[1.3] tracking-[-0.5px] text-[#1a1a1a] sm:text-[19px] sm:tracking-[-0.6px] md:text-[22px] md:tracking-[-0.8px] lg:text-[24px] lg:tracking-[-1px]">Is there a money-back guarantee?</span>
                     <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#f5f5f7] transition-colors group-hover:bg-[#ebebed] sm:size-9 md:size-10">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="faq-icon size-4 text-[#6e6e73] sm:size-4.5 md:size-5 transition-transform duration-200">
                             <path d="m18 15-6-6-6 6"></path>
@@ -311,7 +311,7 @@ require_once __DIR__ . '/config/config.php';
                     </div>
                 </button>
                 <div class="faq-content hidden overflow-hidden">
-                    <p class="pb-5 text-[18px] text-gray-600 leading-relaxed sm:pb-6 md:pb-7">Yes, all plans come with a 30-day free trial. No credit card required to start your trial. You can explore all features and see if <?= SITE_NAME ?> is the right fit for your business.</p>
+                    <p class="pb-5 text-[18px] text-gray-600 leading-relaxed sm:pb-6 md:pb-7">Yes, all plans come with a 14-day money-back guarantee. If you're not satisfied within 14 days, we'll refund your payment in full, no questions asked.</p>
                 </div>
             </div>
             <!-- FAQ Item 2 -->
@@ -367,7 +367,7 @@ require_once __DIR__ . '/config/config.php';
                     </div>
                 </button>
                 <div class="faq-content hidden overflow-hidden">
-                    <p class="pb-5 text-[18px] text-gray-600 leading-relaxed sm:pb-6 md:pb-7">We offer a 30-day money-back guarantee. If you're not satisfied with <?= SITE_NAME ?> within the first 30 days, we'll refund your payment in full, no questions asked.</p>
+                    <p class="pb-5 text-[18px] text-gray-600 leading-relaxed sm:pb-6 md:pb-7">We offer a 14-day money-back guarantee. If you're not satisfied with <?= SITE_NAME ?> within the first 14 days, we'll refund your payment in full, no questions asked.</p>
                 </div>
             </div>
         </div>
