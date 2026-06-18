@@ -1314,10 +1314,45 @@ endforeach; ?>
                             </p>
                         </div>
                         <!-- Col 4: Map -->
-                        <div class="rounded-xl overflow-hidden border border-gray-200" style="height:220px;">
-                            <iframe src="https://maps.google.com/maps?q=<?= $bld_map_q?>&output=embed&z=14"
-                                class="w-full h-full border-0" loading="lazy"></iframe>
-                        </div>
+                        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+                        <div id="builderMap" class="rounded-xl overflow-hidden border border-gray-200 z-0" style="height:220px;"></div>
+                        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+                        <style>
+                        #builderMap .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important; padding: 0 !important; }
+                        #builderMap .leaflet-popup-content { margin: 12px 16px !important; line-height: 1.4 !important; }
+                        #builderMap .leaflet-popup-tip { background: white !important; }
+                        #builderMap .leaflet-container a.leaflet-popup-close-button { color: #9ca3af !important; font-size: 18px !important; top: 6px !important; right: 6px !important; }
+                        </style>
+                        <script>
+                        (function() {
+                            const addr = <?= json_encode($bld_address ?: $bld_name) ?>;
+                            const el = document.getElementById('builderMap');
+                            if (!el || !addr) return;
+                            const map = L.map('builderMap', { zoomControl: false, attributionControl: false }).setView([51.5074, -0.1278], 14);
+                            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(map);
+                            const pinHtml = '<div style="position:relative;width:28px;height:28px;">' +
+                                '<div style="width:28px;height:28px;background:#111827;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.25);"></div>' +
+                                '<div style="position:absolute;top:6px;left:6px;width:12px;height:12px;background:white;border-radius:50%;"></div>' +
+                                '</div>';
+                            const icon = L.divIcon({ className: '', html: pinHtml, iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30] });
+                            fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr))
+                                .then(r => r.json())
+                                .then(data => {
+                                    if (data && data.length > 0) {
+                                        const lat = parseFloat(data[0].lat);
+                                        const lon = parseFloat(data[0].lon);
+                                        map.setView([lat, lon], 15);
+                                        L.marker([lat, lon], { icon: icon }).addTo(map)
+                                            .bindPopup(
+                                                '<div style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;color:#374151;">' +
+                                                '<p style="font-weight:700;margin:0 0 6px 0;color:#111827;">' + addr.replace(/</g,'&lt;') + '</p>' +
+                                                '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#2563eb;font-size:12px;font-weight:600;text-decoration:none;">Open in Maps <svg width=12 height=12 fill=none stroke=currentColor viewBox="0 0 24 24"><path stroke-linecap=round stroke-linejoin=round stroke-width=2 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>' +
+                                                '</div>', { offset: [0, -30] }
+                                            ).openPopup();
+                                    }
+                                });
+                        })();
+                        </script>
                     </div>
                     <div class="border-t border-gray-200 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-400">
                         <p>&copy; <?= date('Y')?> <?= htmlspecialchars($bld_name)?>. All rights reserved.</p>
@@ -1453,6 +1488,42 @@ endif; ?>
                             </div>
                             <button onclick="openMediaSelector(updateLogo)" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">Change Logo</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Info Settings -->
+            <div>
+                <h4 class="text-sm font-semibold text-gray-900 mb-4">Contact Info</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Company Name</label>
+                        <input type="text" data-sync="company_name" value="<?= htmlspecialchars($content['company_name'] ?? '')?>"
+                            oninput="syncPreview('company_name', this.value)"
+                            onchange="saveField('company_name', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Phone Number</label>
+                        <input type="text" data-sync="contact_phone" value="<?= htmlspecialchars($content['contact_phone'] ?? '')?>"
+                            oninput="syncPreview('contact_phone', this.value)"
+                            onchange="saveField('contact_phone', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Email Address</label>
+                        <input type="text" data-sync="contact_email" value="<?= htmlspecialchars($content['contact_email'] ?? '')?>"
+                            oninput="syncPreview('contact_email', this.value)"
+                            onchange="saveField('contact_email', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Business Address</label>
+                        <textarea data-sync="contact_address" rows="3"
+                            oninput="syncPreview('contact_address', this.value)"
+                            onchange="saveField('contact_address', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"><?= htmlspecialchars($content['contact_address'] ?? '')?></textarea>
+                        <p class="text-[10px] text-gray-400 mt-1">This address is used to center the map in the footer.</p>
                     </div>
                 </div>
             </div>
