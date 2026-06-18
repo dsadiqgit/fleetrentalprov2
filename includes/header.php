@@ -427,22 +427,22 @@ function is_header_active($page)
                                         </div>
                                     </a>
 
-                                    <a href="/business-console" class="flex items-start group/item">
+                                    <a href="/#faq" class="flex items-start group/item">
                                         <div
                                             class="w-10 h-10 rounded-lg bg-white flex items-center justify-center mr-4 group-hover/item:bg-blue-50 transition flex-shrink-0 shadow-sm">
                                             <svg class="w-5 h-5 text-gray-700 group-hover/item:text-blue-600 transition"
                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
                                                 </path>
                                             </svg>
                                         </div>
                                         <div>
                                             <h4
                                                 class="text-sm font-semibold text-gray-900 mb-1 group-hover/item:text-blue-600 transition">
-                                                Business Console</h4>
-                                            <p class="text-xs text-gray-500 leading-relaxed">Manage your fleet
-                                                operations dashboard.</p>
+                                                FAQs</h4>
+                                            <p class="text-xs text-gray-500 leading-relaxed">Common questions and
+                                                answers.</p>
                                         </div>
                                     </a>
                                 </div>
@@ -517,7 +517,7 @@ endif; ?>
     </div>
 
     <!-- Mobile menu - Full screen overlay -->
-    <div id="mobileMenu" class="hidden fixed inset-0 bg-white z-50 lg:hidden overflow-y-auto">
+    <div id="mobileMenu" class="hidden fixed inset-0 bg-white z-[200] lg:hidden overflow-y-auto">
         <div class="flex flex-col h-full">
             <!-- Mobile menu header -->
             <div class="flex justify-between items-center h-16 px-4 border-b border-gray-100">
@@ -621,15 +621,59 @@ endif; ?>
                     </div>
                 </div>
 
-                <!-- Other Links -->
-                <div class="space-y-4">
-                    <a href="/" class="flex items-center justify-between text-gray-900 font-medium">
-                        <span>Resources</span>
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M5 12h14M12 5l7 7-7 7"></path>
+                <!-- Resources Section -->
+                <div class="border-b border-gray-100 pb-6">
+                    <button onclick="toggleMobileSection('resources')"
+                        class="flex items-center justify-between w-full text-left">
+                        <h3 class="text-lg font-bold text-gray-900">Resources</h3>
+                        <svg id="resourcesChevron" class="w-5 h-5 text-gray-400 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
                         </svg>
-                    </a>
+                    </button>
+                    <div id="resourcesSection" class="mt-4 space-y-3 hidden">
+                        <a href="/blog" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition border border-transparent hover:border-blue-100">
+                            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mr-3 shadow-sm text-blue-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-width="2"/></svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">Blog</span>
+                        </a>
+                        <a href="/documentation.php" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition border border-transparent hover:border-blue-100">
+                            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mr-3 shadow-sm text-blue-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-width="2"/></svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">Documentation</span>
+                        </a>
+                        <a href="/supported-documents" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition border border-transparent hover:border-blue-100">
+                            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mr-3 shadow-sm text-blue-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2"/></svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">Supported Documents</span>
+                        </a>
+                        <a href="/success-stories" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition border border-transparent hover:border-blue-100">
+                            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mr-3 shadow-sm text-blue-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" stroke-width="2"/></svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">Success Stories</span>
+                        </a>
+                        <a href="/roi-calculator" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition border border-transparent hover:border-blue-100">
+                            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mr-3 shadow-sm text-blue-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-width="2"/></svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">ROI Calculator</span>
+                        </a>
+                        <a href="/#faq" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition border border-transparent hover:border-blue-100">
+                            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mr-3 shadow-sm text-blue-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">FAQs</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Other Links -->
+                <div class="space-y-4 pt-2">
                     <a href="/company/" class="flex items-center justify-between text-gray-900 font-medium">
                         <span>Company</span>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -646,13 +690,6 @@ endif; ?>
                     </a>
                     <a href="/contact.php" class="flex items-center justify-between text-gray-900 font-medium">
                         <span>Contact</span>
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M5 12h14M12 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
-                    <a href="/#faq" class="flex items-center justify-between text-gray-900 font-medium">
-                        <span>FAQs</span>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M5 12h14M12 5l7 7-7 7"></path>
@@ -689,12 +726,16 @@ endif; ?>
     function toggleMobileMenu() {
         const menu = document.getElementById('mobileMenu');
         const body = document.body;
+        const menuIcon = document.getElementById('menuIcon');
+        const closeIcon = document.getElementById('closeIcon');
         menu.classList.toggle('hidden');
         body.classList.toggle('overflow-hidden');
+        if (menuIcon) menuIcon.classList.toggle('hidden');
+        if (closeIcon) closeIcon.classList.toggle('hidden');
     }
 
     function toggleMobileSection(section) {
-        const sections = ['features', 'locations'];
+        const sections = ['features', 'locations', 'resources'];
         const sectionEl = document.getElementById(section + 'Section');
         const chevron = document.getElementById(section + 'Chevron');
 
