@@ -25,14 +25,38 @@ if (!in_array($data['status'], $allowed_statuses)) {
 $pdo = getDB();
 
 try {
-    // Require pickup condition report with mileage before starting trip
+    // When starting a trip, require mileage and create pickup condition report
     if ($data['status'] === 'active') {
-        $stmt = $pdo->prepare("SELECT id FROM booking_condition_reports WHERE booking_id = ? AND tenant_id = ? AND report_type = 'pickup' AND mileage IS NOT NULL");
-        $stmt->execute([$data['booking_id'], $_SESSION['tenant_id']]);
-        if ($stmt->rowCount() === 0) {
-            echo json_encode(['success' => false, 'message' => 'Please complete the pickup condition report with mileage before starting the trip.']);
+        $mileage = isset($data['mileage']) ? intval($data['mileage']) : 0;
+        if ($mileage <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Pickup mileage is required to start the trip.']);
             exit;
         }
+
+        // Create or update pickup condition report with mileage
+        $stmt = $pdo->prepare("
+            INSERT INTO booking_condition_reports (tenant_id, booking_id, report_type, mileage)
+            VALUES (?, ?, 'pickup', ?)
+            ON DUPLICATE KEY UPDATE mileage = VALUES(mileage), updated_at = CURRENT_TIMESTAMP
+        ");
+        $stmt->execute([$_SESSION['tenant_id'], $data['booking_id'], $mileage]);
+    }
+
+    // When completing a trip, require mileage and create return condition report
+    if ($data['status'] === 'completed') {
+        $mileage = isset($data['mileage']) ? intval($data['mileage']) : 0;
+        if ($mileage <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Return mileage is required to complete the trip.']);
+            exit;
+        }
+
+        // Create or update return condition report with mileage
+        $stmt = $pdo->prepare("
+            INSERT INTO booking_condition_reports (tenant_id, booking_id, report_type, mileage)
+            VALUES (?, ?, 'return', ?)
+            ON DUPLICATE KEY UPDATE mileage = VALUES(mileage), updated_at = CURRENT_TIMESTAMP
+        ");
+        $stmt->execute([$_SESSION['tenant_id'], $data['booking_id'], $mileage]);
     }
 
     // Update booking status

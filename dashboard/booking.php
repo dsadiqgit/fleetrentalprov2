@@ -91,8 +91,8 @@ Back to Bookings
 </div>
 <div class="flex flex-wrap items-center gap-2">
 <?php if ($booking['status'] === 'pending'): ?><button onclick="updateBookingStatus(<?= $booking['id'] ?>,'confirmed')" class="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-black transition-all shadow-sm">Confirm Booking</button>
-<?php elseif ($booking['status'] === 'confirmed'): ?><button onclick="updateBookingStatus(<?= $booking['id'] ?>,'active')" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm shadow-blue-100">Start Trip</button>
-<?php elseif ($booking['status'] === 'active'): ?><button onclick="updateBookingStatus(<?= $booking['id'] ?>,'completed')" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-100">Complete Trip</button>
+<?php elseif ($booking['status'] === 'confirmed'): ?><button onclick="openStartTripModal(<?= $booking['id'] ?>)" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm shadow-blue-100">Start Trip</button>
+<?php elseif ($booking['status'] === 'active'): ?><button onclick="openCompleteTripModal(<?= $booking['id'] ?>)" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-100">Complete Trip</button>
 <?php endif; ?>
 <?php if (!in_array($booking['status'], ['cancelled','completed'])): ?><button onclick="updateBookingStatus(<?= $booking['id'] ?>,'cancelled')" class="px-5 py-2.5 bg-white text-red-600 border border-red-100 rounded-xl text-sm font-semibold hover:bg-red-50 transition-all">Cancel</button><?php endif; ?>
 </div>
@@ -487,6 +487,74 @@ function viewContractPDF(bookingId) {
     modal.querySelectorAll('.close-contract').forEach(b => b.addEventListener('click', () => { modal.remove(); document.body.style.overflow = ''; }));
 }
 
+function openCompleteTripModal(bookingId) {
+    window._completeTripBookingId = bookingId;
+    document.getElementById('completeTripModal').classList.remove('hidden');
+    document.getElementById('completeTripMileage').value = '';
+    document.getElementById('completeTripMileage').focus();
+}
+function closeCompleteTripModal() {
+    document.getElementById('completeTripModal').classList.add('hidden');
+    window._completeTripBookingId = null;
+}
+function submitCompleteTrip() {
+    const mileage = document.getElementById('completeTripMileage').value.trim();
+    if (!mileage || parseInt(mileage) <= 0) {
+        showNotification('Please enter a valid return mileage', 'error');
+        return;
+    }
+    fetch('/dashboard/update-booking-status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: window._completeTripBookingId, status: 'completed', mileage: parseInt(mileage) })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            showNotification('Trip completed. Add return photos now.', 'success');
+            setTimeout(() => {
+                window.location.href = '?id=' + window._completeTripBookingId + '&tab=condition';
+            }, 800);
+        } else {
+            showNotification(d.message || 'Error completing trip', 'error');
+        }
+    })
+    .catch(() => showNotification('Error completing trip', 'error'));
+}
+function openStartTripModal(bookingId) {
+    window._startTripBookingId = bookingId;
+    document.getElementById('startTripModal').classList.remove('hidden');
+    document.getElementById('startTripMileage').value = '';
+    document.getElementById('startTripMileage').focus();
+}
+function closeStartTripModal() {
+    document.getElementById('startTripModal').classList.add('hidden');
+    window._startTripBookingId = null;
+}
+function submitStartTrip() {
+    const mileage = document.getElementById('startTripMileage').value.trim();
+    if (!mileage || parseInt(mileage) <= 0) {
+        showNotification('Please enter a valid mileage', 'error');
+        return;
+    }
+    fetch('/dashboard/update-booking-status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: window._startTripBookingId, status: 'active', mileage: parseInt(mileage) })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            showNotification('Trip started. Add pickup photos now.', 'success');
+            setTimeout(() => {
+                window.location.href = '?id=' + window._startTripBookingId + '&tab=condition';
+            }, 800);
+        } else {
+            showNotification(d.message || 'Error starting trip', 'error');
+        }
+    })
+    .catch(() => showNotification('Error starting trip', 'error'));
+}
 function generateContract(bookingId, templateId) {
     showConfirmation('Generate Contract','Generate contract for this booking?',()=>{
     fetch('/dashboard/generate-contract.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ booking_id: bookingId, template_id: templateId }) })
@@ -495,6 +563,59 @@ function generateContract(bookingId, templateId) {
     },'Generate','bg-blue-600 hover:bg-blue-700');
 }
 </script>
+
+<!-- Complete Trip Mileage Modal -->
+<div id="completeTripModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-xl font-black uppercase tracking-tighter text-gray-900">Complete Trip</h3>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Record return mileage</p>
+            </div>
+            <button onclick="closeCompleteTripModal()" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-2">Return Mileage <span class="text-red-500">*</span></label>
+                <input type="number" id="completeTripMileage" placeholder="e.g. 24850" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" min="0" required>
+                <p class="text-xs text-gray-400 mt-2">Enter the current vehicle mileage at return. You can add photos on the next screen.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeCompleteTripModal()" class="flex-1 px-5 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all">Cancel</button>
+                <button onclick="submitCompleteTrip()" class="flex-1 px-5 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">Complete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Start Trip Mileage Modal -->
+<div id="startTripModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-xl font-black uppercase tracking-tighter text-gray-900">Start Trip</h3>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Record pickup mileage</p>
+            </div>
+            <button onclick="closeStartTripModal()" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-2">Pickup Mileage <span class="text-red-500">*</span></label>
+                <input type="number" id="startTripMileage" placeholder="e.g. 24500" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" min="0" required>
+                <p class="text-xs text-gray-400 mt-2">Enter the current vehicle mileage at pickup. You can add photos on the next screen.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeStartTripModal()" class="flex-1 px-5 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all">Cancel</button>
+                <button onclick="submitStartTrip()" class="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <?php include __DIR__ . '/../includes/confirmation-modal.php'; ?>
 </body>
 </html>

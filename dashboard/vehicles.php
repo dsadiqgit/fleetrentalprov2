@@ -1620,10 +1620,10 @@ endif; ?>
                     <div class="flex flex-wrap items-center justify-end gap-3 mb-8" x-cloak>
                         <a href="/dashboard/vehicles.php" class="px-4 py-2 rounded-full border border-gray-300 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:shadow-md transition">Cancel</a>
                         <?php if ($show_edit_form): ?>
-                        <form method="POST" class="inline" onsubmit="return confirm('Duplicate this vehicle?');">
+                        <button type="button" onclick="duplicateVehicle(<?= $edit_vehicle['id'] ?>)" class="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-100 transition">Duplicate</button>
+                        <form id="duplicateVehicleForm" method="POST" class="hidden">
                             <input type="hidden" name="action" value="duplicate_vehicle">
-                            <input type="hidden" name="vehicle_id" value="<?= $edit_vehicle['id'] ?>">
-                            <button type="submit" class="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-100 transition">Duplicate</button>
+                            <input type="hidden" name="vehicle_id" id="duplicateVehicleId" value="">
                         </form>
                         <?php endif; ?>
                         <button form="vehicleForm" type="submit" class="px-4 py-2 rounded-full border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 shadow-sm hover:bg-gray-100 transition">Save</button>
@@ -3990,6 +3990,19 @@ endif; ?>
                 reader.readAsDataURL(file);
             });
         }
+    }
+
+    function duplicateVehicle(vehicleId) {
+        showConfirmation(
+            'Duplicate Vehicle',
+            'Are you sure you want to duplicate this vehicle? A copy will be created with all the same details.',
+            function() {
+                document.getElementById('duplicateVehicleId').value = vehicleId;
+                document.getElementById('duplicateVehicleForm').submit();
+            },
+            'Duplicate',
+            'bg-blue-600 hover:bg-blue-700'
+        );
     }
     </script>
     <?php include __DIR__ . '/../includes/confirmation-modal.php'; ?>
