@@ -74,22 +74,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_name'])) {
         elseif (!empty($content['contact_email'])) $tenant_email = $content['contact_email'];
 
         if (!empty($tenant_email)) {
-            $subject = "New Contact Form Message from " . $c_name;
-            $body = "<h2>New Contact Form Message</h2>";
-            $body .= "<p><strong>Name:</strong> " . htmlspecialchars($c_name) . "</p>";
-            if ($c_phone) $body .= "<p><strong>Phone:</strong> " . htmlspecialchars($c_phone) . "</p>";
-            if ($c_email) $body .= "<p><strong>Email:</strong> " . htmlspecialchars($c_email) . "</p>";
-            $body .= "<p><strong>Message:</strong></p><p>" . nl2br(htmlspecialchars($c_msg)) . "</p>";
-            $body .= "<hr><p><em>Sent from the website contact form.</em></p>";
+            $company_name = htmlspecialchars($content['company_name'] ?? $tenant['name'] ?? SITE_NAME);
+            $logo_url = !empty($tenant['logo']) ? (strpos($tenant['logo'], 'http') === 0 ? $tenant['logo'] : SITE_URL . $tenant['logo']) : '';
+            $subject = "New Contact Inquiry from " . $c_name . " - " . $company_name;
 
-            $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || ($_SERVER['SERVER_ADDR'] ?? '') === '127.0.0.1';
-            if ($isLocal) {
-                $headers = "MIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\nFrom: " . ($c_email ?: $tenant_email) . "\r\n";
-                $sent = @mail($tenant_email, $subject, $body, $headers);
-            } else {
-                require_once __DIR__ . '/../includes/email.php';
-                $sent = sendEmail($tenant_email, $subject, $body, $content['company_name'] ?? $tenant['name'] ?? SITE_NAME);
+            $logo_html = $logo_url 
+                ? '<img src="' . $logo_url . '" alt="' . $company_name . '" style="max-height: 48px; max-width: 200px; object-fit: contain;">'
+                : '<span style="font-size: 24px; font-weight: 700; color: #000;">' . $company_name . '</span>';
+
+            $body = "
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset=\"UTF-8\">
+                <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+                <style>
+                    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; color: #333; }
+                    .email-wrapper { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+                    .email-header { padding: 32px; background: #ffffff; border-bottom: 1px solid #000; text-align: center; }
+                    .content-card { margin: 32px; border: 1px solid #e5e5e5; border-radius: 12px; padding: 32px; background: #fff; }
+                    .field-label { font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+                    .field-value { font-size: 16px; color: #1a1a1a; margin-bottom: 20px; line-height: 1.6; }
+                    .footer { padding: 24px 32px; text-align: center; border-top: 1px solid #e5e5e5; }
+                    .footer p { margin: 0; font-size: 13px; color: #666; }
+                </style>
+            </head>
+            <body>
+                <div class=\"email-wrapper\">
+                    <div class=\"email-header\">
+                        {$logo_html}
+                    </div>
+                    <div class=\"content-card\">
+                        <div class=\"field-label\">Name</div>
+                        <div class=\"field-value\">" . htmlspecialchars($c_name) . "</div>";
+
+            if ($c_phone) {
+                $body .= "
+                        <div class=\"field-label\">Phone</div>
+                        <div class=\"field-value\">" . htmlspecialchars($c_phone) . "</div>";
             }
+
+            if ($c_email) {
+                $body .= "
+                        <div class=\"field-label\">Email</div>
+                        <div class=\"field-value\">" . htmlspecialchars($c_email) . "</div>";
+            }
+
+            $body .= "
+                        <div class=\"field-label\">Message</div>
+                        <div class=\"field-value\">" . nl2br(htmlspecialchars($c_msg)) . "</div>
+                    </div>
+                    <div class=\"footer\">
+                        <p>This message was sent from your website contact form.</p>
+                    </div>
+                </div>
+            </body>
+            </html>";
+
+            require_once __DIR__ . '/../includes/email.php';
+            $sent = sendEmail($tenant_email, $subject, $body, $company_name);
 
             $status  = $sent ? 'success' : 'error';
             $message = $sent ? 'Thank you! Your message has been sent. We will get back to you soon.' : 'Sorry, we could not send your message right now. Please give us a call instead — we would love to hear from you!';
